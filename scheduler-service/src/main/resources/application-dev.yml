@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/scheduler?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    username: root
+    password: root
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+      # password: 123456
+
+# 日志配置
+logging:
+  level:
+    root: info
+    com.platform.scheduler: debug
+    org.springframework: info
+    com.baomidou: debug
+    org.apache.ibatis: debug
+
+# 调度器配置
+scheduler:
+  task:
+    scan-rate: 5000  # 任务扫描频率，单位毫秒
+  node:
+    heartbeat-rate: 10000  # 开发环境下心跳频率更短，单位毫秒

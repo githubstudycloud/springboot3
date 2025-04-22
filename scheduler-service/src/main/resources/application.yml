@@ -1,0 +1,98 @@
+spring:
+  application:
+    name: scheduler-service
+  profiles:
+    active: dev
+  main:
+    allow-circular-references: false
+    banner-mode: off
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 30000
+      pool-name: HikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+      # password: 123456
+      timeout: 10000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1
+
+# MyBatis Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.platform.scheduler.model
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    call-setters-on-nulls: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 日志配置
+logging:
+  level:
+    root: info
+    com.platform.scheduler: debug
+  file:
+    name: logs/scheduler-service.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 30
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 10
+    max-swallow-size: 100MB
+    max-http-form-post-size: 100MB
+
+# 调度器配置
+scheduler:
+  task:
+    scan-rate: 5000  # 任务扫描频率，单位毫秒
+    max-parallel-tasks: 100  # 最大并行任务数
+    default-retry-count: 3  # 默认重试次数
+    default-retry-interval: 60000  # 默认重试间隔，单位毫秒
+  node:
+    id: ${spring.application.name}-${server.port}-${random.uuid}  # 节点ID
+    heartbeat-rate: 30000  # 心跳频率，单位毫秒
+
+# SpringDoc配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    doc-expansion: none
+    tags-sorter: alpha
+    operations-sorter: alpha
+  packages-to-scan: com.platform.scheduler.api

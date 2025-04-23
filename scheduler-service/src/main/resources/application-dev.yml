@@ -1,8 +1,33 @@
 spring:
+  # 主数据源
   datasource:
-    url: jdbc:mysql://localhost:3306/scheduler?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
-    username: root
-    password: root
+    master:
+      name: master
+      url: jdbc:mysql://localhost:3306/scheduler?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: root
+      password: root
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    # 从数据源
+    slave0:
+      name: slave0
+      url: jdbc:mysql://localhost:3306/scheduler?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: root
+      password: root
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    # 日志数据源0
+    log0:
+      name: log0
+      url: jdbc:mysql://localhost:3306/scheduler_log0?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: root
+      password: root
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    # 日志数据源1
+    log1:
+      name: log1
+      url: jdbc:mysql://localhost:3306/scheduler_log1?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: root
+      password: root
+      driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
       host: 127.0.0.1
@@ -25,3 +50,11 @@ scheduler:
     scan-rate: 5000  # 任务扫描频率，单位毫秒
   node:
     heartbeat-rate: 10000  # 开发环境下心跳频率更短，单位毫秒
+  log:
+    datasource:
+      count: 2  # 日志数据源数量
+    retention:
+      days: 30   # 日志保留天数
+      months: 6  # 日志表保留月数
+    export:
+      path: ./export/logs # 日志导出路径

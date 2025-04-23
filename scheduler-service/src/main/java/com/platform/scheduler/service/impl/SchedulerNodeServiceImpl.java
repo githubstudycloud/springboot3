@@ -16,8 +16,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.platform.scheduler.core.cluster.ClusterManager;
+import com.platform.scheduler.core.cluster.NodeStatus;
 import com.platform.scheduler.core.lock.DistributedLockManager;
 import com.platform.scheduler.model.SchedulerNode;
+import com.platform.scheduler.model.Task;
 import com.platform.scheduler.model.TaskExecution;
 import com.platform.scheduler.repository.SchedulerNodeRepository;
 import com.platform.scheduler.repository.TaskExecutionRepository;
@@ -41,6 +44,9 @@ public class SchedulerNodeServiceImpl implements SchedulerNodeService {
     
     @Autowired
     private DistributedLockManager lockManager;
+    
+    @Autowired(required = false)
+    private ClusterManager clusterManager;
     
     @Value("${server.port:8080}")
     private int serverPort;
@@ -72,7 +78,7 @@ public class SchedulerNodeServiceImpl implements SchedulerNodeService {
         node.setLastHeartbeatTime(now);
         
         // 设置状态为在线
-        node.setStatus("ONLINE");
+        node.setStatus(NodeStatus.ONLINE.getCode());
         
         // 保存节点信息
         SchedulerNode savedNode = nodeRepository.save(node);
@@ -125,23 +131,45 @@ public class SchedulerNodeServiceImpl implements SchedulerNodeService {
     @Override
     @Transactional
     public boolean offlineNode(String nodeId) {
-        // 更新节点状态为离线
-        int rows = nodeRepository.updateStatus(nodeId, "OFFLINE");
-        boolean result = rows > 0;
-        
-        if (result) {
-            logger.info("节点已下线: {}", nodeId);
+        try {
+            // 尝试获取分布式锁
+            String lockKey = "node_offline_" + nodeId;
+            boolean locked = lockManager.tryLock(lockKey, 10, 10);
             
-            // 如果是当前节点，清除当前节点信息
-            if (nodeId.equals(currentNodeId)) {
-                currentNodeId = null;
-                currentNode = null;
+            if (locked) {
+                try {
+                    // 更新节点状态为离线
+                    int rows = nodeRepository.updateStatus(nodeId, NodeStatus.OFFLINE.getCode());
+                    boolean result = rows > 0;
+                    
+                    if (result) {
+                        logger.info("节点已下线: {}", nodeId);
+                        
+                        // 如果是当前节点，清除当前节点信息
+                        if (nodeId.equals(currentNodeId)) {
+                            currentNodeId = null;
+                            currentNode = null;
+                        }
+                        
+                        // 重新分配该节点上的任务
+                        reassignTasks(nodeId);
+                    } else {
+                        logger.warn("节点下线失败，节点可能不存在: {}", nodeId);
+                    }
+                    
+                    return result;
+                } finally {
+                    // 释放锁
+                    lockManager.unlock(lockKey);
+                }
+            } else {
+                logger.warn("无法获取节点下线锁: {}", nodeId);
+                return false;
             }
-        } else {
-            logger.warn("节点下线失败，节点可能不存在: {}", nodeId);
+        } catch (Exception e) {
+            logger.error("节点下线异常: " + nodeId, e);
+            return false;
         }
-        
-        return result;
     }
     
     @Override
@@ -152,7 +180,7 @@ public class SchedulerNodeServiceImpl implements SchedulerNodeService {
     
     @Override
     public List<SchedulerNode> findOnlineNodes() {
-        return nodeRepository.findByStatus("ONLINE");
+        return nodeRepository.findByStatus(NodeStatus.ONLINE.getCode());
     }
     
     @Override
@@ -168,26 +196,51 @@ public class SchedulerNodeServiceImpl implements SchedulerNodeService {
     @Override
     @Transactional
     public int handleTimeoutNodes(int timeoutSeconds) {
-        // 计算超时时间
-        Date timeoutTime = new Date(System.currentTimeMillis() - timeoutSeconds * 1000L);
-        
-        // 查询超时节点
-        List<SchedulerNode> timeoutNodes = nodeRepository.findTimeoutNodes(timeoutTime);
-        
-        int count = 0;
-        for (SchedulerNode node : timeoutNodes) {
-            // 更新节点状态为超时
-            int rows = nodeRepository.updateStatus(node.getNodeId(), "TIMEOUT");
-            if (rows > 0) {
-                logger.info("节点已标记为超时: {}", node.getNodeId());
-                count++;
-                
-                // 重新分配该节点上的任务
-                reassignTasks(node.getNodeId());
-            }
+        // 只有主节点才能处理超时节点
+        if (clusterManager != null && !clusterManager.isLeader()) {
+            logger.debug("当前节点不是主节点，跳过处理超时节点");
+            return 0;
         }
         
-        return count;
+        try {
+            // 尝试获取分布式锁
+            String lockKey = "handle_timeout_nodes";
+            boolean locked = lockManager.tryLock(lockKey, 30, 10);
+            
+            if (locked) {
+                try {
+                    // 计算超时时间
+                    Date timeoutTime = new Date(System.currentTimeMillis() - timeoutSeconds * 1000L);
+                    
+                    // 查询超时节点
+                    List<SchedulerNode> timeoutNodes = nodeRepository.findTimeoutNodes(timeoutTime);
+                    
+                    int count = 0;
+                    for (SchedulerNode node : timeoutNodes) {
+                        // 更新节点状态为超时
+                        int rows = nodeRepository.updateStatus(node.getNodeId(), NodeStatus.TIMEOUT.getCode());
+                        if (rows > 0) {
+                            logger.info("节点已标记为超时: {}", node.getNodeId());
+                            count++;
+                            
+                            // 重新分配该节点上的任务
+                            reassignTasks(node.getNodeId());
+                        }
+                    }
+                    
+                    return count;
+                } finally {
+                    // 释放锁
+                    lockManager.unlock(lockKey);
+                }
+            } else {
+                logger.warn("无法获取处理超时节点锁");
+                return 0;
+            }
+        } catch (Exception e) {
+            logger.error("处理超时节点异常", e);
+            return 0;
+        }
     }
     
     @Override
@@ -204,7 +257,7 @@ public class SchedulerNodeServiceImpl implements SchedulerNodeService {
                         node.setIpAddress(InetAddress.getLocalHost().getHostAddress());
                         node.setPort(serverPort);
                         node.setApplicationName(applicationName);
-                        node.setStatus("ONLINE");
+                        node.setStatus(NodeStatus.ONLINE.getCode());
                         
                         // 注册节点
                         currentNode = registerNode(node);
@@ -222,8 +275,16 @@ public class SchedulerNodeServiceImpl implements SchedulerNodeService {
     
     @Override
     public SchedulerNode selectNodeForTask(Long taskId) {
-        // 默认选择策略：简单轮询
-        // 获取所有在线节点
+        // 如果有集群管理器，则使用集群管理器选择节点
+        if (clusterManager != null) {
+            // 获取任务对象
+            Task task = new Task();
+            task.setId(taskId);
+            
+            return clusterManager.selectNodeForTask(task);
+        }
+        
+        // 没有集群管理器，使用简单的哈希策略
         List<SchedulerNode> onlineNodes = findOnlineNodes();
         if (onlineNodes == null || onlineNodes.isEmpty()) {
             logger.warn("没有可用的在线节点");
@@ -308,5 +369,36 @@ public class SchedulerNodeServiceImpl implements SchedulerNodeService {
             logger.error("获取主机信息异常", e);
             return false;
         }
+    }
+    
+    /**
+     * 判断节点是否是主节点
+     * 
+     * @param nodeId 节点ID
+     * @return 是否是主节点
+     */
+    public boolean isLeaderNode(String nodeId) {
+        // 如果有集群管理器，则使用集群管理器判断
+        if (clusterManager != null) {
+            return clusterManager.isLeader() && nodeId.equals(currentNodeId);
+        }
+        
+        // 没有集群管理器，所有节点都视为主节点
+        return true;
+    }
+    
+    /**
+     * 判断当前节点是否是主节点
+     * 
+     * @return 是否是主节点
+     */
+    public boolean isCurrentNodeLeader() {
+        // 如果有集群管理器，则使用集群管理器判断
+        if (clusterManager != null) {
+            return clusterManager.isLeader();
+        }
+        
+        // 没有集群管理器，当前节点视为主节点
+        return true;
     }
 }

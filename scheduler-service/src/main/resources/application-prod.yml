@@ -1,48 +1,84 @@
 spring:
+  # 主数据源
   datasource:
-    url: jdbc:mysql://mysql-host:3306/scheduler?characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
-    username: ${MYSQL_USERNAME:prod_user}
-    password: ${MYSQL_PASSWORD:prod_password}
+    master:
+      name: master
+      url: jdbc:mysql://master-db:3306/scheduler?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: prod_user
+      password: ${MASTER_DB_PASSWORD}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    # 从数据源
+    slave0:
+      name: slave0
+      url: jdbc:mysql://slave-db:3306/scheduler?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: prod_user
+      password: ${SLAVE_DB_PASSWORD}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    # 日志数据源0
+    log0:
+      name: log0
+      url: jdbc:mysql://log-db-0:3306/scheduler_log?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: log_user
+      password: ${LOG_DB_PASSWORD}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    # 日志数据源1
+    log1:
+      name: log1
+      url: jdbc:mysql://log-db-1:3306/scheduler_log?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+      username: log_user
+      password: ${LOG_DB_PASSWORD}
+      driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      host: ${REDIS_HOST:redis-host}
-      port: ${REDIS_PORT:6379}
+      host: redis-master
+      port: 6379
+      password: ${REDIS_PASSWORD}
       database: 0
-      password: ${REDIS_PASSWORD:prod_password}
       timeout: 10000
-      cluster:
-        nodes: ${REDIS_CLUSTER_NODES:redis-node1:6379,redis-node2:6379,redis-node3:6379}
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 16
+          min-idle: 4
+          max-wait: -1
 
 # 日志配置
 logging:
   level:
     root: warn
     com.platform.scheduler: info
+    org.springframework: warn
   file:
-    name: /var/log/scheduler-service/scheduler-service.log
+    name: /var/log/scheduler-service/service.log
   logback:
     rollingpolicy:
-      max-file-size: 1GB
+      max-file-size: 200MB
       max-history: 60
 
 # 服务器配置
 server:
   port: 8080
   tomcat:
-    max-threads: 500
+    max-threads: 400
     min-spare-threads: 20
-    max-connections: 10000
     accept-count: 1000
+    max-connections: 10000
+    connection-timeout: 30000
 
 # 调度器配置
 scheduler:
   task:
-    scan-rate: 3000  # 生产环境下扫描频率更高，单位毫秒
-    max-parallel-tasks: 300  # 生产环境下最大并行任务数更高
+    scan-rate: 3000  # 任务扫描频率，单位毫秒
+    max-parallel-tasks: 500  # 最大并行任务数
+    default-retry-count: 5  # 默认重试次数
+    default-retry-interval: 120000  # 默认重试间隔，单位毫秒
   node:
-    heartbeat-rate: 15000  # 生产环境下心跳频率，单位毫秒
-
-# SpringDoc配置
-springdoc:
-  api-docs:
-    enabled: false  # 生产环境下禁用API文档
+    heartbeat-rate: 15000  # 心跳频率，单位毫秒
+  log:
+    datasource:
+      count: 2  # 日志数据源数量
+    retention:
+      days: 180  # 日志保留天数
+      months: 12  # 日志表保留月数
+    export:
+      path: /data/scheduler-service/logs/export  # 日志导出路径

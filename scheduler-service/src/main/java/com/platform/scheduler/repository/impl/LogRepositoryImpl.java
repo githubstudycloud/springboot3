@@ -407,4 +407,9 @@ public class LogRepositoryImpl implements LogRepository {
     public String getLogTableNameByDate(LocalDate date) {
         return LOG_TABLE_PREFIX + date.format(TABLE_NAME_FORMATTER);
     }
+    
+    @Override
+    public int executeUpdate(String sql, Object... args) {
+        return jdbcTemplate.update(sql, args);
+    }
 }

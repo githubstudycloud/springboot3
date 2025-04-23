@@ -84,6 +84,15 @@ scheduler:
   node:
     id: ${spring.application.name}-${server.port}-${random.uuid}  # 节点ID
     heartbeat-rate: 30000  # 心跳频率，单位毫秒
+  datasource:
+    config-file: ./config/datasources.json  # 数据源配置文件路径
+    auto-load: true  # 是否自动加载数据源配置
+    health-check-rate: 60000  # 数据源健康检查频率，单位毫秒
+  cluster:
+    health-check-rate: 30000  # 节点健康检查频率，单位毫秒
+    load-balance-strategy: RoundRobin  # 负载均衡策略（RoundRobin/Hash/LeastLoad）
+    node-timeout: 60  # 节点超时时间，单位秒
+    leader-elect-enabled: true  # 是否启用主节点选举
 
 # SpringDoc配置
 springdoc:

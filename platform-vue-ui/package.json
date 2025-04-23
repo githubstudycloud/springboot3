@@ -11,7 +11,10 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=platform-vue-ui-app",
-    "build": "npm run build --workspace=platform-vue-ui-app",
+    "dev:common": "npm run dev --workspace=platform-vue-ui-common",
+    "build": "npm run build --workspace=platform-vue-ui-common && npm run build --workspace=platform-vue-ui-app",
+    "build:common": "npm run build --workspace=platform-vue-ui-common",
+    "build:app": "npm run build --workspace=platform-vue-ui-app",
     "lint": "npm run lint --workspaces",
     "test": "npm run test --workspaces",
     "clean": "rm -rf node_modules && npm run clean --workspaces"

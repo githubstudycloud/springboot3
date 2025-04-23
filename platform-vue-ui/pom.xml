@@ -70,25 +70,23 @@
                 </executions>
             </plugin>
             
-            <!-- 将构建结果复制到目标目录 -->
+            <!-- 打包前端资源为zip -->
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
-                        <id>copy-resources</id>
-                        <phase>prepare-package</phase>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>copy-resources</goal>
+                            <goal>single</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/classes/static</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/platform-vue-ui-app/dist</directory>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/assembly/ui-package.xml</descriptor>
+                            </descriptors>
+                            <finalName>platform-vue-ui-${project.version}</finalName>
                         </configuration>
                     </execution>
                 </executions>

@@ -1,0 +1,37 @@
+version: '3'
+services:
+  # 通用组件库开发服务
+  vue-common:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: npm run dev:common
+    ports:
+      - "3100:3100"
+    environment:
+      - NODE_ENV=development
+
+  # 主应用开发服务
+  vue-app:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - vue-common
+
+  # Nginx 用于开发环境中的前后端代理
+  nginx-dev:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/dev.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "8000:80"
+    depends_on:
+      - vue-app

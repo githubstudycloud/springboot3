@@ -1,0 +1,325 @@
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  mysql:
+    image: mysql:8.0
+    container_name: platform-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-platformdb}
+      MYSQL_USER: ${MYSQL_USER:-platformuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-platformpass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: platform-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redispass}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+  rabbitmq:
+    image: rabbitmq:3.10-management
+    container_name: platform-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-platformuser}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-platformpass}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.8
+    container_name: platform-elasticsearch
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-elasticpass}
+      - xpack.security.enabled=true
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - platform-network
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: platform-zipkin
+    restart: always
+    ports:
+      - "9411:9411"
+    networks:
+      - platform-network
+
+  prometheus:
+    image: prom/prometheus
+    container_name: platform-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - platform-network
+
+  grafana:
+    image: grafana/grafana
+    container_name: platform-grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    depends_on:
+      - prometheus
+    networks:
+      - platform-network
+
+  # Core Platform Services
+  registry:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: platform-registry/target/platform-registry.jar
+    container_name: platform-registry
+    restart: always
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - REGISTRY_USERNAME=${REGISTRY_USERNAME:-admin}
+      - REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-admin}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+  config:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: platform-config/target/platform-config.jar
+    container_name: platform-config
+    restart: always
+    ports:
+      - "8888:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVICE_URL=http://${REGISTRY_USERNAME:-admin}:${REGISTRY_PASSWORD:-admin}@registry:8761/eureka/
+    depends_on:
+      registry:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: platform-gateway/target/platform-gateway.jar
+    container_name: platform-gateway
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVICE_URL=http://${REGISTRY_USERNAME:-admin}:${REGISTRY_PASSWORD:-admin}@registry:8761/eureka/
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redispass}
+      - ZIPKIN_URL=http://zipkin:9411
+    depends_on:
+      config:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+  scheduler:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: platform-scheduler/target/platform-scheduler.jar
+    container_name: platform-scheduler
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVICE_URL=http://${REGISTRY_USERNAME:-admin}:${REGISTRY_PASSWORD:-admin}@registry:8761/eureka/
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-platformdb}
+      - MYSQL_USER=${MYSQL_USER:-platformuser}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-platformpass}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=${RABBITMQ_USER:-platformuser}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-platformpass}
+      - ZIPKIN_URL=http://zipkin:9411
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+  scheduler-register:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: platform-scheduler-register/target/platform-scheduler-register.jar
+    container_name: platform-scheduler-register
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVICE_URL=http://${REGISTRY_USERNAME:-admin}:${REGISTRY_PASSWORD:-admin}@registry:8761/eureka/
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-platformdb}
+      - MYSQL_USER=${MYSQL_USER:-platformuser}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-platformpass}
+      - ZIPKIN_URL=http://zipkin:9411
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+  scheduler-query:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: platform-scheduler-query/target/platform-scheduler-query.jar
+    container_name: platform-scheduler-query
+    restart: always
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVICE_URL=http://${REGISTRY_USERNAME:-admin}:${REGISTRY_PASSWORD:-admin}@registry:8761/eureka/
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-platformdb}
+      - MYSQL_USER=${MYSQL_USER:-platformuser}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-platformpass}
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-elasticpass}
+      - ZIPKIN_URL=http://zipkin:9411
+    depends_on:
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      config:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - platform-network
+
+# Define volumes
+volumes:
+  mysql-data:
+  redis-data:
+  rabbitmq-data:
+  elasticsearch-data:
+  prometheus-data:
+  grafana-data:
+
+# Define networks
+networks:
+  platform-network:
+    driver: bridge

@@ -1,0 +1,79 @@
+server:
+  port: 8761
+  shutdown: graceful
+
+spring:
+  application:
+    name: platform-registry
+  # Profiles configuration
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  # Security configuration
+  security:
+    user:
+      name: ${REGISTRY_USERNAME:admin}
+      password: ${REGISTRY_PASSWORD:admin}
+  
+  # Spring Boot Admin configuration
+  boot:
+    admin:
+      context-path: /admin
+      ui:
+        title: Platform Administration
+        brand: <img src="assets/img/icon-spring-boot-admin.svg" alt="Platform Admin"><span>Platform Admin</span>
+
+# Eureka configuration
+eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: false
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+  server:
+    # Disable self-preservation mode for development
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 5000
+    # Set response cache update interval
+    response-cache-update-interval-ms: 5000
+  client:
+    # Don't register with itself
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:${server.port}/eureka/
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+  health:
+    defaults:
+      enabled: true
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.platform.registry: DEBUG
+    org.springframework.cloud.netflix.eureka: INFO
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg %n"
+
+# Custom application properties
+platform:
+  registry:
+    # Enable detailed instance info
+    detailed-instance-info: true
+    # Instance status page refresh rate (milliseconds)
+    status-page-refresh-rate: 10000

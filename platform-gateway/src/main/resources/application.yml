@@ -1,0 +1,143 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: platform-gateway
+  main:
+    web-application-type: reactive
+  # Profiles configuration
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  # Cloud configuration
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      # Default filters applied to all routes
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            rate-limiter: "#{@defaultRateLimiter}"
+            key-resolver: "#{@ipKeyResolver}"
+        - AddRequestHeader=X-Gateway-Timestamp, ${now:yyyy-MM-dd HH:mm:ss.SSS}
+        - AddResponseHeader=X-Gateway, platform-gateway
+        - RemoveRequestHeader=Cookie
+        - name: Retry
+          args:
+            retries: 3
+            statuses: BAD_GATEWAY,SERVICE_UNAVAILABLE
+            methods: GET,POST
+            backoff:
+              firstBackoff: 50ms
+              maxBackoff: 500ms
+              factor: 2
+              basedOnPreviousValue: true
+        - name: CircuitBreaker
+          args:
+            name: defaultCircuitBreaker
+            fallbackUri: forward:/fallback
+  
+  # Redis configuration
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 0
+  
+  # Sleuth and Zipkin configuration
+  sleuth:
+    sampler:
+      probability: 1.0
+  zipkin:
+    base-url: ${ZIPKIN_URL:http://localhost:9411}
+    sender:
+      type: web
+
+# Eureka configuration
+eureka:
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15
+    instance-id: ${spring.application.name}:${random.uuid}
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761/eureka/}
+    registry-fetch-interval-seconds: 5
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
+
+# Resilience4J Circuit Breaker configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 50
+        permitted-number-of-calls-in-half-open-state: 5
+        wait-duration-in-open-state: 10s
+        slow-call-duration-threshold: 2s
+    instances:
+      defaultCircuitBreaker:
+        base-config: default
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+    instances:
+      defaultTimeLimiter:
+        base-config: default
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.platform.gateway: DEBUG
+    org.springframework.cloud.gateway: INFO
+    reactor.netty: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg %n"
+
+# Custom application properties
+platform:
+  gateway:
+    # Default timeout in milliseconds
+    default-timeout: 30000
+    # Enable/disable canary deployment mode
+    canary-enabled: false
+    # Canary ratio (0.0 - 1.0)
+    canary-ratio: 0.1
+    # HTTP headers to forward
+    forwarded-headers:
+      - X-User-ID
+      - X-User-Name
+      - X-Request-ID
+      - X-Trace-ID
+      - X-Forwarded-For

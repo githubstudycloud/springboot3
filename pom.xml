@@ -24,6 +24,7 @@
         <module>platform-scheduler-query</module>
         <module>platform-config</module>
         <module>platform-registry</module>
+        <module>platform-vue-ui</module>
     </modules>
 
     <properties>

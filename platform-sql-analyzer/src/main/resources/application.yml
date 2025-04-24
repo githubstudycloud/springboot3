@@ -1,0 +1,105 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: platform-sql-analyzer
+  profiles:
+    active: dev
+  cloud:
+    discovery:
+      enabled: true
+    config:
+      enabled: true
+      fail-fast: true
+
+# 数据库连接池配置
+datasource:
+  default:
+    jdbc-url: jdbc:mysql://localhost:3306/information_schema?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    connection-timeout: 30000
+    idle-timeout: 600000
+    max-lifetime: 1800000
+    maximum-pool-size: 10
+    minimum-idle: 5
+  
+# SQL分析器配置
+sql-analyzer:
+  # 定义脚本检索路径
+  script-locations: classpath:sql/**/*.sql
+  # 默认SQL超时时间（毫秒）
+  default-timeout: 30000
+  # 是否启用SQL缓存
+  cache-enabled: true
+  # 缓存有效期（分钟）
+  cache-expiration: 10
+  # 并发执行的最大线程数
+  max-concurrent-queries: 5
+  # 历史数据存储路径
+  history-data-path: ./data/history
+  # 性能数据收集配置
+  data-collection:
+    # 是否启用数据收集
+    enabled: true
+    # 保留历史数据的时间（天）
+    retention-days:
+      hourly: 7
+      daily: 90
+      weekly: 365
+    # 清理任务的cron表达式
+    cleanup-cron: 0 0 2 * * ?
+    # 数据收集监控项
+    monitors:
+      # 是否收集内存使用情况
+      memory-usage: true
+      # 是否收集连接状态
+      connection-status: true
+      # 是否收集系统状态
+      system-status: true
+      # 是否收集表使用情况
+      table-usage: true
+      # 是否收集慢查询
+      slow-queries: true
+      # 慢查询阈值（秒）
+      slow-query-threshold: 1.0
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.platform.sqlanalyzer: DEBUG
+    org.springframework.jdbc: INFO
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: always
+
+---
+# Development profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+  cloud:
+    discovery:
+      enabled: false
+
+---
+# Production profile
+spring:
+  config:
+    activate:
+      on-profile: prod

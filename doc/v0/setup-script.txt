@@ -1,0 +1,843 @@
+#!/bin/bash
+# 微服务平台项目文档设置脚本
+# 日期: 2025-04-26
+# 版本: 1.0.0
+
+# 设置颜色输出
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# 工作目录设置
+PROJECT_ROOT="$HOME/Documents/IdeaProject/springboot3.x"
+DOCS_DIR="$PROJECT_ROOT/docs"
+ARCH_DIR="$DOCS_DIR/architecture"
+STANDARDS_DIR="$DOCS_DIR/standards"
+IMPLEMENTATION_DIR="$DOCS_DIR/implementation"
+
+# 创建目录结构
+echo -e "${BLUE}创建文档目录结构...${NC}"
+mkdir -p "$ARCH_DIR"
+mkdir -p "$STANDARDS_DIR"
+mkdir -p "$IMPLEMENTATION_DIR"
+mkdir -p "$DOCS_DIR/diagrams"
+mkdir -p "$DOCS_DIR/examples"
+mkdir -p "$DOCS_DIR/api"
+
+# 检查是否成功创建目录
+if [ $? -ne 0 ]; then
+    echo -e "${RED}错误: 无法创建目录结构。请检查路径和权限。${NC}"
+    exit 1
+fi
+
+# 创建架构设计文档
+echo -e "${BLUE}创建架构设计文档...${NC}"
+cat > "$ARCH_DIR/architecture-design.md" << 'EOL'
+# 现代化微服务平台架构设计文档
+
+**版本**: 1.0.0  
+**日期**: 2025-04-26  
+**作者**: 架构团队  
+
+## 目录
+
+1. [引言](#1-引言)
+2. [架构概述](#2-架构概述)
+3. [技术栈选择](#3-技术栈选择)
+4. [系统架构设计](#4-系统架构设计)
+5. [核心子系统详细设计](#5-核心子系统详细设计)
+6. [跨模块关注点](#6-跨模块关注点)
+7. [开发规范](#7-开发规范)
+8. [项目结构与模块划分](#8-项目结构与模块划分)
+9. [开发与部署流程](#9-开发与部署流程)
+10. [实施路线图](#10-实施路线图)
+11. [附录](#11-附录)
+
+## 1. 引言
+
+### 1.1 文档目的
+
+本文档详细描述了现代化微服务平台的架构设计，旨在为开发团队提供清晰的架构蓝图，确保系统实现符合预期的质量属性和业务需求。
+
+### 1.2 设计目标
+
+本架构设计的主要目标包括：
+
+- 构建高度可扩展、松耦合且易于维护的企业级系统
+- 支持快速业务迭代和弹性扩展
+- 简化开发流程，提高团队协作效率
+- 实现服务的高可用性、可伸缩性和容错性
+- 支持系统的灰度发布和平滑升级
+- 提供完善的监控、日志和审计功能
+- 支持现代化AI和向量数据分析能力
+
+...
+
+[完整内容见架构设计文档]
+EOL
+
+# 创建开发规范文档
+echo -e "${BLUE}创建开发规范文档...${NC}"
+cat > "$STANDARDS_DIR/development-standards.md" << 'EOL'
+# 微服务平台项目开发规范
+
+**版本**: 1.0.0  
+**日期**: 2025-04-26  
+**状态**: 正式发布  
+
+## 目录
+
+1. [前言](#1-前言)
+2. [通用规范](#2-通用规范)
+3. [Java编码规范](#3-java编码规范)
+4. [Kotlin编码规范](#4-kotlin编码规范)
+5. [响应式编程规范](#5-响应式编程规范)
+6. [领域驱动设计实践](#6-领域驱动设计实践)
+7. [微服务设计规范](#7-微服务设计规范)
+8. [API设计规范](#8-api设计规范)
+9. [数据库设计规范](#9-数据库设计规范)
+10. [测试规范](#10-测试规范)
+11. [文档规范](#11-文档规范)
+12. [安全规范](#12-安全规范)
+13. [日志规范](#13-日志规范)
+14. [版本控制规范](#14-版本控制规范)
+15. [持续集成与部署规范](#15-持续集成与部署规范)
+16. [附录](#16-附录)
+
+...
+
+[完整内容见开发规范文档]
+EOL
+
+# 创建实施时间表文档
+echo -e "${BLUE}创建实施时间表文档...${NC}"
+cat > "$IMPLEMENTATION_DIR/implementation-timeline.md" << 'EOL'
+# 微服务平台项目实施时间表
+
+**版本**: 1.0.0  
+**日期**: 2025-04-26  
+**状态**: 规划阶段  
+
+## 1. 项目概述
+
+本文档详细规划微服务平台的实施时间表，包括各个阶段的工作内容、里程碑、团队分工和风险管理计划。实施计划基于架构设计文档中的技术选型和模块划分，确保系统按照预期进度和质量交付。
+
+...
+
+[完整内容见实施时间表文档]
+EOL
+
+# 创建项目结构示例图
+echo -e "${BLUE}创建项目结构示例图...${NC}"
+cat > "$DOCS_DIR/diagrams/project-structure.md" << 'EOL'
+# 项目结构示例图
+
+```mermaid
+graph TD
+    A[platform-parent] --> B[platform-common]
+    A --> C[platform-dependencies]
+    A --> D[platform-framework]
+    A --> E[platform-infrastructure]
+    A --> F[platform-business]
+    
+    B --> B1[platform-common-core]
+    B --> B2[platform-common-web]
+    B --> B3[platform-common-security]
+    B --> B4[platform-common-test]
+    
+    D --> D1[platform-framework-core]
+    D --> D2[platform-framework-web]
+    D --> D3[platform-framework-data]
+    D --> D4[platform-framework-security]
+    
+    E --> E1[platform-config]
+    E --> E2[platform-registry]
+    E --> E3[platform-gateway]
+    E --> E4[platform-scheduler]
+    E --> E5[platform-monitor-dashboard]
+    E --> E6[platform-fluxcore]
+    E --> E7[platform-vector-service]
+    
+    F --> F1[business-module-a]
+    F --> F2[business-module-b]
+    F --> F3[business-module-c]
+```
+EOL
+
+# 创建系统架构示例图
+echo -e "${BLUE}创建系统架构示例图...${NC}"
+cat > "$DOCS_DIR/diagrams/system-architecture.md" << 'EOL'
+# 系统架构示例图
+
+```mermaid
+graph TD
+    A[客户端访问层] --> B[API网关层]
+    B --> C[业务服务层]
+    B --> D[平台服务层]
+    C --> E[事件总线/消息队列]
+    D --> E
+    C --> F[数据存储层]
+    D --> F
+    D --> G[向量数据层]
+    
+    subgraph "客户端访问层"
+        A1[Web客户端] 
+        A2[移动端] 
+        A3[第三方系统] 
+        A4[管理控制台]
+        A5[IoT设备]
+    end
+    
+    subgraph "API网关层"
+        B1[platform-gateway]
+    end
+    
+    subgraph "业务服务层"
+        C1[核心业务服务群] 
+        C2[运营管理服务群] 
+        C3[数据分析服务群]
+    end
+    
+    subgraph "平台服务层"
+        D1[配置中心\nplatform-config] 
+        D2[注册中心\nplatform-registry]
+        D3[调度中心\nplatform-scheduler]
+        D4[监控中心\nplatform-monitor-dashboard]
+        D5[流量控制中心\nplatform-fluxcore]
+        D6[数据采集中心\nplatform-collect]
+        D7[向量服务\nplatform-vector-service]
+        D8[向量分析\nplatform-vector-analytics]
+        D9[向量嵌入\nplatform-vector-embedding]
+    end
+    
+    subgraph "数据存储层"
+        F1[关系型数据库] 
+        F2[NoSQL] 
+        F3[时序数据库] 
+        F4[缓存] 
+        F5[分布式文件系统]
+    end
+    
+    subgraph "向量数据层"
+        G1[Milvus向量数据库]
+        G2[向量索引服务]
+        G3[向量检索引擎]
+    end
+```
+EOL
+
+# 创建开发流程示例图
+echo -e "${BLUE}创建开发流程示例图...${NC}"
+cat > "$DOCS_DIR/diagrams/development-workflow.md" << 'EOL'
+# 开发流程示例图
+
+```mermaid
+graph LR
+    A[需求分析] --> B[系统设计]
+    B --> C[编码实现]
+    C --> D[代码审查]
+    D --> E[测试验证]
+    E --> F[合并代码]
+    F --> G[构建部署]
+    G --> H[监控反馈]
+    H --> A[新的迭代]
+```
+
+```mermaid
+gitGraph
+    commit
+    branch develop
+    checkout develop
+    commit
+    branch feature/login
+    checkout feature/login
+    commit
+    commit
+    checkout develop
+    merge feature/login
+    branch release/v1.0
+    checkout release/v1.0
+    commit
+    checkout main
+    merge release/v1.0
+    checkout develop
+    merge release/v1.0
+    branch hotfix/v1.0.1
+    checkout hotfix/v1.0.1
+    commit
+    checkout main
+    merge hotfix/v1.0.1
+    checkout develop
+    merge hotfix/v1.0.1
+```
+EOL
+
+# 创建API示例文档
+echo -e "${BLUE}创建API示例文档...${NC}"
+cat > "$DOCS_DIR/api/api-example.md" << 'EOL'
+# API示例文档
+
+## 用户服务API
+
+### 1. 创建用户
+
+**请求URL**: `/api/v1/users`
+
+**请求方法**: `POST`
+
+**请求体**:
+```json
+{
+  "username": "johndoe",
+  "email": "john.doe@example.com",
+  "password": "Password123",
+  "fullName": "John Doe",
+  "phoneNumber": "+1234567890"
+}
+```
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "id": "usr_abc123",
+    "username": "johndoe",
+    "email": "john.doe@example.com",
+    "fullName": "John Doe",
+    "phoneNumber": "+1234567890",
+    "createdAt": "2025-04-26T10:30:00Z"
+  },
+  "timestamp": "2025-04-26T10:30:00Z"
+}
+```
+
+### 2. 获取用户详情
+
+**请求URL**: `/api/v1/users/{userId}`
+
+**请求方法**: `GET`
+
+**路径参数**:
+- `userId`: 用户ID
+
+**响应**:
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "id": "usr_abc123",
+    "username": "johndoe",
+    "email": "john.doe@example.com",
+    "fullName": "John Doe",
+    "phoneNumber": "+1234567890",
+    "createdAt": "2025-04-26T10:30:00Z",
+    "updatedAt": "2025-04-26T10:30:00Z"
+  },
+  "timestamp": "2025-04-26T10:30:15Z"
+}
+```
+EOL
+
+# 创建README文件
+echo -e "${BLUE}创建主README文件...${NC}"
+cat > "$PROJECT_ROOT/README.md" << 'EOL'
+# 现代化微服务平台
+
+## 项目概述
+
+本项目是一个基于Spring Boot 3.x和Spring Cloud构建的现代化微服务平台，采用领域驱动设计(DDD)思想，结合响应式编程、CQRS模式、事件驱动架构等先进理念，支持高性能、高可用性和可扩展性的企业级应用。
+
+## 核心特性
+
+- **微服务架构**: 基于DDD设计，按业务域划分服务边界
+- **响应式编程**: 采用Spring WebFlux和Project Reactor，提供非阻塞异步处理
+- **高级数据分析**: 集成向量数据库，支持AI和相似性检索
+- **云原生设计**: 容器化部署，支持Kubernetes编排
+- **DevOps支持**: 完整CI/CD流程，自动化测试和部署
+- **高可观测性**: 全方位监控、日志和追踪能力
+
+## 技术栈
+
+- **核心框架**: Spring Boot 3.x, Spring Cloud 2022.x
+- **响应式编程**: Project Reactor, Spring WebFlux
+- **数据存储**: MySQL 8.x, MongoDB 6.x, Redis 7.x, Milvus 2.x
+- **消息队列**: Kafka 3.x, RocketMQ 5.x
+- **服务治理**: Nacos, Sentinel, Spring Cloud Gateway
+- **监控工具**: Prometheus, Grafana, OpenTelemetry
+- **容器化**: Docker, Kubernetes, Istio
+
+## 架构文档
+
+详细的架构设计和规范文档可在`docs`目录下查看：
+
+- [架构设计文档](docs/architecture/architecture-design.md)
+- [开发规范](docs/standards/development-standards.md)
+- [实施时间表](docs/implementation/implementation-timeline.md)
+
+## 快速开始
+
+### 环境要求
+
+- JDK 17+
+- Maven 3.8+
+- Docker & Docker Compose
+- Git
+
+### 构建与运行
+
+```bash
+# 克隆仓库
+git clone https://github.com/your-org/microservices-platform.git
+cd microservices-platform
+
+# 构建项目
+./mvnw clean package
+
+# 启动基础设施服务
+docker-compose -f docker-compose-infra.yml up -d
+
+# 启动应用服务
+./mvnw spring-boot:run -pl platform-gateway
+```
+
+## 项目结构
+
+```
+platform-parent/                        # 父项目
+├── platform-common/                    # 公共工具库
+│   ├── platform-common-core/           # 核心工具类
+│   ├── platform-common-web/            # Web相关工具
+│   ├── platform-common-security/       # 安全相关工具
+│   └── platform-common-test/           # 测试工具
+├── platform-dependencies/              # 依赖管理
+├── platform-framework/                 # 框架核心
+├── platform-infrastructure/            # 基础设施服务
+│   ├── platform-config/                # 配置中心
+│   ├── platform-registry/              # 注册中心
+│   ├── platform-gateway/               # API网关
+│   └── platform-monitor-dashboard/     # 监控中心
+├── platform-scheduler/                 # 调度系统
+├── platform-vector/                    # 向量服务
+└── platform-business/                  # 业务服务
+```
+
+## 参与贡献
+
+欢迎参与本项目的贡献，请阅读[贡献指南](CONTRIBUTING.md)了解详细信息。
+
+## 许可证
+
+本项目采用 [Apache License 2.0](LICENSE) 许可证。
+EOL
+
+# 创建README索引文件
+echo -e "${BLUE}创建文档索引README...${NC}"
+cat > "$DOCS_DIR/README.md" << 'EOL'
+# 项目文档索引
+
+## 架构文档
+
+- [架构设计文档](architecture/architecture-design.md) - 详细的系统架构设计
+- [系统架构图](diagrams/system-architecture.md) - 系统整体架构图示
+
+## 开发规范
+
+- [开发规范文档](standards/development-standards.md) - 项目开发规范和最佳实践
+- [项目结构图](diagrams/project-structure.md) - 项目模块结构图示
+- [开发流程图](diagrams/development-workflow.md) - 开发流程和Git分支策略
+
+## 实施计划
+
+- [实施时间表](implementation/implementation-timeline.md) - 项目实施计划和里程碑
+
+## API文档
+
+- [API示例文档](api/api-example.md) - API设计示例和规范
+
+## 其他资源
+
+- [主项目README](../README.md) - 项目概述和快速开始指南
+EOL
+
+# 创建模块初始化脚本
+echo -e "${BLUE}创建模块初始化脚本...${NC}"
+cat > "$PROJECT_ROOT/init-modules.sh" << 'EOL'
+#!/bin/bash
+# 模块初始化脚本 - 创建项目基本结构
+# 日期: 2025-04-26
+# 版本: 1.0.0
+
+# 设置颜色输出
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# 工作目录设置
+PROJECT_ROOT=$(pwd)
+
+# 基础模块列表
+declare -a BASE_MODULES=(
+  "platform-common/platform-common-core"
+  "platform-common/platform-common-web"
+  "platform-common/platform-common-security"
+  "platform-common/platform-common-test"
+  "platform-dependencies"
+  "platform-framework/platform-framework-core"
+  "platform-framework/platform-framework-web"
+  "platform-framework/platform-framework-data"
+  "platform-framework/platform-framework-security"
+)
+
+# 基础设施模块列表
+declare -a INFRA_MODULES=(
+  "platform-config"
+  "platform-registry"
+  "platform-gateway"
+  "platform-scheduler"
+  "platform-scheduler-register"
+  "platform-scheduler-query"
+  "platform-monitor-dashboard"
+  "platform-buss-dashboard"
+  "platform-fluxcore"
+)
+
+# 向量服务模块列表
+declare -a VECTOR_MODULES=(
+  "platform-vector-embedding"
+  "platform-vector-service"
+  "platform-vector-analytics"
+)
+
+# 创建基础目录结构
+echo -e "${BLUE}创建基础目录结构...${NC}"
+for module in "${BASE_MODULES[@]}"
+do
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/domain"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/application"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/infrastructure"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/resources"
+  mkdir -p "$PROJECT_ROOT/$module/src/test/java/com/example/${module##*/}"
+  mkdir -p "$PROJECT_ROOT/$module/src/test/resources"
+  
+  echo "# ${module##*/}" > "$PROJECT_ROOT/$module/README.md"
+  echo "创建模块: $module"
+done
+
+# 创建基础设施模块
+echo -e "${BLUE}创建基础设施模块...${NC}"
+for module in "${INFRA_MODULES[@]}"
+do
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/domain"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/application"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/infrastructure"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/interfaces/rest"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/resources"
+  mkdir -p "$PROJECT_ROOT/$module/src/test/java/com/example/${module##*/}"
+  mkdir -p "$PROJECT_ROOT/$module/src/test/resources"
+  
+  echo "# ${module##*/}" > "$PROJECT_ROOT/$module/README.md"
+  echo "创建模块: $module"
+done
+
+# 创建向量服务模块
+echo -e "${BLUE}创建向量服务模块...${NC}"
+for module in "${VECTOR_MODULES[@]}"
+do
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/domain"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/application"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/infrastructure"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/java/com/example/${module##*/}/interfaces/rest"
+  mkdir -p "$PROJECT_ROOT/$module/src/main/resources"
+  mkdir -p "$PROJECT_ROOT/$module/src/test/java/com/example/${module##*/}"
+  mkdir -p "$PROJECT_ROOT/$module/src/test/resources"
+  
+  echo "# ${module##*/}" > "$PROJECT_ROOT/$module/README.md"
+  echo "创建模块: $module"
+done
+
+# 创建业务模块示例
+echo -e "${BLUE}创建业务模块示例...${NC}"
+mkdir -p "$PROJECT_ROOT/platform-business"
+for module in "user-service" "order-service" "product-service"
+do
+  mkdir -p "$PROJECT_ROOT/platform-business/$module/$module-api/src/main/java/com/example/business/$module/api"
+  mkdir -p "$PROJECT_ROOT/platform-business/$module/$module-domain/src/main/java/com/example/business/$module/domain/model"
+  mkdir -p "$PROJECT_ROOT/platform-business/$module/$module-application/src/main/java/com/example/business/$module/application/service"
+  mkdir -p "$PROJECT_ROOT/platform-business/$module/$module-infrastructure/src/main/java/com/example/business/$module/infrastructure/repository"
+  mkdir -p "$PROJECT_ROOT/platform-business/$module/$module-infrastructure/src/main/resources"
+  mkdir -p "$PROJECT_ROOT/platform-business/$module/$module-starter/src/main/java/com/example/business/$module"
+  mkdir -p "$PROJECT_ROOT/platform-business/$module/$module-starter/src/main/resources"
+  
+  echo "# $module" > "$PROJECT_ROOT/platform-business/$module/README.md"
+  echo "创建业务模块: $module"
+done
+
+# 创建Docker配置
+echo -e "${BLUE}创建Docker配置...${NC}"
+mkdir -p "$PROJECT_ROOT/docker"
+
+# 创建基础镜像Dockerfile
+cat > "$PROJECT_ROOT/docker/Dockerfile" << 'EOF'
+FROM openjdk:17-slim
+
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+
+ENV TZ=Asia/Shanghai
+ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=256m"
+
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar ${0} ${@}"]
+EOF
+
+# 创建Docker Compose配置
+cat > "$PROJECT_ROOT/docker-compose.yml" << 'EOF'
+version: '3.8'
+
+services:
+  nacos:
+    image: nacos/nacos-server:v2.2.0
+    container_name: nacos-standalone
+    environment:
+      - MODE=standalone
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - ./docker/nacos/standalone-logs/:/home/nacos/logs
+      - ./docker/nacos/init.d/custom.properties:/home/nacos/init.d/custom.properties
+    networks:
+      - microservice-net
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: microservice
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+      - ./docker/mysql/conf:/etc/mysql/conf.d
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - microservice-net
+
+  redis:
+    image: redis:7.0
+    container_name: redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./docker/redis/data:/data
+    networks:
+      - microservice-net
+
+  milvus:
+    image: milvusdb/milvus:v2.2.11
+    container_name: milvus-standalone
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - ./docker/milvus/data:/var/lib/milvus
+    depends_on:
+      - "etcd"
+      - "minio"
+    networks:
+      - microservice-net
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: milvus-etcd
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ./docker/etcd/data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    networks:
+      - microservice-net
+
+  minio:
+    image: minio/minio:RELEASE.2023-05-18T00-05-36Z
+    container_name: milvus-minio
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - ./docker/minio/data:/minio_data
+    command: minio server /minio_data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - microservice-net
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker/prometheus/data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - microservice-net
+
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docker/grafana/data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - microservice-net
+    depends_on:
+      - prometheus
+
+networks:
+  microservice-net:
+    driver: bridge
+EOF
+
+# 创建Maven父POM文件
+echo -e "${BLUE}创建Maven父POM文件...${NC}"
+cat > "$PROJECT_ROOT/pom.xml" << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.1.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.example</groupId>
+    <artifactId>platform-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Platform Parent</name>
+    <description>Modern Microservice Platform Based on Spring Boot 3.x</description>
+
+    <modules>
+        <module>platform-dependencies</module>
+        <module>platform-common</module>
+        <module>platform-framework</module>
+        <module>platform-config</module>
+        <module>platform-registry</module>
+        <module>platform-gateway</module>
+        <module>platform-scheduler</module>
+        <module>platform-scheduler-register</module>
+        <module>platform-scheduler-query</module>
+        <module>platform-fluxcore</module>
+        <module>platform-monitor-dashboard</module>
+        <module>platform-buss-dashboard</module>
+        <module>platform-vector-embedding</module>
+        <module>platform-vector-service</module>
+        <module>platform-vector-analytics</module>
+        <module>platform-business</module>
+    </modules>
+
+    <properties>
+        <java.version>17</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <spring-cloud.version>2022.0.4</spring-cloud.version>
+        <spring-cloud-alibaba.version>2022.0.0.0</spring-cloud-alibaba.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Cloud -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            
+            <!-- Spring Cloud Alibaba -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <excludes>
+                            <exclude>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                            </exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>
+EOF
+
+echo -e "${GREEN}项目基础结构和模块初始化完成!${NC}"
+echo -e "${BLUE}运行 'mvn clean install -DskipTests' 来构建项目${NC}"
+EOL
+
+# 添加可执行权限
+chmod +x "$PROJECT_ROOT/init-modules.sh"
+
+echo -e "${GREEN}文档设置脚本执行完成!${NC}"
+echo ""
+echo -e "${BLUE}文档路径：${DOCS_DIR}${NC}"
+echo -e "${BLUE}架构文档：${ARCH_DIR}/architecture-design.md${NC}"
+echo -e "${BLUE}开发规范：${STANDARDS_DIR}/development-standards.md${NC}"
+echo -e "${BLUE}实施计划：${IMPLEMENTATION_DIR}/implementation-timeline.md${NC}"
+echo ""
+echo -e "${BLUE}要创建项目基础结构，请运行：${NC}"
+echo -e "${GREEN}cd ${PROJECT_ROOT} && ./init-modules.sh${NC}"

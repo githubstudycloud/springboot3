@@ -1,16 +1,48 @@
-# Compiled class file
-*.class
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
 
-# Log file
-*.log
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+*.iwsout
+.idea_modules/
+out/
 
-# BlueJ files
-*.ctxt
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+# VS Code
+.vscode/
+.code-workspace
 
-# Package Files #
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+!gradle-wrapper.jar
+
+# Package Files
 *.jar
 *.war
 *.nar
@@ -19,6 +51,58 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Java specific
+*.class
+*.hprof
+
+# Node
+node_modules/
+jspm_packages/
+bower_components/
+.npm
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*~
+*.bak
+
+# H2 Database
+*.db
+*.h2.db
+*.lock.db
+
+# Application specific
+application-local.yml
+application-local.properties
+
+# Eclipse STS Plugin
+.springBeans
+.sts4-cache/

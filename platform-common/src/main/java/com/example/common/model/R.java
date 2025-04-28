@@ -1,10 +1,6 @@
 package com.example.common.model;
 
 import com.example.common.constant.SystemConstants;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -16,10 +12,6 @@ import java.time.ZoneOffset;
  * @author platform
  * @since 1.0.0
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class R<T> implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -46,35 +38,149 @@ public class R<T> implements Serializable {
     /**
      * 时间戳
      */
-    @Builder.Default
     private Long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();
+
+    /**
+     * 无参构造函数
+     */
+    public R() {
+    }
+
+    /**
+     * 带参构造函数
+     *
+     * @param code      响应码
+     * @param message   响应消息
+     * @param data      响应数据
+     * @param traceId   追踪ID
+     * @param timestamp 时间戳
+     */
+    public R(Integer code, String message, T data, String traceId, Long timestamp) {
+        this.code = code;
+        this.message = message;
+        this.data = data;
+        this.traceId = traceId;
+        this.timestamp = timestamp;
+    }
+
+    /**
+     * 获取响应码
+     *
+     * @return 响应码
+     */
+    public Integer getCode() {
+        return code;
+    }
+
+    /**
+     * 设置响应码
+     *
+     * @param code 响应码
+     */
+    public void setCode(Integer code) {
+        this.code = code;
+    }
+
+    /**
+     * 获取响应消息
+     *
+     * @return 响应消息
+     */
+    public String getMessage() {
+        return message;
+    }
+
+    /**
+     * 设置响应消息
+     *
+     * @param message 响应消息
+     */
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    /**
+     * 获取响应数据
+     *
+     * @return 响应数据
+     */
+    public T getData() {
+        return data;
+    }
+
+    /**
+     * 设置响应数据
+     *
+     * @param data 响应数据
+     */
+    public void setData(T data) {
+        this.data = data;
+    }
+
+    /**
+     * 获取追踪ID
+     *
+     * @return 追踪ID
+     */
+    public String getTraceId() {
+        return traceId;
+    }
+
+    /**
+     * 设置追踪ID
+     *
+     * @param traceId 追踪ID
+     */
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
+    }
+
+    /**
+     * 获取时间戳
+     *
+     * @return 时间戳
+     */
+    public Long getTimestamp() {
+        return timestamp;
+    }
+
+    /**
+     * 设置时间戳
+     *
+     * @param timestamp 时间戳
+     */
+    public void setTimestamp(Long timestamp) {
+        this.timestamp = timestamp;
+    }
 
     /**
      * 成功返回
      *
-     * @param <T> 数据类型
+     * @param <E> 数据类型
      * @return 响应对象
      */
-    public static <T> R<T> success() {
-        return R.<T>builder()
-                .code(SystemConstants.SUCCESS_CODE)
-                .message("操作成功")
-                .build();
+    public static <E> R<E> success() {
+        R<E> r = new R<>();
+        r.setCode(SystemConstants.SUCCESS_CODE);
+        r.setMessage("操作成功");
+        r.setTimestamp(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+        return r;
     }
 
     /**
      * 成功返回（带数据）
      *
      * @param data 数据
-     * @param <T>  数据类型
+     * @param <E>  数据类型
      * @return 响应对象
      */
-    public static <T> R<T> success(T data) {
-        return R.<T>builder()
-                .code(SystemConstants.SUCCESS_CODE)
-                .message("操作成功")
-                .data(data)
-                .build();
+    public static <E> R<E> success(final E data) {
+        R<E> r = new R<>();
+        r.setCode(SystemConstants.SUCCESS_CODE);
+        r.setMessage("操作成功");
+        r.setData(data);
+        r.setTimestamp(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+        return r;
     }
 
     /**
@@ -82,42 +188,45 @@ public class R<T> implements Serializable {
      *
      * @param message 消息
      * @param data    数据
-     * @param <T>     数据类型
+     * @param <E>     数据类型
      * @return 响应对象
      */
-    public static <T> R<T> success(String message, T data) {
-        return R.<T>builder()
-                .code(SystemConstants.SUCCESS_CODE)
-                .message(message)
-                .data(data)
-                .build();
+    public static <E> R<E> success(final String message, final E data) {
+        R<E> r = new R<>();
+        r.setCode(SystemConstants.SUCCESS_CODE);
+        r.setMessage(message);
+        r.setData(data);
+        r.setTimestamp(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+        return r;
     }
 
     /**
      * 失败返回
      *
-     * @param <T> 数据类型
+     * @param <E> 数据类型
      * @return 响应对象
      */
-    public static <T> R<T> error() {
-        return R.<T>builder()
-                .code(SystemConstants.ERROR_CODE)
-                .message("操作失败")
-                .build();
+    public static <E> R<E> error() {
+        R<E> r = new R<>();
+        r.setCode(SystemConstants.ERROR_CODE);
+        r.setMessage("操作失败");
+        r.setTimestamp(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+        return r;
     }
 
     /**
      * 失败返回（带消息）
      *
      * @param message 消息
-     * @param <T>     数据类型
+     * @param <E>     数据类型
      * @return 响应对象
      */
-    public static <T> R<T> error(String message) {
-        return R.<T>builder()
-                .code(SystemConstants.ERROR_CODE)
-                .message(message)
-                .build();
+    public static <E> R<E> error(final String message) {
+        R<E> r = new R<>();
+        r.setCode(SystemConstants.ERROR_CODE);
+        r.setMessage(message);
+        r.setTimestamp(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+        return r;
     }
 
     /**
@@ -125,14 +234,15 @@ public class R<T> implements Serializable {
      *
      * @param code    错误码
      * @param message 消息
-     * @param <T>     数据类型
+     * @param <E>     数据类型
      * @return 响应对象
      */
-    public static <T> R<T> error(Integer code, String message) {
-        return R.<T>builder()
-                .code(code)
-                .message(message)
-                .build();
+    public static <E> R<E> error(final Integer code, final String message) {
+        R<E> r = new R<>();
+        r.setCode(code);
+        r.setMessage(message);
+        r.setTimestamp(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+        return r;
     }
 
     /**
@@ -150,7 +260,7 @@ public class R<T> implements Serializable {
      * @param traceId 追踪ID
      * @return 响应对象
      */
-    public R<T> withTraceId(String traceId) {
+    public R<T> withTraceId(final String traceId) {
         this.traceId = traceId;
         return this;
     }

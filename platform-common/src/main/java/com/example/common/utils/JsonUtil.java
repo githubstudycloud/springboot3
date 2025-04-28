@@ -1,14 +1,15 @@
 package com.example.common.utils;
 
 import com.example.common.exception.SystemException;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,8 +23,8 @@ import java.util.Map;
  * @author platform
  * @since 1.0.0
  */
-@Slf4j
 public final class JsonUtil {
+    private static final Logger log = LoggerFactory.getLogger(JsonUtil.class);
     private static final ObjectMapper OBJECT_MAPPER = createObjectMapper();
 
     /**
@@ -42,7 +43,7 @@ public final class JsonUtil {
         // 格式化日期输出
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         // 忽略null值
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        objectMapper.setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
         return objectMapper;
     }
 

@@ -8,7 +8,7 @@
     <artifactId>platform-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>V6平台 - 父项</name>
+    <name>V6平台 - 父项目</name>
     <description>基于Spring Boot 3.x的现代化微服务平台V6版本</description>
 
     <modules>
@@ -99,6 +99,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
                     <configLocation>checkstyle.xml</configLocation>
+                    <encoding>UTF-8</encoding>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <linkXRef>false</linkXRef>

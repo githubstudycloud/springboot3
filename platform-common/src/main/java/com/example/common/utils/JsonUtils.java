@@ -1,30 +1,22 @@
 package com.example.common.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
- * JSON工具类
+ * JSON工具类（过渡用）
+ * 
+ * @deprecated 请使用 {@link JsonUtil} 替代，此类将在下一个版本中移除
  */
+@Deprecated
 public class JsonUtils {
-    private static final Logger logger = LoggerFactory.getLogger(JsonUtils.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    static {
-        // 注册Java8时间模块
-        OBJECT_MAPPER.registerModule(new JavaTimeModule());
-        // 禁止将日期序列化为时间戳
-        OBJECT_MAPPER.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    }
-
+    
+    /**
+     * 私有构造函数，防止实例化
+     */
     private JsonUtils() {
         throw new IllegalStateException("Utility class");
     }
@@ -34,14 +26,11 @@ public class JsonUtils {
      *
      * @param obj 对象
      * @return JSON字符串
+     * @deprecated 请使用 {@link JsonUtil#toJson(Object)} 替代
      */
+    @Deprecated
     public static String toJson(Object obj) {
-        try {
-            return OBJECT_MAPPER.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            logger.error("Object to JSON failed: ", e);
-            throw new RuntimeException("Object to JSON failed", e);
-        }
+        return JsonUtil.toJson(obj);
     }
 
     /**
@@ -49,14 +38,11 @@ public class JsonUtils {
      *
      * @param obj 对象
      * @return 格式化的JSON字符串
+     * @deprecated 请使用 {@link JsonUtil#toPrettyJson(Object)} 替代
      */
+    @Deprecated
     public static String toPrettyJson(Object obj) {
-        try {
-            return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            logger.error("Object to pretty JSON failed: ", e);
-            throw new RuntimeException("Object to pretty JSON failed", e);
-        }
+        return JsonUtil.toPrettyJson(obj);
     }
 
     /**
@@ -66,14 +52,11 @@ public class JsonUtils {
      * @param clazz 对象类型
      * @param <T>   泛型
      * @return 对象
+     * @deprecated 请使用 {@link JsonUtil#fromJson(String, Class)} 替代
      */
+    @Deprecated
     public static <T> T fromJson(String json, Class<T> clazz) {
-        try {
-            return OBJECT_MAPPER.readValue(json, clazz);
-        } catch (IOException e) {
-            logger.error("JSON to Object failed: ", e);
-            throw new RuntimeException("JSON to Object failed", e);
-        }
+        return JsonUtil.fromJson(json, clazz);
     }
 
     /**
@@ -83,14 +66,11 @@ public class JsonUtils {
      * @param typeReference 类型引用
      * @param <T>           泛型
      * @return 复杂对象
+     * @deprecated 请使用 {@link JsonUtil#fromJson(String, TypeReference)} 替代
      */
+    @Deprecated
     public static <T> T fromJson(String json, TypeReference<T> typeReference) {
-        try {
-            return OBJECT_MAPPER.readValue(json, typeReference);
-        } catch (IOException e) {
-            logger.error("JSON to Object with TypeReference failed: ", e);
-            throw new RuntimeException("JSON to Object with TypeReference failed", e);
-        }
+        return JsonUtil.fromJson(json, typeReference);
     }
 
     /**
@@ -98,9 +78,22 @@ public class JsonUtils {
      *
      * @param obj 对象
      * @return Map
+     * @deprecated 请使用 {@link JsonUtil#objectToMap(Object)} 替代
      */
+    @Deprecated
     @SuppressWarnings("unchecked")
     public static Map<String, Object> toMap(Object obj) {
-        return fromJson(toJson(obj), Map.class);
+        return JsonUtil.objectToMap(obj);
     }
-} 
+    
+    /**
+     * 获取ObjectMapper实例
+     *
+     * @return ObjectMapper实例
+     * @deprecated 请使用 {@link JsonUtil#getObjectMapper()} 替代
+     */
+    @Deprecated
+    public static ObjectMapper getObjectMapper() {
+        return JsonUtil.getObjectMapper();
+    }
+}

@@ -1,23 +1,26 @@
 package com.example.framework.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
  * 平台自动配置类
- * 集中导入和管理平台核心组件
+ * 启用DDD架构和相关功能
+ *
+ * @author platform
+ * @since 1.0.0
  */
 @Configuration
-@ComponentScan(basePackages = {"com.example.common", "com.example.framework"})
-@Import({
-    JacksonConfig.class,
-    WebMvcConfig.class,
-    WebFluxConfig.class,
-    GlobalExceptionHandler.class
+@EnableConfigurationProperties(PlatformProperties.class)
+@ComponentScan({
+    "com.example.framework.application",
+    "com.example.framework.domain",
+    "com.example.framework.infrastructure",
+    "com.example.framework.interfaces"
 })
+@ConditionalOnProperty(name = "platform.enabled", havingValue = "true", matchIfMissing = true)
 public class PlatformAutoConfiguration {
-    
-    // 自动配置逻辑
-    
-} 
+    // 配置逻辑
+}

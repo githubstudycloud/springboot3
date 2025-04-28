@@ -1,0 +1,19 @@
+platform:
+  thread:
+    virtual:
+      enabled: true
+
+# 开启Spring Boot 3.2.9的会话事务支持
+spring:
+  session:
+    jdbc:
+      initialize-schema: always
+      table-name: SPRING_SESSION
+      schema: classpath:org/springframework/session/jdbc/schema-@@platform@@.sql
+    timeout: 1800
+  datasource:
+    hikari:
+      auto-commit: false
+  # 事务配置
+  transaction:
+    default-timeout: 30s

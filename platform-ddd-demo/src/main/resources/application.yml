@@ -1,0 +1,46 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /ddd-demo
+
+spring:
+  application:
+    name: platform-ddd-demo
+  
+  # 数据库配置 - 使用H2内存数据库
+  datasource:
+    url: jdbc:h2:mem:ddddb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # JPA配置
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  # H2控制台
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.example.demo: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

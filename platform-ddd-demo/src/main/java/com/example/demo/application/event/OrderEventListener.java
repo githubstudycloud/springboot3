@@ -12,27 +12,27 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class OrderEventListener {
-    
+
     /**
      * 监听订单创建事件
      */
     @EventListener
     public void handleOrderCreatedEvent(OrderCreatedEvent event) {
-        log.info("订单已创建: orderId={}, eventId={}, occurredOn={}", 
+        log.info("订单已创建: orderId={}, eventId={}, occurredOn={}",
                 event.getOrderId().getValue(), event.getEventId(), event.getOccurredOn());
-        
+
         // 这里可以执行订单创建后的业务逻辑，如发送通知等
     }
-    
+
     /**
      * 监听订单状态变更事件
      */
     @EventListener
     public void handleOrderStatusChangedEvent(OrderStatusChangedEvent event) {
-        log.info("订单状态已变更: orderId={}, oldStatus={}, newStatus={}, eventId={}, occurredOn={}", 
-                event.getOrderId().getValue(), event.getOldStatus(), event.getNewStatus(), 
+        log.info("订单状态已变更: orderId={}, oldStatus={}, newStatus={}, eventId={}, occurredOn={}",
+                event.getOrderId().getValue(), event.getOldStatus(), event.getNewStatus(),
                 event.getEventId(), event.getOccurredOn());
-        
+
         // 这里可以执行订单状态变更后的业务逻辑，如根据不同状态执行不同操作
         switch (event.getNewStatus()) {
             case PAID:

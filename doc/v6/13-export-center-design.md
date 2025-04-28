@@ -97,11 +97,11 @@ stateDiagram-v2
 
 ### 4.1 核心框架选型
 
-- **数据导出库**: 
-  - Excel: Apache POI, EasyExcel, JXL
-  - PDF: iText, Apache PDFBox
-  - CSV: Apache Commons CSV, OpenCSV
-  - 报表: JasperReports, Birt
+- **数据导出库**:
+    - Excel: Apache POI, EasyExcel, JXL
+    - PDF: iText, Apache PDFBox
+    - CSV: Apache Commons CSV, OpenCSV
+    - 报表: JasperReports, Birt
 - **任务管理**: Spring Batch, XXL-Job, PowerJob
 - **存储集成**: Amazon S3兼容接口, HDFS, 分布式文件系统
 - **缓存层**: Redis用于任务状态和临时数据存储
@@ -156,7 +156,7 @@ DELETE /api/v1/exports/{taskId}
 
 为主要编程语言提供SDK：
 
-- Java SDK 
+- Java SDK
 - JavaScript/TypeScript SDK (Web前端)
 - Python SDK
 - Go SDK
@@ -171,10 +171,10 @@ DELETE /api/v1/exports/{taskId}
 
 ## 7. 可观测性
 
-- **监控指标**: 
-  - 导出任务数量、成功率、平均执行时间
-  - 队列深度、资源利用率
-  - 异常类型统计
+- **监控指标**:
+    - 导出任务数量、成功率、平均执行时间
+    - 队列深度、资源利用率
+    - 异常类型统计
 - **链路追踪**: 通过调用链跟踪定位导出性能瓶颈
 - **日志管理**: 结构化日志输出，支持ELK/Loki等日志分析平台
 - **告警规则**: 针对导出服务的健康状况设置告警

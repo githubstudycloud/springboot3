@@ -15,17 +15,17 @@ import java.util.UUID;
 @Getter
 public abstract class BaseDomainEvent implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 事件ID
      */
     private final String eventId;
-    
+
     /**
      * 事件发生时间
      */
     private final LocalDateTime occurredOn;
-    
+
     /**
      * 构造函数
      */
@@ -33,7 +33,7 @@ public abstract class BaseDomainEvent implements Serializable {
         this.eventId = UUID.randomUUID().toString().replace("-", "");
         this.occurredOn = LocalDateTime.now();
     }
-    
+
     /**
      * 获取事件类型
      *

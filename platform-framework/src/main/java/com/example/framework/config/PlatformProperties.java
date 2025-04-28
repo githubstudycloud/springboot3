@@ -14,19 +14,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class PlatformProperties {
 
     /**
-     * 是否启用平台功能
-     */
-    private boolean enabled = true;
-
-    /**
      * 线程配置
      */
     private final Thread thread = new Thread();
-
     /**
      * 会话配置
      */
     private final Session session = new Session();
+    /**
+     * 是否启用平台功能
+     */
+    private boolean enabled = true;
 
     /**
      * 线程配置类

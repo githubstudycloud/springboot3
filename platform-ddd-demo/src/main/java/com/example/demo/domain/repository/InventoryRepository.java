@@ -14,12 +14,12 @@ public interface InventoryRepository {
      * 保存库存
      */
     void save(Inventory inventory);
-    
+
     /**
      * 根据库存ID查找库存
      */
     Optional<Inventory> findById(InventoryId inventoryId);
-    
+
     /**
      * 根据产品ID查找库存
      */

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
@@ -19,7 +19,7 @@
         <spring-boot.version>3.2.9</spring-boot.version>
         <spring-cloud.version>2023.0.2</spring-cloud.version>
         <spring-cloud-alibaba.version>2022.0.0.0</spring-cloud-alibaba.version>
-        
+
         <!-- 数据库相关 -->
         <mysql.version>8.3.0</mysql.version>
         <postgresql.version>42.7.2</postgresql.version>
@@ -27,7 +27,7 @@
         <redis.version>3.2.1</redis.version>
         <milvus.version>2.3.3</milvus.version>
         <r2dbc.version>1.0.1.RELEASE</r2dbc.version>
-        
+
         <!-- 工具库 -->
         <hutool.version>5.8.26</hutool.version>
         <guava.version>33.0.0-jre</guava.version>
@@ -35,31 +35,31 @@
         <commons-io.version>2.15.1</commons-io.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <lombok.version>1.18.32</lombok.version>
-        
+
         <!-- 响应式编程 -->
         <reactor.version>3.6.3</reactor.version>
-        
+
         <!-- 消息队列 -->
         <kafka.version>3.7.0</kafka.version>
         <rocketmq.version>5.2.0</rocketmq.version>
-        
+
         <!-- 服务治理 -->
         <resilience4j.version>2.2.0</resilience4j.version>
         <sentinel.version>1.8.7</sentinel.version>
-        
+
         <!-- 日志与监控 -->
         <logback.version>1.4.14</logback.version>
         <micrometer.version>1.12.3</micrometer.version>
         <opentelemetry.version>1.35.0</opentelemetry.version>
         <prometheus.version>0.16.0</prometheus.version>
-        
+
         <!-- JSON处理 -->
         <jackson.version>2.16.2</jackson.version>
-        
+
         <!-- 安全框架 -->
         <spring-security.version>6.2.3</spring-security.version>
         <oauth2.version>1.1.2</oauth2.version>
-        
+
         <!-- 测试框架 -->
         <junit-jupiter.version>5.10.2</junit-jupiter.version>
         <mockito.version>5.10.0</mockito.version>
@@ -76,7 +76,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- Spring Cloud Dependencies -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -85,7 +85,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- Spring Cloud Alibaba Dependencies -->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
@@ -94,7 +94,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- Resilience4j BOM -->
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
@@ -103,7 +103,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- Testcontainers BOM -->
             <dependency>
                 <groupId>org.testcontainers</groupId>
@@ -112,7 +112,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- 数据库相关 -->
             <dependency>
                 <groupId>com.mysql</groupId>
@@ -129,14 +129,14 @@
                 <artifactId>milvus-sdk-java</artifactId>
                 <version>${milvus.version}</version>
             </dependency>
-            
+
             <!-- 响应式数据库 -->
             <dependency>
                 <groupId>io.r2dbc</groupId>
                 <artifactId>r2dbc-pool</artifactId>
                 <version>${r2dbc.version}</version>
             </dependency>
-            
+
             <!-- 消息队列 -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -148,14 +148,14 @@
                 <artifactId>rocketmq-client-java</artifactId>
                 <version>${rocketmq.version}</version>
             </dependency>
-            
+
             <!-- 监控 -->
             <dependency>
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-registry-prometheus</artifactId>
                 <version>${prometheus.version}</version>
             </dependency>
-            
+
             <!-- JSON处理 -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -167,7 +167,7 @@
                 <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
-            
+
             <!-- 工具库 -->
             <dependency>
                 <groupId>cn.hutool</groupId>

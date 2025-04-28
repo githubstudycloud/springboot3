@@ -3,17 +3,16 @@ package com.example.common.utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.List;
 import java.util.Map;
 
 /**
  * JSON工具类（过渡用）
- * 
+ *
  * @deprecated 请使用 {@link JsonUtil} 替代，此类将在下一个版本中移除
  */
 @Deprecated
 public class JsonUtils {
-    
+
     /**
      * 私有构造函数，防止实例化
      */
@@ -85,7 +84,7 @@ public class JsonUtils {
     public static Map<String, Object> toMap(Object obj) {
         return JsonUtil.objectToMap(obj);
     }
-    
+
     /**
      * 获取ObjectMapper实例
      *

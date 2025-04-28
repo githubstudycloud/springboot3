@@ -14,15 +14,15 @@ V6版本是在V5版本基础上，进一步整合、优化和提炼而成，代�
 
 本架构设计文档被拆分为多个独立文件，以便于阅读和维护。详细内容请参考以下文档：
 
-1.  **[引言与原则 (01-introduction.md)](01-introduction.md)**: 阐述架构的设计目标、核心原则和关键设计决策。
-2.  **[系统架构 (02-system-architecture.md)](02-system-architecture.md)**: 描述整体架构、系统层次结构和核心功能模块。
-3.  **[技术栈选型 (03-technology-stack.md)](03-technology-stack.md)**: 列出平台所选用的主要技术和框架。
-4.  **[核心架构模式 (04-architectural-patterns.md)](04-architectural-patterns.md)**: 深入探讨超模块化、六边形、CQRS、事件驱动、响应式等核心架构模式。
-5.  **[API管理框架 (05-api-management.md)](05-api-management.md)**: 详细设计API网关、路由、适配、限流、缓存和监控治理方案。
-6.  **[向量服务体系 (06-vector-services.md)](06-vector-services.md)**: 介绍向量服务的架构、数据处理、检索引擎和应用场景。
-7.  **[安全架构设计 (07-security-architecture.md)](07-security-architecture.md)**: 详述零信任安全模型2.0及其实现策略。
-8.  **[开发规范 (08-development-guidelines.md)](08-development-guidelines.md)**: 规定代码规范、API设计规范和测试规范。
-9.  **[部署架构 (09-deployment-architecture.md)](09-deployment-architecture.md)**: 说明容器化部署、多环境支持和监控告警体系。
+1. **[引言与原则 (01-introduction.md)](01-introduction.md)**: 阐述架构的设计目标、核心原则和关键设计决策。
+2. **[系统架构 (02-system-architecture.md)](02-system-architecture.md)**: 描述整体架构、系统层次结构和核心功能模块。
+3. **[技术栈选型 (03-technology-stack.md)](03-technology-stack.md)**: 列出平台所选用的主要技术和框架。
+4. **[核心架构模式 (04-architectural-patterns.md)](04-architectural-patterns.md)**: 深入探讨超模块化、六边形、CQRS、事件驱动、响应式等核心架构模式。
+5. **[API管理框架 (05-api-management.md)](05-api-management.md)**: 详细设计API网关、路由、适配、限流、缓存和监控治理方案。
+6. **[向量服务体系 (06-vector-services.md)](06-vector-services.md)**: 介绍向量服务的架构、数据处理、检索引擎和应用场景。
+7. **[安全架构设计 (07-security-architecture.md)](07-security-architecture.md)**: 详述零信任安全模型2.0及其实现策略。
+8. **[开发规范 (08-development-guidelines.md)](08-development-guidelines.md)**: 规定代码规范、API设计规范和测试规范。
+9. **[部署架构 (09-deployment-architecture.md)](09-deployment-architecture.md)**: 说明容器化部署、多环境支持和监控告警体系。
 10. **[高级架构理念 (10-advanced-concepts.md)](10-advanced-concepts.md)**: 包含全链路AI优化、智能边缘计算和可持续性设计。
 11. **[横切关注点 (11-cross-cutting-concerns.md)](11-cross-cutting-concerns.md)**: 讨论异常处理框架和多版本兼容策略。
 12. **[实施与演进 (12-implementation-roadmap.md)](12-implementation-roadmap.md)**: 提供升级路线图和实施指南。
@@ -42,7 +42,7 @@ V6架构融合了多种先进的设计理念和技术范式，关键特性包括
 - **先进的API管理**: 智能路由、多级缓存、精细化限流。
 - **强大的向量服务**: 支持高级AI分析和语义理解。
 
-通过这些设计，V6平台旨在为企业提供一个高效、智能、安全、可扩展且可持续发展的技术基础设施。 
+通过这些设计，V6平台旨在为企业提供一个高效、智能、安全、可扩展且可持续发展的技术基础设施。
 
 简洁的总结，用于顺序编写这个 Spring Boot 3.x 项目。
 
@@ -68,24 +68,24 @@ V6架构融合了多种先进的设计理念和技术范式，关键特性包括
 ### 核心模块
 
 1. **平台基础模块**：
-    
+
     - `platform-common`：通用工具类、常量
     - `platform-dependencies`：统一管理依赖
     - `platform-framework`：框架核心抽象
 2. **平台基础设施**：
-    
+
     - `platform-gateway`：API智能网关
     - `platform-registry`：服务注册与发现（基于Nacos）
     - `platform-config`：分布式配置中心
     - `platform-security`：安全中心
 3. **平台核心服务**：
-    
+
     - `platform-dataflow`：数据流处理中心
     - `platform-collect`：数据采集中心
     - `platform-integration`：系统集成中心
     - `platform-scheduler`：分布式调度中心
 4. **平台增强服务**：
-    
+
     - `platform-monitor`：统一监控中心
     - `platform-vector`：向量服务体系
     - `platform-edge`：边缘计算管理

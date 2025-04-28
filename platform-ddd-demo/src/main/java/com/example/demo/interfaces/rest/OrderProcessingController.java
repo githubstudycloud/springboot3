@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class OrderProcessingController {
     private final OrderProcessingService orderProcessingService;
-    
+
     /**
      * 确认订单并预留库存
      */
@@ -26,7 +26,7 @@ public class OrderProcessingController {
         OrderDTO order = orderProcessingService.confirmOrderWithInventoryCheck(orderId);
         return ResponseEntity.ok(order);
     }
-    
+
     /**
      * 取消订单并释放库存
      */
@@ -35,7 +35,7 @@ public class OrderProcessingController {
         OrderDTO order = orderProcessingService.cancelOrderAndReleaseInventory(orderId);
         return ResponseEntity.ok(order);
     }
-    
+
     /**
      * 支付订单并完成库存预留
      */

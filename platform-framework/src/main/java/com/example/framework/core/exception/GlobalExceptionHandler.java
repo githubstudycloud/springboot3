@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    
+
     /**
      * 平台基础异常处理
      *
@@ -49,7 +49,7 @@ public class GlobalExceptionHandler {
         log.error("Platform exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI(), e);
         return R.error(e.getCode(), e.getMessage());
     }
-    
+
     /**
      * 业务异常处理
      *
@@ -62,7 +62,7 @@ public class GlobalExceptionHandler {
         log.warn("Business exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(e.getCode(), e.getMessage());
     }
-    
+
     /**
      * 系统异常处理
      *
@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
         log.error("System exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI(), e);
         return R.error(e.getCode(), e.getMessage());
     }
-    
+
     /**
      * 参数校验异常处理
      *
@@ -94,7 +94,7 @@ public class GlobalExceptionHandler {
         log.warn("Method argument validation failed: {}, URI: {}", message, request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, message);
     }
-    
+
     /**
      * 参数绑定异常处理
      *
@@ -111,7 +111,7 @@ public class GlobalExceptionHandler {
         log.warn("Parameter bind failed: {}, URI: {}", message, request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, message);
     }
-    
+
     /**
      * 参数校验异常处理
      *
@@ -129,7 +129,7 @@ public class GlobalExceptionHandler {
         log.warn("Constraint violation: {}, URI: {}", message, request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, message);
     }
-    
+
     /**
      * 请求参数类型不匹配异常处理
      *
@@ -143,7 +143,7 @@ public class GlobalExceptionHandler {
         log.warn("Method argument type mismatch: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, "参数类型不匹配: " + e.getName());
     }
-    
+
     /**
      * 缺少请求参数异常处理
      *
@@ -157,7 +157,7 @@ public class GlobalExceptionHandler {
         log.warn("Missing request parameter: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, "缺少必要参数: " + e.getParameterName());
     }
-    
+
     /**
      * HTTP请求方法不支持异常处理
      *
@@ -172,7 +172,7 @@ public class GlobalExceptionHandler {
         String supportedMethods = StringUtils.join(e.getSupportedMethods(), ", ");
         return R.error(HttpStatus.METHOD_NOT_ALLOWED.value(), "不支持的请求方法: " + e.getMethod() + ", 支持的方法: " + supportedMethods);
     }
-    
+
     /**
      * 请求体不可读异常处理
      *
@@ -186,7 +186,7 @@ public class GlobalExceptionHandler {
         log.warn("HTTP message not readable: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, "请求体格式错误");
     }
-    
+
     /**
      * 404异常处理
      *
@@ -200,7 +200,7 @@ public class GlobalExceptionHandler {
         log.warn("No handler found: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.NOT_FOUND_CODE, "请求的资源不存在");
     }
-    
+
     /**
      * 默认异常处理
      *

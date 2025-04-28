@@ -11,7 +11,7 @@ import com.example.common.constant.SystemConstants;
  */
 public class SystemException extends PlatformException {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 构造函数
      *
@@ -20,7 +20,7 @@ public class SystemException extends PlatformException {
     public SystemException(String message) {
         super(SystemConstants.ERROR_CODE, message);
     }
-    
+
     /**
      * 构造函数
      *
@@ -30,7 +30,7 @@ public class SystemException extends PlatformException {
     public SystemException(Integer code, String message) {
         super(code, message);
     }
-    
+
     /**
      * 构造函数
      *
@@ -40,7 +40,7 @@ public class SystemException extends PlatformException {
     public SystemException(String message, Throwable cause) {
         super(SystemConstants.ERROR_CODE, message, cause);
     }
-    
+
     /**
      * 构造函数
      *
@@ -51,7 +51,7 @@ public class SystemException extends PlatformException {
     public SystemException(Integer code, String message, Throwable cause) {
         super(code, message, cause);
     }
-    
+
     /**
      * 服务不可用异常
      *

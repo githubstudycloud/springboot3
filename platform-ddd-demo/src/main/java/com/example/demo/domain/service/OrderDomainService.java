@@ -23,118 +23,118 @@ import java.util.Optional;
 public class OrderDomainService {
     private final OrderRepository orderRepository;
     private final DomainEventPublisher eventPublisher;
-    
+
     /**
      * 创建订单
      */
     public Order createOrder(CustomerId customerId) {
         Order newOrder = Order.create(customerId);
         orderRepository.save(newOrder);
-        
+
         // 发布领域事件
         publishEvents(newOrder);
-        
+
         return newOrder;
     }
-    
+
     /**
      * 添加订单项
      */
     public void addOrderItem(OrderId orderId, ProductId productId, int quantity, BigDecimal unitPrice) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         order.addItem(productId, quantity, unitPrice);
         orderRepository.save(order);
-        
+
         // 发布领域事件
         publishEvents(order);
     }
-    
+
     /**
      * 确认订单
      */
     public void confirmOrder(OrderId orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         order.confirm();
         orderRepository.save(order);
-        
+
         // 发布领域事件
         publishEvents(order);
     }
-    
+
     /**
      * 取消订单
      */
     public void cancelOrder(OrderId orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         order.cancel();
         orderRepository.save(order);
-        
+
         // 发布领域事件
         publishEvents(order);
     }
-    
+
     /**
      * 支付订单
      */
     public void payOrder(OrderId orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         order.pay();
         orderRepository.save(order);
-        
+
         // 发布领域事件
         publishEvents(order);
     }
-    
+
     /**
      * 发货
      */
     public void shipOrder(OrderId orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         order.ship();
         orderRepository.save(order);
-        
+
         // 发布领域事件
         publishEvents(order);
     }
-    
+
     /**
      * 交付订单
      */
     public void deliverOrder(OrderId orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         order.deliver();
         orderRepository.save(order);
-        
+
         // 发布领域事件
         publishEvents(order);
     }
-    
+
     /**
      * 完成订单
      */
     public void completeOrder(OrderId orderId) {
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         order.complete();
         orderRepository.save(order);
-        
+
         // 发布领域事件
         publishEvents(order);
     }
-    
+
     /**
      * 发布聚合根中的所有领域事件
      */

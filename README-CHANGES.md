@@ -38,16 +38,16 @@
 根据领域驱动设计(DDD)原则，重构了项目包结构：
 
 - 添加了完整的DDD分层架构：
-  - `domain`: 领域层，包含实体、值对象、聚合根和领域事件
-  - `application`: 应用层，包含应用服务、DTO和用例
-  - `interfaces`: 接口层，包含REST控制器和其他外部接口
-  - `infrastructure`: 基础设施层，包含仓储实现、消息和集成组件
+    - `domain`: 领域层，包含实体、值对象、聚合根和领域事件
+    - `application`: 应用层，包含应用服务、DTO和用例
+    - `interfaces`: 接口层，包含REST控制器和其他外部接口
+    - `infrastructure`: 基础设施层，包含仓储实现、消息和集成组件
 
 - 创建了示例类，展示各层的最佳实践：
-  - `UserDTO`: 应用层DTO示例
-  - `UserApplicationService`: 应用层服务示例
-  - `UserController`: 接口层REST控制器示例
-  - `JpaRepositoryImpl`: 基础设施层仓储实现示例
+    - `UserDTO`: 应用层DTO示例
+    - `UserApplicationService`: 应用层服务示例
+    - `UserController`: 接口层REST控制器示例
+    - `JpaRepositoryImpl`: 基础设施层仓储实现示例
 
 - 添加了Web请求日志切面，记录所有接口调用的详细日志
 

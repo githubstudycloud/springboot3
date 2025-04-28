@@ -24,26 +24,26 @@ import java.util.stream.Collectors;
 public class OrderRepositoryImpl implements OrderRepository {
     private final OrderJpaRepository orderJpaRepository;
     private final DomainEventPublisher eventPublisher;
-    
+
     @Override
     @Transactional
     public void save(Order order) {
         OrderEntity entity = toEntity(order);
         orderJpaRepository.save(entity);
-        
+
         // 发布所有未发布的领域事件
         List<DomainEvent> events = order.getAndClearDomainEvents();
         for (DomainEvent event : events) {
             eventPublisher.publish(event);
         }
     }
-    
+
     @Override
     public Optional<Order> findById(OrderId orderId) {
         return orderJpaRepository.findById(orderId.getValue())
                 .map(this::toDomain);
     }
-    
+
     @Override
     public List<Order> findByCustomerId(CustomerId customerId) {
         return orderJpaRepository.findByCustomerId(customerId.getValue())
@@ -51,13 +51,13 @@ public class OrderRepositoryImpl implements OrderRepository {
                 .map(this::toDomain)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     @Transactional
     public void remove(OrderId orderId) {
         orderJpaRepository.deleteById(orderId.getValue());
     }
-    
+
     /**
      * 将领域对象转换为持久化实体
      */
@@ -69,10 +69,10 @@ public class OrderRepositoryImpl implements OrderRepository {
         entity.setTotalAmount(order.calculateTotalAmount());
         entity.setCreatedAt(order.getCreatedAt());
         entity.setUpdatedAt(order.getUpdatedAt());
-        
+
         // 清除旧的订单项
         entity.getItems().clear();
-        
+
         // 添加新的订单项
         for (OrderItem item : order.getOrderItems()) {
             OrderItemEntity itemEntity = new OrderItemEntity();
@@ -81,10 +81,10 @@ public class OrderRepositoryImpl implements OrderRepository {
             itemEntity.setUnitPrice(item.getUnitPrice());
             entity.addItem(itemEntity);
         }
-        
+
         return entity;
     }
-    
+
     /**
      * 将持久化实体转换为领域对象
      */
@@ -96,40 +96,40 @@ public class OrderRepositoryImpl implements OrderRepository {
             OrderId orderId = new OrderId(entity.getId());
             CustomerId customerId = new CustomerId(entity.getCustomerId());
             Order order = Order.create(customerId); // 使用工厂方法创建
-            
+
             // 使用Java反射设置私有字段
             java.lang.reflect.Field idField = Order.class.getDeclaredField("id");
             idField.setAccessible(true);
             idField.set(order, orderId);
-            
+
             java.lang.reflect.Field statusField = Order.class.getDeclaredField("status");
             statusField.setAccessible(true);
             statusField.set(order, entity.getStatus());
-            
+
             java.lang.reflect.Field createdAtField = Order.class.getDeclaredField("createdAt");
             createdAtField.setAccessible(true);
             createdAtField.set(order, entity.getCreatedAt());
-            
+
             java.lang.reflect.Field updatedAtField = Order.class.getDeclaredField("updatedAt");
             updatedAtField.setAccessible(true);
             updatedAtField.set(order, entity.getUpdatedAt());
-            
+
             java.lang.reflect.Field orderItemsField = Order.class.getDeclaredField("orderItems");
             orderItemsField.setAccessible(true);
             List<OrderItem> orderItems = new ArrayList<>();
-            
+
             // 添加订单项
             for (OrderItemEntity itemEntity : entity.getItems()) {
                 ProductId productId = new ProductId(itemEntity.getProductId());
                 OrderItem item = new OrderItem(productId, itemEntity.getQuantity(), itemEntity.getUnitPrice());
                 orderItems.add(item);
             }
-            
+
             orderItemsField.set(order, orderItems);
-            
+
             // 清除加载的领域对象的所有领域事件，因为这些事件已经被处理过了
             order.getAndClearDomainEvents();
-            
+
             return order;
         } catch (Exception e) {
             throw new RuntimeException("无法将实体转换为领域对象", e);

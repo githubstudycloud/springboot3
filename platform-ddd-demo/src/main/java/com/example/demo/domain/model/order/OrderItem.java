@@ -1,6 +1,7 @@
 package com.example.demo.domain.model.order;
 
 import lombok.Getter;
+
 import java.math.BigDecimal;
 
 /**
@@ -9,9 +10,9 @@ import java.math.BigDecimal;
 @Getter
 public class OrderItem {
     private final ProductId productId;
-    private int quantity;
     private final BigDecimal unitPrice;
-    
+    private int quantity;
+
     public OrderItem(ProductId productId, int quantity, BigDecimal unitPrice) {
         if (productId == null) {
             throw new IllegalArgumentException("产品ID不能为空");
@@ -22,12 +23,12 @@ public class OrderItem {
         if (unitPrice == null || unitPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("单价必须大于0");
         }
-        
+
         this.productId = productId;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
     }
-    
+
     /**
      * 更新数量
      */
@@ -37,7 +38,7 @@ public class OrderItem {
         }
         this.quantity = newQuantity;
     }
-    
+
     /**
      * 计算小计
      */

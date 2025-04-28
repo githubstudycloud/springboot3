@@ -42,7 +42,7 @@ public class WebFluxConfig implements WebFluxConfigurer {
     @Override
     public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
         ObjectMapper objectMapper = createObjectMapper();
-        
+
         configurer.defaultCodecs().jackson2JsonEncoder(
                 new Jackson2JsonEncoder(objectMapper));
         configurer.defaultCodecs().jackson2JsonDecoder(
@@ -57,15 +57,15 @@ public class WebFluxConfig implements WebFluxConfigurer {
     public ObjectMapper objectMapper() {
         return createObjectMapper();
     }
-    
+
     private ObjectMapper createObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
-        
+
         // 注册Java8时间模块
         objectMapper.registerModule(new JavaTimeModule());
         // 禁止将日期序列化为时间戳
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        
+
         return objectMapper;
     }
 } 

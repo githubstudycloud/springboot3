@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 订单查询服务
@@ -19,14 +18,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderQueryService {
     private final JdbcTemplate jdbcTemplate;
-    
+
     /**
      * 查询所有订单简要信息
      */
     public List<OrderSummaryDTO> findAllOrderSummaries() {
         String sql = "SELECT o.id, o.customer_id, o.status, o.total_amount, o.created_at " +
                 "FROM orders o ORDER BY o.created_at DESC";
-        
+
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             OrderSummaryDTO summary = new OrderSummaryDTO();
             summary.setId(rs.getString("id"));
@@ -37,14 +36,14 @@ public class OrderQueryService {
             return summary;
         });
     }
-    
+
     /**
      * 根据状态查询订单
      */
     public List<OrderSummaryDTO> findOrdersByStatus(OrderStatus status) {
         String sql = "SELECT o.id, o.customer_id, o.status, o.total_amount, o.created_at " +
                 "FROM orders o WHERE o.status = ? ORDER BY o.created_at DESC";
-        
+
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             OrderSummaryDTO summary = new OrderSummaryDTO();
             summary.setId(rs.getString("id"));
@@ -55,7 +54,7 @@ public class OrderQueryService {
             return summary;
         }, status.name());
     }
-    
+
     /**
      * 获取订单详情及订单项
      */
@@ -63,7 +62,7 @@ public class OrderQueryService {
         // 查询订单基本信息
         String orderSql = "SELECT o.id, o.customer_id, o.status, o.total_amount, o.created_at, o.updated_at " +
                 "FROM orders o WHERE o.id = ?";
-        
+
         OrderDTO order = jdbcTemplate.queryForObject(orderSql, (rs, rowNum) -> {
             OrderDTO dto = new OrderDTO();
             dto.setId(rs.getString("id"));
@@ -74,15 +73,15 @@ public class OrderQueryService {
             dto.setUpdatedAt(rs.getObject("updated_at", LocalDateTime.class));
             return dto;
         }, orderId);
-        
+
         if (order == null) {
             return null;
         }
-        
+
         // 查询订单项
         String itemsSql = "SELECT i.product_id, i.quantity, i.unit_price " +
                 "FROM order_items i WHERE i.order_id = ?";
-        
+
         List<OrderDTO.OrderItemDTO> items = jdbcTemplate.query(itemsSql, (rs, rowNum) -> {
             OrderDTO.OrderItemDTO item = new OrderDTO.OrderItemDTO();
             item.setProductId(rs.getString("product_id"));
@@ -91,12 +90,12 @@ public class OrderQueryService {
             item.setSubtotal(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
             return item;
         }, orderId);
-        
+
         order.setItems(items);
-        
+
         return order;
     }
-    
+
     /**
      * 订单摘要DTO
      */
@@ -106,44 +105,44 @@ public class OrderQueryService {
         private OrderStatus status;
         private BigDecimal totalAmount;
         private LocalDateTime createdAt;
-        
+
         // Getters and Setters
         public String getId() {
             return id;
         }
-        
+
         public void setId(String id) {
             this.id = id;
         }
-        
+
         public String getCustomerId() {
             return customerId;
         }
-        
+
         public void setCustomerId(String customerId) {
             this.customerId = customerId;
         }
-        
+
         public OrderStatus getStatus() {
             return status;
         }
-        
+
         public void setStatus(OrderStatus status) {
             this.status = status;
         }
-        
+
         public BigDecimal getTotalAmount() {
             return totalAmount;
         }
-        
+
         public void setTotalAmount(BigDecimal totalAmount) {
             this.totalAmount = totalAmount;
         }
-        
+
         public LocalDateTime getCreatedAt() {
             return createdAt;
         }
-        
+
         public void setCreatedAt(LocalDateTime createdAt) {
             this.createdAt = createdAt;
         }

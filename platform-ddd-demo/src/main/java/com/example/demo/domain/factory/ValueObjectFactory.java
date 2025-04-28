@@ -11,21 +11,21 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ValueObjectFactory {
-    
+
     /**
      * 创建订单ID值对象
      */
     public OrderId createOrderId(String value) {
         return new OrderId(value);
     }
-    
+
     /**
      * 创建客户ID值对象
      */
     public CustomerId createCustomerId(String value) {
         return new CustomerId(value);
     }
-    
+
     /**
      * 创建产品ID值对象
      */

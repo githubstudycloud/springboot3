@@ -11,7 +11,7 @@ import com.example.common.constant.SystemConstants;
  */
 public class BusinessException extends PlatformException {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 构造函数
      *
@@ -20,7 +20,7 @@ public class BusinessException extends PlatformException {
     public BusinessException(String message) {
         super(SystemConstants.BAD_REQUEST_CODE, message);
     }
-    
+
     /**
      * 构造函数
      *
@@ -30,7 +30,7 @@ public class BusinessException extends PlatformException {
     public BusinessException(Integer code, String message) {
         super(code, message);
     }
-    
+
     /**
      * 未找到资源异常
      *
@@ -40,7 +40,7 @@ public class BusinessException extends PlatformException {
     public static BusinessException notFound(String message) {
         return new BusinessException(SystemConstants.NOT_FOUND_CODE, message);
     }
-    
+
     /**
      * 未授权异常
      *
@@ -50,7 +50,7 @@ public class BusinessException extends PlatformException {
     public static BusinessException unauthorized(String message) {
         return new BusinessException(SystemConstants.UNAUTHORIZED_CODE, message);
     }
-    
+
     /**
      * 禁止访问异常
      *
@@ -60,7 +60,7 @@ public class BusinessException extends PlatformException {
     public static BusinessException forbidden(String message) {
         return new BusinessException(SystemConstants.FORBIDDEN_CODE, message);
     }
-    
+
     /**
      * 参数错误异常
      *

@@ -52,12 +52,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
         ObjectMapper objectMapper = new ObjectMapper();
-        
+
         // 注册Java8时间模块
         objectMapper.registerModule(new JavaTimeModule());
         // 禁止将日期序列化为时间戳
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        
+
         converter.setObjectMapper(objectMapper);
         return converter;
     }

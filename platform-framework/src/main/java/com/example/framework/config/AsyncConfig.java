@@ -19,10 +19,10 @@ import java.util.concurrent.Executors;
 @EnableAsync
 @ConditionalOnProperty(name = "platform.thread.virtual.enabled", havingValue = "true", matchIfMissing = false)
 public class AsyncConfig {
-    
+
     /**
      * 配置虚拟线程执行器
-     * 
+     *
      * @return 基于虚拟线程的异步任务执行器
      */
     @Bean

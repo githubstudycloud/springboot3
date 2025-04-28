@@ -25,7 +25,7 @@ public class OrderDTO {
     private BigDecimal totalAmount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
+
     /**
      * 订单项数据传输对象
      */

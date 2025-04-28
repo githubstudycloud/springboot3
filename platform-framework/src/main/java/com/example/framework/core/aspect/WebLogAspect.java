@@ -26,10 +26,14 @@ import java.util.UUID;
 @Component
 public class WebLogAspect {
 
-    /** 线程本地变量，用于存储请求开始时间 */
+    /**
+     * 线程本地变量，用于存储请求开始时间
+     */
     private final ThreadLocal<Long> startTime = new ThreadLocal<>();
-    
-    /** 线程本地变量，用于存储请求ID */
+
+    /**
+     * 线程本地变量，用于存储请求ID
+     */
     private final ThreadLocal<String> requestId = new ThreadLocal<>();
 
     /**
@@ -49,12 +53,12 @@ public class WebLogAspect {
     public void doBefore(JoinPoint joinPoint) {
         startTime.set(System.currentTimeMillis());
         requestId.set(UUID.randomUUID().toString().replace("-", ""));
-        
+
         // 获取请求信息
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes != null) {
             HttpServletRequest request = attributes.getRequest();
-            
+
             // 记录请求信息
             log.info("RequestId: {}, URL: {}, HTTP Method: {}, IP: {}, Class Method: {}.{}, Args: {}",
                     requestId.get(),
@@ -82,13 +86,13 @@ public class WebLogAspect {
     public void doAfterReturning(Object result) {
         // 计算执行时间
         long executionTime = System.currentTimeMillis() - startTime.get();
-        
+
         // 记录响应信息
         log.info("RequestId: {}, Response: {}, Execution Time: {} ms",
                 requestId.get(),
                 result,
                 executionTime);
-        
+
         // 清理线程本地变量
         startTime.remove();
         requestId.remove();

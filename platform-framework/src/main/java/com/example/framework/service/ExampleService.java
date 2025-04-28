@@ -13,9 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 public class ExampleService {
-    
+
     private final ExampleRepository repository;
-    
+
     /**
      * 推荐使用构造器注入方式
      * Spring Boot 3.2+已优化构造器注入，无需显式添加@Autowired注解
@@ -25,7 +25,7 @@ public class ExampleService {
     public ExampleService(ExampleRepository repository) {
         this.repository = repository;
     }
-    
+
     /**
      * 示例方法，展示事务和虚拟线程支持
      *
@@ -37,7 +37,7 @@ public class ExampleService {
         log.info("当前线程: {}", Thread.currentThread());
         return repository.findNameById(id);
     }
-    
+
     /**
      * 内部接口，用于展示
      */

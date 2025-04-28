@@ -12,21 +12,21 @@ import java.util.List;
  */
 public abstract class AggregateRoot<ID> extends Entity<ID> {
     private final List<DomainEvent> domainEvents = new ArrayList<>();
-    
+
     /**
      * 注册领域事件
      */
     protected void registerEvent(DomainEvent event) {
         this.domainEvents.add(event);
     }
-    
+
     /**
      * 获取领域事件的不可变列表
      */
     public List<DomainEvent> getDomainEvents() {
         return Collections.unmodifiableList(domainEvents);
     }
-    
+
     /**
      * 获取并清除所有未发布的领域事件
      */
@@ -35,7 +35,7 @@ public abstract class AggregateRoot<ID> extends Entity<ID> {
         this.domainEvents.clear();
         return events;
     }
-    
+
     /**
      * 清除所有未发布的领域事件
      */

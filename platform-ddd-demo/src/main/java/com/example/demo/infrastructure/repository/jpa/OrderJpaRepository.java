@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Repository
 public interface OrderJpaRepository extends JpaRepository<OrderEntity, String> {
-    
+
     /**
      * 根据客户ID查找订单
      */

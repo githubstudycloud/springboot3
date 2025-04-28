@@ -1,6 +1,5 @@
 package com.example.common.utils;
 
-import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.core.util.StrUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -13,7 +12,7 @@ import java.util.UUID;
  * @since 1.0.0
  */
 public class StringUtil extends StringUtils {
-    
+
     /**
      * 生成UUID（不带横线）
      *
@@ -22,7 +21,7 @@ public class StringUtil extends StringUtils {
     public static String uuid() {
         return UUID.randomUUID().toString().replace("-", "");
     }
-    
+
     /**
      * 生成带横线的UUID
      *
@@ -31,7 +30,7 @@ public class StringUtil extends StringUtils {
     public static String uuidWithHyphen() {
         return UUID.randomUUID().toString();
     }
-    
+
     /**
      * 驼峰转下划线
      *
@@ -41,7 +40,7 @@ public class StringUtil extends StringUtils {
     public static String camelToUnderscore(String str) {
         return StrUtil.toUnderlineCase(str);
     }
-    
+
     /**
      * 下划线转驼峰
      *
@@ -51,7 +50,7 @@ public class StringUtil extends StringUtils {
     public static String underscoreToCamel(String str) {
         return StrUtil.toCamelCase(str);
     }
-    
+
     /**
      * 下划线转帕斯卡（首字母大写驼峰）
      *
@@ -61,7 +60,7 @@ public class StringUtil extends StringUtils {
     public static String underscoreToPascal(String str) {
         return StrUtil.upperFirst(StrUtil.toCamelCase(str));
     }
-    
+
     /**
      * 获取字符串的字节长度
      *
@@ -71,7 +70,7 @@ public class StringUtil extends StringUtils {
     public static int getByteLength(String str) {
         return str == null ? 0 : str.getBytes().length;
     }
-    
+
     /**
      * 截取字符串（按字节长度）
      *
@@ -89,7 +88,7 @@ public class StringUtil extends StringUtils {
         }
         return new String(bytes, 0, length);
     }
-    
+
     /**
      * 获取字符串中的数字部分
      *
@@ -102,7 +101,7 @@ public class StringUtil extends StringUtils {
         }
         return str.replaceAll("\\D", "");
     }
-    
+
     /**
      * 获取字符串中的字母部分
      *
@@ -115,7 +114,7 @@ public class StringUtil extends StringUtils {
         }
         return str.replaceAll("[^a-zA-Z]", "");
     }
-    
+
     /**
      * 是否包含中文
      *
@@ -123,6 +122,6 @@ public class StringUtil extends StringUtils {
      * @return 是否包含中文
      */
     public static boolean containsChinese(String str) {
-        return CharSequenceUtil.containsAny(str, CharSequenceUtil.CHINESE);
+        return str != null && str.matches(".*[\\u4e00-\\u9fa5].*");
     }
 }

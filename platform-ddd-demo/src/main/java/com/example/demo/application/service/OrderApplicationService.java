@@ -3,7 +3,10 @@ package com.example.demo.application.service;
 import com.example.demo.application.command.AddOrderItemCommand;
 import com.example.demo.application.command.CreateOrderCommand;
 import com.example.demo.application.dto.OrderDTO;
-import com.example.demo.domain.model.order.*;
+import com.example.demo.domain.model.order.CustomerId;
+import com.example.demo.domain.model.order.Order;
+import com.example.demo.domain.model.order.OrderId;
+import com.example.demo.domain.model.order.ProductId;
 import com.example.demo.domain.repository.OrderRepository;
 import com.example.demo.domain.service.OrderDomainService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +26,7 @@ import java.util.stream.Collectors;
 public class OrderApplicationService {
     private final OrderRepository orderRepository;
     private final OrderDomainService orderDomainService;
-    
+
     /**
      * 创建订单
      */
@@ -34,7 +37,7 @@ public class OrderApplicationService {
         orderRepository.save(order);
         return convertToDTO(order);
     }
-    
+
     /**
      * 添加订单项
      */
@@ -42,15 +45,15 @@ public class OrderApplicationService {
     public OrderDTO addOrderItem(AddOrderItemCommand command) {
         OrderId orderId = new OrderId(command.getOrderId());
         ProductId productId = new ProductId(command.getProductId());
-        
+
         orderDomainService.addOrderItem(orderId, productId, command.getQuantity(), command.getUnitPrice());
-        
+
         Optional<Order> orderOpt = orderRepository.findById(orderId);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         return convertToDTO(order);
     }
-    
+
     /**
      * 确认订单
      */
@@ -58,13 +61,13 @@ public class OrderApplicationService {
     public OrderDTO confirmOrder(String orderId) {
         OrderId id = new OrderId(orderId);
         orderDomainService.confirmOrder(id);
-        
+
         Optional<Order> orderOpt = orderRepository.findById(id);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         return convertToDTO(order);
     }
-    
+
     /**
      * 支付订单
      */
@@ -72,13 +75,13 @@ public class OrderApplicationService {
     public OrderDTO payOrder(String orderId) {
         OrderId id = new OrderId(orderId);
         orderDomainService.payOrder(id);
-        
+
         Optional<Order> orderOpt = orderRepository.findById(id);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         return convertToDTO(order);
     }
-    
+
     /**
      * 取消订单
      */
@@ -86,13 +89,13 @@ public class OrderApplicationService {
     public OrderDTO cancelOrder(String orderId) {
         OrderId id = new OrderId(orderId);
         orderDomainService.cancelOrder(id);
-        
+
         Optional<Order> orderOpt = orderRepository.findById(id);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         return convertToDTO(order);
     }
-    
+
     /**
      * 查询订单
      */
@@ -100,22 +103,22 @@ public class OrderApplicationService {
         OrderId id = new OrderId(orderId);
         Optional<Order> orderOpt = orderRepository.findById(id);
         Order order = orderOpt.orElseThrow(() -> new IllegalArgumentException("订单不存在"));
-        
+
         return convertToDTO(order);
     }
-    
+
     /**
      * 查询客户的所有订单
      */
     public List<OrderDTO> getCustomerOrders(String customerId) {
         CustomerId id = new CustomerId(customerId);
         List<Order> orders = orderRepository.findByCustomerId(id);
-        
+
         return orders.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * 将领域对象转换为DTO
      */
@@ -128,7 +131,7 @@ public class OrderApplicationService {
                         .subtotal(item.calculateSubtotal())
                         .build())
                 .collect(Collectors.toList());
-        
+
         return OrderDTO.builder()
                 .id(order.getId().getValue())
                 .customerId(order.getCustomerId().getValue())

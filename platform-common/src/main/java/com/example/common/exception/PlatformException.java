@@ -12,17 +12,17 @@ import lombok.Getter;
 @Getter
 public class PlatformException extends RuntimeException {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 错误码
      */
     private final Integer code;
-    
+
     /**
      * 错误消息
      */
     private final String message;
-    
+
     /**
      * 构造函数
      *
@@ -31,7 +31,7 @@ public class PlatformException extends RuntimeException {
     public PlatformException(String message) {
         this(SystemConstants.ERROR_CODE, message);
     }
-    
+
     /**
      * 构造函数
      *
@@ -43,7 +43,7 @@ public class PlatformException extends RuntimeException {
         this.code = code;
         this.message = message;
     }
-    
+
     /**
      * 构造函数
      *

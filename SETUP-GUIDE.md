@@ -49,7 +49,8 @@
 ### IntelliJ IDEA
 
 1. 安装Lombok插件：File > Settings > Plugins > 搜索"Lombok" > 安装
-2. 启用注解处理：File > Settings > Build, Execution, Deployment > Compiler > Annotation Processors > 勾选"Enable annotation processing"
+2. 启用注解处理：File > Settings > Build, Execution, Deployment > Compiler > Annotation Processors > 勾选"Enable
+   annotation processing"
 3. 重新构建项目
 
 ### Eclipse / STS
@@ -93,6 +94,7 @@ java -jar target/platform-ddd-demo-1.0.0-SNAPSHOT.jar
 ### 1. 找不到符号 / 无法解析符号
 
 这通常与Lombok或MapStruct有关。确保：
+
 - IDE中安装了Lombok插件
 - 启用了注解处理
 - 项目正确引用了Lombok和MapStruct依赖
@@ -101,6 +103,7 @@ java -jar target/platform-ddd-demo-1.0.0-SNAPSHOT.jar
 ### 2. Java版本不兼容
 
 如果你看到与Java版本相关的错误，请确保：
+
 - JDK 21已正确安装
 - JAVA_HOME环境变量指向JDK 21
 - IDE中项目和模块的Java版本都设置为21

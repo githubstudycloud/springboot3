@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderController {
     private final OrderApplicationService orderApplicationService;
-    
+
     /**
      * 创建订单
      */
@@ -29,7 +29,7 @@ public class OrderController {
         OrderDTO order = orderApplicationService.createOrder(command);
         return new ResponseEntity<>(order, HttpStatus.CREATED);
     }
-    
+
     /**
      * 添加订单项
      */
@@ -38,7 +38,7 @@ public class OrderController {
         OrderDTO order = orderApplicationService.addOrderItem(command);
         return ResponseEntity.ok(order);
     }
-    
+
     /**
      * 确认订单
      */
@@ -47,7 +47,7 @@ public class OrderController {
         OrderDTO order = orderApplicationService.confirmOrder(orderId);
         return ResponseEntity.ok(order);
     }
-    
+
     /**
      * 支付订单
      */
@@ -56,7 +56,7 @@ public class OrderController {
         OrderDTO order = orderApplicationService.payOrder(orderId);
         return ResponseEntity.ok(order);
     }
-    
+
     /**
      * 取消订单
      */
@@ -65,7 +65,7 @@ public class OrderController {
         OrderDTO order = orderApplicationService.cancelOrder(orderId);
         return ResponseEntity.ok(order);
     }
-    
+
     /**
      * 获取订单详情
      */
@@ -74,7 +74,7 @@ public class OrderController {
         OrderDTO order = orderApplicationService.getOrder(orderId);
         return ResponseEntity.ok(order);
     }
-    
+
     /**
      * 获取客户的所有订单
      */

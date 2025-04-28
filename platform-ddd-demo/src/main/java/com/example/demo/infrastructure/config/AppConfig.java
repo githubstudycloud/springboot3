@@ -13,7 +13,7 @@ import javax.sql.DataSource;
  */
 @Configuration
 public class AppConfig {
-    
+
     /**
      * 配置数据源
      */
@@ -23,7 +23,7 @@ public class AppConfig {
                 .setType(EmbeddedDatabaseType.H2)
                 .build();
     }
-    
+
     /**
      * 配置JdbcTemplate，用于CQRS查询
      */

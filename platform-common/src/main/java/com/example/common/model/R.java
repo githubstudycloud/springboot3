@@ -27,28 +27,28 @@ public class R<T> implements Serializable {
      * 响应码
      */
     private Integer code;
-    
+
     /**
      * 响应消息
      */
     private String message;
-    
+
     /**
      * 响应数据
      */
     private T data;
-    
+
     /**
      * 追踪ID
      */
     private String traceId;
-    
+
     /**
      * 时间戳
      */
     @Builder.Default
     private Long timestamp = LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli();
-    
+
     /**
      * 成功返回
      *
@@ -61,7 +61,7 @@ public class R<T> implements Serializable {
                 .message("操作成功")
                 .build();
     }
-    
+
     /**
      * 成功返回（带数据）
      *
@@ -76,7 +76,7 @@ public class R<T> implements Serializable {
                 .data(data)
                 .build();
     }
-    
+
     /**
      * 成功返回（带消息和数据）
      *
@@ -92,7 +92,7 @@ public class R<T> implements Serializable {
                 .data(data)
                 .build();
     }
-    
+
     /**
      * 失败返回
      *
@@ -105,7 +105,7 @@ public class R<T> implements Serializable {
                 .message("操作失败")
                 .build();
     }
-    
+
     /**
      * 失败返回（带消息）
      *
@@ -119,7 +119,7 @@ public class R<T> implements Serializable {
                 .message(message)
                 .build();
     }
-    
+
     /**
      * 失败返回（带错误码和消息）
      *
@@ -134,7 +134,7 @@ public class R<T> implements Serializable {
                 .message(message)
                 .build();
     }
-    
+
     /**
      * 判断是否成功
      *
@@ -143,7 +143,7 @@ public class R<T> implements Serializable {
     public boolean isSuccess() {
         return SystemConstants.SUCCESS_CODE.equals(this.code);
     }
-    
+
     /**
      * 设置追踪ID
      *

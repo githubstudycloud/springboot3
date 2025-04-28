@@ -2,7 +2,7 @@
 
 **版本**: 1.0.0  
 **日期**: 2025-04-26  
-**状态**: 正式发布  
+**状态**: 正式发布
 
 ## 目录
 
@@ -84,16 +84,16 @@
 2. **[强制]** 源文件组织顺序：package语句、import语句、类/接口定义。
 
 3. **[强制]** import语句按以下顺序分组，每组之间空一行：
-   - 标准Java库
-   - 第三方库
-   - 项目内部导入
+    - 标准Java库
+    - 第三方库
+    - 项目内部导入
 
 4. **[强制]** 类内部组织顺序：
-   - 静态变量
-   - 实例变量
-   - 构造函数
-   - 公共方法
-   - 私有方法
+    - 静态变量
+    - 实例变量
+    - 构造函数
+    - 公共方法
+    - 私有方法
 
 ### 3.2 Java编码实践
 
@@ -329,10 +329,10 @@ public class Order {
 2. **[强制]** 使用六边形架构（Hexagonal Architecture）或洋葱架构分离领域逻辑与技术实现。
 
 3. **[推荐]** 包结构遵循以下模式：
-   - xx.domain：领域模型和业务逻辑
-   - xx.application：应用服务和用例
-   - xx.infrastructure：技术实现
-   - xx.interfaces：对外接口
+    - xx.domain：领域模型和业务逻辑
+    - xx.application：应用服务和用例
+    - xx.infrastructure：技术实现
+    - xx.interfaces：对外接口
 
 4. **[推荐]** 使用CQRS模式分离读写操作，优化各自的性能。
 
@@ -411,11 +411,11 @@ sequenceDiagram
 1. **[强制]** URI使用名词而非动词，复数形式表示资源集合。
 
 2. **[强制]** 使用HTTP方法表示操作：
-   - GET：查询资源，幂等
-   - POST：创建资源，非幂等
-   - PUT：全量更新资源，幂等
-   - PATCH：部分更新资源，幂等性取决于操作
-   - DELETE：删除资源，幂等
+    - GET：查询资源，幂等
+    - POST：创建资源，非幂等
+    - PUT：全量更新资源，幂等
+    - PATCH：部分更新资源，幂等性取决于操作
+    - DELETE：删除资源，幂等
 
 3. **[强制]** URI格式：`/api/v{n}/{resources}/{resourceId}/{subresources}`
 
@@ -424,17 +424,17 @@ sequenceDiagram
 5. **[强制]** 时间类型使用ISO 8601格式（yyyy-MM-ddTHH:mm:ssZ）。
 
 6. **[推荐]** 支持分页、排序和过滤：
-   - 分页：page、size参数
-   - 排序：sort参数，如sort=name,asc&sort=createTime,desc
-   - 过滤：field=value参数
+    - 分页：page、size参数
+    - 排序：sort参数，如sort=name,asc&sort=createTime,desc
+    - 过滤：field=value参数
 
 ### 8.2 API响应规范
 
 1. **[强制]** 使用标准HTTP状态码：
-   - 2xx：成功
-   - 3xx：重定向
-   - 4xx：客户端错误
-   - 5xx：服务端错误
+    - 2xx：成功
+    - 3xx：重定向
+    - 4xx：客户端错误
+    - 5xx：服务端错误
 
 2. **[强制]** 响应体使用统一的数据结构：
 
@@ -507,11 +507,11 @@ sequenceDiagram
 1. **[强制]** 使用OpenAPI 3.0规范编写API文档。
 
 2. **[强制]** API文档应包含：
-   - 接口描述
-   - 请求参数说明
-   - 响应结构说明
-   - 错误码说明
-   - 请求/响应示例
+    - 接口描述
+    - 请求参数说明
+    - 响应结构说明
+    - 错误码说明
+    - 请求/响应示例
 
 3. **[强制]** API文档与代码同步更新，使用注解生成。
 
@@ -530,10 +530,10 @@ sequenceDiagram
 4. **[强制]** 外键命名规则：`{关联表名单数}_id`
 
 5. **[强制]** 所有表必须包含以下审计字段：
-   - created_at：创建时间
-   - updated_at：更新时间
-   - created_by：创建人
-   - updated_by：更新人
+    - created_at：创建时间
+    - updated_at：更新时间
+    - created_by：创建人
+    - updated_by：更新人
 
 6. **[强制]** 使用软删除而非物理删除，添加is_deleted字段。
 
@@ -670,11 +670,11 @@ void testCalculatePrice_WithValidQuantity_ReturnsCorrectTotal() {
 ### 11.1 代码文档
 
 1. **[强制]** 所有公共API必须有完整的Javadoc/KDoc注释，包括：
-   - 方法说明
-   - 参数说明
-   - 返回值说明
-   - 异常说明
-   - 使用示例（如适用）
+    - 方法说明
+    - 参数说明
+    - 返回值说明
+    - 异常说明
+    - 使用示例（如适用）
 
 2. **[强制]** 复杂算法和业务逻辑必须有详细的内部注释。
 
@@ -685,10 +685,10 @@ void testCalculatePrice_WithValidQuantity_ReturnsCorrectTotal() {
 ### 11.2 架构文档
 
 1. **[强制]** 每个项目必须有架构概述文档，包括：
-   - 系统整体架构
-   - 关键组件说明
-   - 技术选型理由
-   - 部署架构
+    - 系统整体架构
+    - 关键组件说明
+    - 技术选型理由
+    - 部署架构
 
 2. **[强制]** 关键设计决策必须有文档记录（ADR - Architecture Decision Record）。
 
@@ -701,11 +701,11 @@ void testCalculatePrice_WithValidQuantity_ReturnsCorrectTotal() {
 1. **[强制]** 使用OpenAPI规范编写API文档。
 
 2. **[强制]** API文档必须包含：
-   - 接口功能描述
-   - 请求参数详细说明
-   - 响应结构详细说明
-   - 错误码及处理方式
-   - 请求/响应示例
+    - 接口功能描述
+    - 请求参数详细说明
+    - 响应结构详细说明
+    - 错误码及处理方式
+    - 请求/响应示例
 
 3. **[强制]** API变更必须更新文档，保持文档与代码一致。
 
@@ -714,16 +714,16 @@ void testCalculatePrice_WithValidQuantity_ReturnsCorrectTotal() {
 ### 11.4 操作文档
 
 1. **[强制]** 系统必须有部署文档，包括：
-   - 环境要求
-   - 部署步骤
-   - 配置说明
-   - 常见问题处理
+    - 环境要求
+    - 部署步骤
+    - 配置说明
+    - 常见问题处理
 
 2. **[强制]** 系统必须有运维文档，包括：
-   - 监控指标说明
-   - 日志格式说明
-   - 故障处理流程
-   - 扩容/缩容流程
+    - 监控指标说明
+    - 日志格式说明
+    - 故障处理流程
+    - 扩容/缩容流程
 
 3. **[推荐]** 使用自动化脚本简化部署和运维操作。
 
@@ -764,10 +764,10 @@ void testCalculatePrice_WithValidQuantity_ReturnsCorrectTotal() {
 3. **[强制]** 实现CSRF保护机制。
 
 4. **[强制]** 设置安全响应头，如：
-   - Content-Security-Policy
-   - X-Content-Type-Options
-   - X-Frame-Options
-   - X-XSS-Protection
+    - Content-Security-Policy
+    - X-Content-Type-Options
+    - X-Frame-Options
+    - X-XSS-Protection
 
 5. **[推荐]** 使用API密钥或OAuth2.0保护API访问。
 
@@ -788,11 +788,11 @@ void testCalculatePrice_WithValidQuantity_ReturnsCorrectTotal() {
 ### 13.1 日志级别使用
 
 1. **[强制]** 日志级别定义：
-   - ERROR: 影响系统运行的错误，需要立即处理
-   - WARN: 潜在问题或即将发生的错误，需要关注
-   - INFO: 重要业务操作和系统状态变更
-   - DEBUG: 详细的系统运行信息，用于问题排查
-   - TRACE: 最详细的跟踪信息，一般只在开发环境使用
+    - ERROR: 影响系统运行的错误，需要立即处理
+    - WARN: 潜在问题或即将发生的错误，需要关注
+    - INFO: 重要业务操作和系统状态变更
+    - DEBUG: 详细的系统运行信息，用于问题排查
+    - TRACE: 最详细的跟踪信息，一般只在开发环境使用
 
 2. **[强制]** 正确选择日志级别，避免日志过多或过少。
 
@@ -803,12 +803,12 @@ void testCalculatePrice_WithValidQuantity_ReturnsCorrectTotal() {
 ### 13.2 日志内容规范
 
 1. **[强制]** 日志必须包含以下基本信息：
-   - 时间戳（ISO 8601格式）
-   - 日志级别
-   - 线程名
-   - 类名
-   - 请求ID/跟踪ID
-   - 日志内容
+    - 时间戳（ISO 8601格式）
+    - 日志级别
+    - 线程名
+    - 类名
+    - 请求ID/跟踪ID
+    - 日志内容
 
 2. **[强制]** 错误日志必须包含详细的异常堆栈和上下文信息。
 
@@ -890,13 +890,13 @@ gitGraph
    ```
 
 2. **[强制]** 类型（type）包括：
-   - feat: 新功能
-   - fix: 缺陷修复
-   - docs: 文档变更
-   - style: 代码格式变更
-   - refactor: 代码重构
-   - test: 测试相关
-   - chore: 构建过程或辅助工具变更
+    - feat: 新功能
+    - fix: 缺陷修复
+    - docs: 文档变更
+    - style: 代码格式变更
+    - refactor: 代码重构
+    - test: 测试相关
+    - chore: 构建过程或辅助工具变更
 
 3. **[强制]** 主题（subject）简明扼要，不超过50个字符。
 
@@ -907,9 +907,9 @@ gitGraph
 ### 14.3 版本号管理
 
 1. **[强制]** 遵循语义化版本（SemVer）规范：X.Y.Z
-   - X: 主版本号，不兼容的API变更
-   - Y: 次版本号，向后兼容的功能新增
-   - Z: 修订号，向后兼容的问题修复
+    - X: 主版本号，不兼容的API变更
+    - Y: 次版本号，向后兼容的功能新增
+    - Z: 修订号，向后兼容的问题修复
 
 2. **[强制]** 预发布版本使用后缀标识：X.Y.Z-alpha.N，X.Y.Z-beta.N，X.Y.Z-rc.N
 
@@ -924,10 +924,10 @@ gitGraph
 1. **[强制]** 代码提交到特性分支后自动触发CI流程。
 
 2. **[强制]** CI流程必须包含：
-   - 代码编译
-   - 单元测试
-   - 代码质量检查
-   - 安全漏洞扫描
+    - 代码编译
+    - 单元测试
+    - 代码质量检查
+    - 安全漏洞扫描
 
 3. **[强制]** 构建失败必须立即修复，保持主干分支随时可构建。
 
@@ -983,19 +983,19 @@ graph TD
 
 ### 16.1 常用工具
 
-| 类别 | 工具 | 用途 |
-|-----|------|-----|
-| 构建工具 | Maven, Gradle | 项目构建与依赖管理 |
-| 代码质量 | SonarQube, CheckStyle | 代码质量检查 |
-| 单元测试 | JUnit 5, Mockito | 单元测试与模拟 |
-| API测试 | RestAssured | REST API测试 |
-| 性能测试 | JMeter, Gatling | 性能与负载测试 |
-| 代码覆盖率 | JaCoCo | 测试覆盖率分析 |
-| CI/CD | GitHub Actions, Jenkins | 持续集成与部署 |
-| 容器化 | Docker, Kubernetes | 容器与编排 |
-| 监控 | Prometheus, Grafana | 指标监控与可视化 |
-| 日志 | ELK Stack, Loki | 日志收集与分析 |
-| 追踪 | Jaeger, Zipkin | 分布式追踪 |
+| 类别    | 工具                      | 用途         |
+|-------|-------------------------|------------|
+| 构建工具  | Maven, Gradle           | 项目构建与依赖管理  |
+| 代码质量  | SonarQube, CheckStyle   | 代码质量检查     |
+| 单元测试  | JUnit 5, Mockito        | 单元测试与模拟    |
+| API测试 | RestAssured             | REST API测试 |
+| 性能测试  | JMeter, Gatling         | 性能与负载测试    |
+| 代码覆盖率 | JaCoCo                  | 测试覆盖率分析    |
+| CI/CD | GitHub Actions, Jenkins | 持续集成与部署    |
+| 容器化   | Docker, Kubernetes      | 容器与编排      |
+| 监控    | Prometheus, Grafana     | 指标监控与可视化   |
+| 日志    | ELK Stack, Loki         | 日志收集与分析    |
+| 追踪    | Jaeger, Zipkin          | 分布式追踪      |
 
 ### 16.2 参考资料
 
@@ -1010,14 +1010,14 @@ graph TD
 
 ### 16.3 术语表
 
-| 术语 | 定义 |
-|-----|------|
-| DDD | 领域驱动设计(Domain-Driven Design)，一种以业务领域为中心的软件设计方法 |
-| CQRS | 命令查询责任分离(Command Query Responsibility Segregation)，将读写操作分离的架构模式 |
-| REST | 表现层状态转移(Representational State Transfer)，一种API设计风格 |
-| JWT | JSON Web Token，一种用于安全传输信息的开放标准 |
-| TDD | 测试驱动开发(Test-Driven Development)，先编写测试再实现功能的开发方法 |
-| CI/CD | 持续集成/持续部署(Continuous Integration/Continuous Deployment) |
-| SemVer | 语义化版本(Semantic Versioning)，一种版本号管理方案 |
-| RBAC | 基于角色的访问控制(Role-Based Access Control) |
-| ABAC | 基于属性的访问控制(Attribute-Based Access Control) |
+| 术语     | 定义                                                              |
+|--------|-----------------------------------------------------------------|
+| DDD    | 领域驱动设计(Domain-Driven Design)，一种以业务领域为中心的软件设计方法                  |
+| CQRS   | 命令查询责任分离(Command Query Responsibility Segregation)，将读写操作分离的架构模式 |
+| REST   | 表现层状态转移(Representational State Transfer)，一种API设计风格              |
+| JWT    | JSON Web Token，一种用于安全传输信息的开放标准                                  |
+| TDD    | 测试驱动开发(Test-Driven Development)，先编写测试再实现功能的开发方法                 |
+| CI/CD  | 持续集成/持续部署(Continuous Integration/Continuous Deployment)         |
+| SemVer | 语义化版本(Semantic Versioning)，一种版本号管理方案                            |
+| RBAC   | 基于角色的访问控制(Role-Based Access Control)                            |
+| ABAC   | 基于属性的访问控制(Attribute-Based Access Control)                       |

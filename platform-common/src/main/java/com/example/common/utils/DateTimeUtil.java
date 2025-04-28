@@ -17,42 +17,42 @@ public class DateTimeUtil {
      * 标准日期格式：yyyy-MM-dd
      */
     public static final String PATTERN_DATE = "yyyy-MM-dd";
-    
+
     /**
      * 标准时间格式：HH:mm:ss
      */
     public static final String PATTERN_TIME = "HH:mm:ss";
-    
+
     /**
      * 标准日期时间格式：yyyy-MM-dd HH:mm:ss
      */
     public static final String PATTERN_DATETIME = "yyyy-MM-dd HH:mm:ss";
-    
+
     /**
      * 标准日期时间带毫秒格式：yyyy-MM-dd HH:mm:ss.SSS
      */
     public static final String PATTERN_DATETIME_MS = "yyyy-MM-dd HH:mm:ss.SSS";
-    
+
     /**
      * 紧凑日期格式：yyyyMMdd
      */
     public static final String PATTERN_DATE_COMPACT = "yyyyMMdd";
-    
+
     /**
      * 紧凑时间格式：HHmmss
      */
     public static final String PATTERN_TIME_COMPACT = "HHmmss";
-    
+
     /**
      * 紧凑日期时间格式：yyyyMMddHHmmss
      */
     public static final String PATTERN_DATETIME_COMPACT = "yyyyMMddHHmmss";
-    
+
     /**
      * 紧凑日期时间带毫秒格式：yyyyMMddHHmmssSSS
      */
     public static final String PATTERN_DATETIME_MS_COMPACT = "yyyyMMddHHmmssSSS";
-    
+
     /**
      * 获取当前日期
      *
@@ -61,7 +61,7 @@ public class DateTimeUtil {
     public static LocalDate getCurrentDate() {
         return LocalDate.now();
     }
-    
+
     /**
      * 获取当前时间
      *
@@ -70,7 +70,7 @@ public class DateTimeUtil {
     public static LocalTime getCurrentTime() {
         return LocalTime.now();
     }
-    
+
     /**
      * 获取当前日期时间
      *
@@ -79,7 +79,7 @@ public class DateTimeUtil {
     public static LocalDateTime getCurrentDateTime() {
         return LocalDateTime.now();
     }
-    
+
     /**
      * 获取当前时间戳（毫秒）
      *
@@ -88,7 +88,7 @@ public class DateTimeUtil {
     public static long getCurrentTimeMillis() {
         return System.currentTimeMillis();
     }
-    
+
     /**
      * 获取当前时间戳（秒）
      *
@@ -97,7 +97,7 @@ public class DateTimeUtil {
     public static long getCurrentTimeSeconds() {
         return System.currentTimeMillis() / 1000;
     }
-    
+
     /**
      * Date转LocalDateTime
      *
@@ -110,7 +110,7 @@ public class DateTimeUtil {
         }
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
-    
+
     /**
      * LocalDateTime转Date
      *
@@ -123,7 +123,7 @@ public class DateTimeUtil {
         }
         return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
     }
-    
+
     /**
      * 时间戳（毫秒）转LocalDateTime
      *
@@ -133,7 +133,7 @@ public class DateTimeUtil {
     public static LocalDateTime toLocalDateTime(long timestamp) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
     }
-    
+
     /**
      * LocalDateTime转时间戳（毫秒）
      *
@@ -143,7 +143,7 @@ public class DateTimeUtil {
     public static long toTimestamp(LocalDateTime localDateTime) {
         return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
-    
+
     /**
      * 格式化日期（yyyy-MM-dd）
      *
@@ -156,7 +156,7 @@ public class DateTimeUtil {
         }
         return localDate.format(DateTimeFormatter.ofPattern(PATTERN_DATE));
     }
-    
+
     /**
      * 格式化时间（HH:mm:ss）
      *
@@ -169,7 +169,7 @@ public class DateTimeUtil {
         }
         return localTime.format(DateTimeFormatter.ofPattern(PATTERN_TIME));
     }
-    
+
     /**
      * 格式化日期时间（yyyy-MM-dd HH:mm:ss）
      *
@@ -182,7 +182,7 @@ public class DateTimeUtil {
         }
         return localDateTime.format(DateTimeFormatter.ofPattern(PATTERN_DATETIME));
     }
-    
+
     /**
      * 按自定义格式格式化日期时间
      *
@@ -196,7 +196,7 @@ public class DateTimeUtil {
         }
         return localDateTime.format(DateTimeFormatter.ofPattern(pattern));
     }
-    
+
     /**
      * 解析日期字符串（yyyy-MM-dd）
      *
@@ -209,7 +209,7 @@ public class DateTimeUtil {
         }
         return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern(PATTERN_DATE));
     }
-    
+
     /**
      * 解析时间字符串（HH:mm:ss）
      *
@@ -222,7 +222,7 @@ public class DateTimeUtil {
         }
         return LocalTime.parse(timeStr, DateTimeFormatter.ofPattern(PATTERN_TIME));
     }
-    
+
     /**
      * 解析日期时间字符串（yyyy-MM-dd HH:mm:ss）
      *
@@ -235,7 +235,7 @@ public class DateTimeUtil {
         }
         return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern(PATTERN_DATETIME));
     }
-    
+
     /**
      * 按自定义格式解析日期时间字符串
      *
@@ -249,7 +249,7 @@ public class DateTimeUtil {
         }
         return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern(pattern));
     }
-    
+
     /**
      * 计算两个日期之间的天数差
      *
@@ -260,7 +260,7 @@ public class DateTimeUtil {
     public static long daysBetween(LocalDate start, LocalDate end) {
         return ChronoUnit.DAYS.between(start, end);
     }
-    
+
     /**
      * 计算两个日期时间之间的小时差
      *
@@ -271,7 +271,7 @@ public class DateTimeUtil {
     public static long hoursBetween(LocalDateTime start, LocalDateTime end) {
         return ChronoUnit.HOURS.between(start, end);
     }
-    
+
     /**
      * 计算两个日期时间之间的分钟差
      *
@@ -282,7 +282,7 @@ public class DateTimeUtil {
     public static long minutesBetween(LocalDateTime start, LocalDateTime end) {
         return ChronoUnit.MINUTES.between(start, end);
     }
-    
+
     /**
      * 日期加天数
      *
@@ -293,7 +293,7 @@ public class DateTimeUtil {
     public static LocalDate plusDays(LocalDate localDate, long days) {
         return localDate.plusDays(days);
     }
-    
+
     /**
      * 日期时间加小时
      *
@@ -304,7 +304,7 @@ public class DateTimeUtil {
     public static LocalDateTime plusHours(LocalDateTime localDateTime, long hours) {
         return localDateTime.plusHours(hours);
     }
-    
+
     /**
      * 获取某月的第一天
      *
@@ -315,7 +315,7 @@ public class DateTimeUtil {
     public static LocalDate firstDayOfMonth(int year, int month) {
         return LocalDate.of(year, month, 1);
     }
-    
+
     /**
      * 获取某月的最后一天
      *
@@ -326,7 +326,7 @@ public class DateTimeUtil {
     public static LocalDate lastDayOfMonth(int year, int month) {
         return LocalDate.of(year, month, 1).with(TemporalAdjusters.lastDayOfMonth());
     }
-    
+
     /**
      * 获取本周第一天（周一）
      *
@@ -335,7 +335,7 @@ public class DateTimeUtil {
     public static LocalDate firstDayOfWeek() {
         return LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }
-    
+
     /**
      * 获取本周最后一天（周日）
      *

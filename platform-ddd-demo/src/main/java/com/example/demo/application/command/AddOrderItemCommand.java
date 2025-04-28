@@ -18,13 +18,13 @@ import java.math.BigDecimal;
 public class AddOrderItemCommand {
     @NotEmpty(message = "订单ID不能为空")
     private String orderId;
-    
+
     @NotEmpty(message = "产品ID不能为空")
     private String productId;
-    
+
     @Min(value = 1, message = "数量必须大于0")
     private int quantity;
-    
+
     @NotNull(message = "单价不能为空")
     private BigDecimal unitPrice;
 }

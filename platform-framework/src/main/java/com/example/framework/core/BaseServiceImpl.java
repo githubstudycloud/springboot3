@@ -25,13 +25,13 @@ public abstract class BaseServiceImpl<T extends BaseEntity<ID>, R extends BaseRe
     public T save(T entity) {
         // 执行保存前的操作
         beforeSave(entity);
-        
+
         // 保存实体
         T savedEntity = repository.save(entity);
-        
+
         // 执行保存后的操作
         afterSave(savedEntity);
-        
+
         return savedEntity;
     }
 
@@ -39,21 +39,21 @@ public abstract class BaseServiceImpl<T extends BaseEntity<ID>, R extends BaseRe
     @Transactional(rollbackFor = Exception.class)
     public List<T> saveAll(Iterable<T> entities) {
         List<T> result = new ArrayList<>();
-        
+
         for (T entity : entities) {
             // 执行保存前的操作
             beforeSave(entity);
         }
-        
+
         // 批量保存实体
         List<T> savedEntities = repository.saveAll(entities);
-        
+
         for (T savedEntity : savedEntities) {
             // 执行保存后的操作
             afterSave(savedEntity);
             result.add(savedEntity);
         }
-        
+
         return result;
     }
 
@@ -82,10 +82,10 @@ public abstract class BaseServiceImpl<T extends BaseEntity<ID>, R extends BaseRe
         if (existsById(id)) {
             // 执行删除前的操作
             beforeDelete(id);
-            
+
             // 删除实体
             repository.deleteById(id);
-            
+
             // 执行删除后的操作
             afterDelete(id);
         }
@@ -96,10 +96,10 @@ public abstract class BaseServiceImpl<T extends BaseEntity<ID>, R extends BaseRe
     public void delete(T entity) {
         // 执行删除前的操作
         beforeDelete(entity);
-        
+
         // 删除实体
         repository.delete(entity);
-        
+
         // 执行删除后的操作
         afterDelete(entity);
     }
@@ -111,10 +111,10 @@ public abstract class BaseServiceImpl<T extends BaseEntity<ID>, R extends BaseRe
             // 执行删除前的操作
             beforeDelete(entity);
         }
-        
+
         // 批量删除实体
         repository.deleteAll(entities);
-        
+
         for (T entity : entities) {
             // 执行删除后的操作
             afterDelete(entity);

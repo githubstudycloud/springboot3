@@ -23,7 +23,7 @@ public class PomXmlFixer {
 
     public static void main(String[] args) {
         System.out.println("开始修复POM文件中的XML标签问题...");
-        
+
         for (String pomFile : POM_FILES) {
             try {
                 Path path = Paths.get(pomFile);
@@ -31,31 +31,31 @@ public class PomXmlFixer {
                     System.out.println("文件不存在: " + pomFile);
                     continue;
                 }
-                
+
                 System.out.println("处理文件: " + pomFile);
-                
+
                 // 读取文件内容
                 List<String> lines = Files.readAllLines(path);
                 List<String> fixedLines = lines.stream()
                         .map(PomXmlFixer::fixLine)
                         .collect(Collectors.toList());
-                
+
                 // 写回文件
                 Files.write(path, fixedLines);
-                
+
                 System.out.println("已修复文件: " + pomFile);
             } catch (IOException e) {
                 System.err.println("处理文件时发生错误: " + pomFile);
                 e.printStackTrace();
             }
         }
-        
+
         System.out.println("所有POM文件修复完成！");
     }
-    
+
     /**
      * 修复单行内容中的标签
-     * 
+     *
      * @param line 原始行内容
      * @return 修复后的行内容
      */
@@ -63,7 +63,7 @@ public class PomXmlFixer {
         // 将<n>替换为<name>，将</n>替换为</name>
         return line.replaceAll("<n>", "<name>").replaceAll("</n>", "</name>");
     }
-    
+
     /**
      * 递归查找指定目录下的所有POM文件
      *

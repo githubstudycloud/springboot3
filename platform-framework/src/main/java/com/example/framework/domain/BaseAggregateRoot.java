@@ -18,17 +18,15 @@ import java.util.List;
 @Setter
 public abstract class BaseAggregateRoot<ID> extends BaseEntity {
     private static final long serialVersionUID = 1L;
-    
-    /**
-     * 唯一标识
-     */
-    protected ID id;
-    
     /**
      * 领域事件列表
      */
     private transient final List<BaseDomainEvent> domainEvents = new ArrayList<>();
-    
+    /**
+     * 唯一标识
+     */
+    protected ID id;
+
     /**
      * 添加领域事件
      *
@@ -37,14 +35,14 @@ public abstract class BaseAggregateRoot<ID> extends BaseEntity {
     protected void registerEvent(BaseDomainEvent event) {
         this.domainEvents.add(event);
     }
-    
+
     /**
      * 清除领域事件
      */
     public void clearEvents() {
         this.domainEvents.clear();
     }
-    
+
     /**
      * 获取领域事件列表（不可修改）
      *

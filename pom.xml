@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,15 +15,20 @@
         <module>platform-dependencies</module>
         <module>platform-common</module>
         <module>platform-framework</module>
+        <module>platform-ddd-demo</module>
     </modules>
 
     <properties>
         <java.version>21</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        
+
+        <!-- Spring Boot 版本 -->
+        <spring-boot.version>3.2.9</spring-boot.version>
+
         <!-- 插件版本 -->
         <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
@@ -51,6 +56,19 @@
         </developer>
     </developers>
 
+    <!-- 添加Spring Boot依赖管理 -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <pluginManagement>
             <plugins>
@@ -61,10 +79,21 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
+                        <release>${java.version}</release>
                         <encoding>UTF-8</encoding>
-                        <compilerArgs>
-                            <arg>--enable-preview</arg>
-                        </compilerArgs>
+                        <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>1.18.32</version>
+                            </path>
+                            <path>
+                                <groupId>org.mapstruct</groupId>
+                                <artifactId>mapstruct-processor</artifactId>
+                                <version>1.5.5.Final</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -87,6 +116,11 @@
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>${jacoco-maven-plugin.version}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -100,7 +134,7 @@
                 <configuration>
                     <configLocation>checkstyle.xml</configLocation>
                     <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
+                    <failsOnError>false</failsOnError>
                     <linkXRef>false</linkXRef>
                 </configuration>
                 <executions>

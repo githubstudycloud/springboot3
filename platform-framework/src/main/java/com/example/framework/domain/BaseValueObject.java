@@ -11,7 +11,7 @@ import java.io.Serializable;
  */
 public abstract class BaseValueObject implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 判断相等性
      * 所有属性都相等时，两个值对象相等
@@ -21,7 +21,7 @@ public abstract class BaseValueObject implements Serializable {
      */
     @Override
     public abstract boolean equals(Object o);
-    
+
     /**
      * 计算哈希码
      * 必须和equals方法一致

@@ -1,12 +1,12 @@
 package com.example.common.utils;
 
+import com.example.common.exception.SystemException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.example.common.exception.SystemException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -24,7 +24,7 @@ import java.util.Map;
 @Slf4j
 public class JsonUtil {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    
+
     static {
         // 忽略未知属性
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -35,14 +35,14 @@ public class JsonUtil {
         // 格式化日期输出
         OBJECT_MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
-    
+
     /**
      * 私有构造函数，防止实例化
      */
     private JsonUtil() {
         throw new IllegalStateException("Utility class");
     }
-    
+
     /**
      * 对象转JSON字符串
      *
@@ -60,7 +60,7 @@ public class JsonUtil {
             throw new SystemException("JSON序列化失败", e);
         }
     }
-    
+
     /**
      * 对象转格式化的JSON字符串
      *
@@ -78,7 +78,7 @@ public class JsonUtil {
             throw new SystemException("JSON序列化失败", e);
         }
     }
-    
+
     /**
      * JSON字符串转对象
      *
@@ -98,7 +98,7 @@ public class JsonUtil {
             throw new SystemException("JSON反序列化失败", e);
         }
     }
-    
+
     /**
      * JSON字符串转复杂对象
      *
@@ -118,7 +118,7 @@ public class JsonUtil {
             throw new SystemException("JSON反序列化失败", e);
         }
     }
-    
+
     /**
      * JSON字符串转Map
      *
@@ -137,7 +137,7 @@ public class JsonUtil {
             throw new SystemException("JSON反序列化失败", e);
         }
     }
-    
+
     /**
      * 将对象转换为Map
      *
@@ -148,7 +148,7 @@ public class JsonUtil {
     public static Map<String, Object> objectToMap(Object obj) {
         return fromJson(toJson(obj), Map.class);
     }
-    
+
     /**
      * JSON字符串转List
      *
@@ -168,7 +168,7 @@ public class JsonUtil {
             throw new SystemException("JSON反序列化失败", e);
         }
     }
-    
+
     /**
      * 获取ObjectMapper实例
      *

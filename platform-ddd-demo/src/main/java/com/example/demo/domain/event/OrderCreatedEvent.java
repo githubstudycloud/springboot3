@@ -9,7 +9,7 @@ import lombok.Getter;
 @Getter
 public class OrderCreatedEvent extends DomainEvent {
     private final OrderId orderId;
-    
+
     public OrderCreatedEvent(OrderId orderId) {
         super();
         this.orderId = orderId;

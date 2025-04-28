@@ -20,7 +20,7 @@ import java.util.Optional;
 public class UserApplicationService {
 
     private final Repository userRepository;
-    
+
     /**
      * 构造函数注入依赖
      * Spring Boot 3.2+推荐的注入方式
@@ -30,7 +30,7 @@ public class UserApplicationService {
     public UserApplicationService(Repository userRepository) {
         this.userRepository = userRepository;
     }
-    
+
     /**
      * 获取用户DTO
      * 应用层方法示例，将领域对象转换为DTO
@@ -44,7 +44,7 @@ public class UserApplicationService {
         // 实际项目中，这里会调用领域层获取领域对象，然后转换为DTO
         return Optional.empty();
     }
-    
+
     /**
      * 创建用户
      * 应用层方法示例，处理用户创建用例

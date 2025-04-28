@@ -5,7 +5,10 @@ import com.example.demo.application.query.OrderQueryService;
 import com.example.demo.domain.model.order.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -18,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderQueryController {
     private final OrderQueryService orderQueryService;
-    
+
     /**
      * 获取所有订单摘要信息
      */
@@ -27,7 +30,7 @@ public class OrderQueryController {
         List<OrderQueryService.OrderSummaryDTO> orders = orderQueryService.findAllOrderSummaries();
         return ResponseEntity.ok(orders);
     }
-    
+
     /**
      * 根据状态查询订单
      */
@@ -36,7 +39,7 @@ public class OrderQueryController {
         List<OrderQueryService.OrderSummaryDTO> orders = orderQueryService.findOrdersByStatus(status);
         return ResponseEntity.ok(orders);
     }
-    
+
     /**
      * 获取订单详情
      */

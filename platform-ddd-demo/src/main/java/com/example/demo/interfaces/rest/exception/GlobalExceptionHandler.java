@@ -19,7 +19,7 @@ import java.util.Map;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    
+
     /**
      * 处理业务异常
      */
@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
-    
+
     /**
      * 处理业务逻辑异常
      */
@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
-    
+
     /**
      * 处理数据验证异常
      */
@@ -57,17 +57,17 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        
+
         ValidationErrorResponse errorResponse = new ValidationErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "数据验证失败",
                 LocalDateTime.now(),
                 errors
         );
-        
+
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
-    
+
     /**
      * 处理其他异常
      */
@@ -80,7 +80,7 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    
+
     /**
      * 错误响应
      */
@@ -92,7 +92,7 @@ public class GlobalExceptionHandler {
         private String message;
         private LocalDateTime timestamp;
     }
-    
+
     /**
      * 数据验证错误响应
      */

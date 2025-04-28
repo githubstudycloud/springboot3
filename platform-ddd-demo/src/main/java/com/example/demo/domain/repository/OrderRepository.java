@@ -16,17 +16,17 @@ public interface OrderRepository {
      * 保存订单
      */
     void save(Order order);
-    
+
     /**
      * 根据订单ID查找订单
      */
     Optional<Order> findById(OrderId orderId);
-    
+
     /**
      * 根据客户ID查找所有订单
      */
     List<Order> findByCustomerId(CustomerId customerId);
-    
+
     /**
      * 删除订单
      */

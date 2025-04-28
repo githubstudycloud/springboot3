@@ -1,18 +1,18 @@
 @echo off
-REM 修复 XML 标签问题的批处理脚本
+echo 正在修复XML标签错误...
 
-echo 开始修复 XML 标签问题...
+set TEMP_FILE=pom.xml.temp
+set POM_FILE=pom.xml
 
-REM 修复主 pom.xml
-powershell -Command "(Get-Content pom.xml) -replace '<n>', '<name>' -replace '</n>', '</name>' | Set-Content pom.xml"
+type nul > %TEMP_FILE%
 
-REM 修复 platform-dependencies pom.xml
-powershell -Command "(Get-Content platform-dependencies/pom.xml) -replace '<n>', '<name>' -replace '</n>', '</name>' | Set-Content platform-dependencies/pom.xml"
+for /f "tokens=*" %%a in (%POM_FILE%) do (
+    set line=%%a
+    set line=!line:<n>V6平台 - 父项</n>=<name>V6平台 - 父项</name>!
+    set line=!line:<n>Developer Name</n>=<name>Developer Name</name>!
+    echo !line! >> %TEMP_FILE%
+)
 
-REM 修复 platform-common pom.xml
-powershell -Command "(Get-Content platform-common/pom.xml) -replace '<n>', '<name>' -replace '</n>', '</name>' | Set-Content platform-common/pom.xml"
+move /y %TEMP_FILE% %POM_FILE%
 
-REM 修复 platform-framework pom.xml
-powershell -Command "(Get-Content platform-framework/pom.xml) -replace '<n>', '<name>' -replace '</n>', '</name>' | Set-Content platform-framework/pom.xml"
-
-echo XML 标签修复完成！
+echo XML标签修复完成。

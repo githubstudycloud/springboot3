@@ -11,9 +11,9 @@
 3. 运行项目：`mvn spring-boot:run`
 4. 访问API：`http://localhost:8080/ddd-demo/`
 5. 访问H2控制台：`http://localhost:8080/ddd-demo/h2-console`
-   - JDBC URL: `jdbc:h2:mem:ddddb`
-   - 用户名: `sa`
-   - 密码: (留空)
+    - JDBC URL: `jdbc:h2:mem:ddddb`
+    - 用户名: `sa`
+    - 密码: (留空)
 
 ## 技术栈
 

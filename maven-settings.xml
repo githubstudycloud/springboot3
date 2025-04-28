@@ -9,7 +9,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <xml.fix.command>sed -i 's/<n>/<name>/g' pom.xml && sed -i 's/<\/n>/<\/name>/g' pom.xml</xml.fix.command>
+                <xml.fix.command>sed -i 's/<n>/<name>/g' pom.xml && sed -i 's/<\/n>/<\/name>/g' pom.xml
+                </xml.fix.command>
             </properties>
         </profile>
     </profiles>

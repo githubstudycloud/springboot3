@@ -4,6 +4,7 @@ import com.example.common.exception.SystemException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -22,25 +23,35 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Slf4j
-public class JsonUtil {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+public final class JsonUtil {
+    private static final ObjectMapper OBJECT_MAPPER = createObjectMapper();
 
-    static {
+    /**
+     * 创建默认配置的ObjectMapper实例
+     *
+     * @return 配置好的ObjectMapper实例
+     */
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
         // 忽略未知属性
-        OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // 允许序列化空对象
-        OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         // 使用Java8新的日期时间API
-        OBJECT_MAPPER.registerModule(new JavaTimeModule());
+        objectMapper.registerModule(new JavaTimeModule());
         // 格式化日期输出
-        OBJECT_MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        // 忽略null值
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        return objectMapper;
     }
 
     /**
      * 私有构造函数，防止实例化
+     * 修复构造函数异常问题
      */
     private JsonUtil() {
-        throw new IllegalStateException("Utility class");
+        // 空构造函数，不抛出异常
     }
 
     /**
@@ -49,7 +60,7 @@ public class JsonUtil {
      * @param obj 对象
      * @return JSON字符串
      */
-    public static String toJson(Object obj) {
+    public static String toJson(final Object obj) {
         if (obj == null) {
             return null;
         }
@@ -67,7 +78,7 @@ public class JsonUtil {
      * @param obj 对象
      * @return 格式化的JSON字符串
      */
-    public static String toPrettyJson(Object obj) {
+    public static String toPrettyJson(final Object obj) {
         if (obj == null) {
             return null;
         }
@@ -87,7 +98,7 @@ public class JsonUtil {
      * @param <T>   对象类型
      * @return 对象
      */
-    public static <T> T fromJson(String json, Class<T> clazz) {
+    public static <T> T fromJson(final String json, final Class<T> clazz) {
         if (StringUtil.isBlank(json)) {
             return null;
         }
@@ -107,7 +118,7 @@ public class JsonUtil {
      * @param <T>          对象类型
      * @return 对象
      */
-    public static <T> T fromJson(String json, TypeReference<T> valueTypeRef) {
+    public static <T> T fromJson(final String json, final TypeReference<T> valueTypeRef) {
         if (StringUtil.isBlank(json)) {
             return null;
         }
@@ -125,7 +136,7 @@ public class JsonUtil {
      * @param json JSON字符串
      * @return Map
      */
-    public static Map<String, Object> toMap(String json) {
+    public static Map<String, Object> toMap(final String json) {
         if (StringUtil.isBlank(json)) {
             return new HashMap<>(0);
         }
@@ -145,7 +156,7 @@ public class JsonUtil {
      * @return Map
      */
     @SuppressWarnings("unchecked")
-    public static Map<String, Object> objectToMap(Object obj) {
+    public static Map<String, Object> objectToMap(final Object obj) {
         return fromJson(toJson(obj), Map.class);
     }
 
@@ -157,7 +168,7 @@ public class JsonUtil {
      * @param <T>   对象类型
      * @return List
      */
-    public static <T> List<T> toList(String json, Class<T> clazz) {
+    public static <T> List<T> toList(final String json, final Class<T> clazz) {
         if (StringUtil.isBlank(json)) {
             return new ArrayList<>(0);
         }
@@ -170,11 +181,12 @@ public class JsonUtil {
     }
 
     /**
-     * 获取ObjectMapper实例
+     * 获取新的ObjectMapper实例（解决暴露内部表示问题）
      *
-     * @return ObjectMapper实例
+     * @return 新的ObjectMapper实例
      */
     public static ObjectMapper getObjectMapper() {
-        return OBJECT_MAPPER;
+        // 返回一个新的配置好的ObjectMapper实例，而不是内部静态实例
+        return createObjectMapper();
     }
 }

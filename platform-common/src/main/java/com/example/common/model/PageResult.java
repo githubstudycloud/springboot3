@@ -1,6 +1,7 @@
 package com.example.common.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -57,8 +58,9 @@ public class PageResult<T> implements Serializable {
         this.hasNext = false;
     }
 
-    public PageResult(List<T> list, Long total, Integer pageNum, Integer pageSize) {
-        this.list = list;
+    public PageResult(final List<T> list, final Long total, final Integer pageNum, final Integer pageSize) {
+        // 防止内部表示暴露
+        this.list = list != null ? new ArrayList<>(list) : Collections.emptyList();
         this.total = total;
         this.pageNum = pageNum;
         this.pageSize = pageSize;
@@ -91,7 +93,7 @@ public class PageResult<T> implements Serializable {
      * @param <T>      数据类型
      * @return 分页结果
      */
-    public static <T> PageResult<T> of(List<T> list, Long total, Integer pageNum, Integer pageSize) {
+    public static <T> PageResult<T> of(final List<T> list, final Long total, final Integer pageNum, final Integer pageSize) {
         return new PageResult<>(list, total, pageNum, pageSize);
     }
 
@@ -99,7 +101,7 @@ public class PageResult<T> implements Serializable {
         return pageNum;
     }
 
-    public void setPageNum(Integer pageNum) {
+    public void setPageNum(final Integer pageNum) {
         this.pageNum = pageNum;
     }
 
@@ -107,7 +109,7 @@ public class PageResult<T> implements Serializable {
         return pageSize;
     }
 
-    public void setPageSize(Integer pageSize) {
+    public void setPageSize(final Integer pageSize) {
         this.pageSize = pageSize;
     }
 
@@ -115,7 +117,7 @@ public class PageResult<T> implements Serializable {
         return total;
     }
 
-    public void setTotal(Long total) {
+    public void setTotal(final Long total) {
         this.total = total;
     }
 
@@ -123,23 +125,33 @@ public class PageResult<T> implements Serializable {
         return pages;
     }
 
-    public void setPages(Integer pages) {
+    public void setPages(final Integer pages) {
         this.pages = pages;
     }
 
+    /**
+     * 获取列表数据（解决内部表示暴露问题）
+     *
+     * @return 数据列表的副本
+     */
     public List<T> getList() {
-        return list;
+        return list != null ? new ArrayList<>(list) : null;
     }
 
-    public void setList(List<T> list) {
-        this.list = list;
+    /**
+     * 设置列表数据（解决内部表示暴露问题）
+     *
+     * @param list 数据列表
+     */
+    public void setList(final List<T> list) {
+        this.list = list != null ? new ArrayList<>(list) : null;
     }
 
     public Boolean getHasPrevious() {
         return hasPrevious;
     }
 
-    public void setHasPrevious(Boolean hasPrevious) {
+    public void setHasPrevious(final Boolean hasPrevious) {
         this.hasPrevious = hasPrevious;
     }
 
@@ -147,7 +159,7 @@ public class PageResult<T> implements Serializable {
         return hasNext;
     }
 
-    public void setHasNext(Boolean hasNext) {
+    public void setHasNext(final Boolean hasNext) {
         this.hasNext = hasNext;
     }
-} 
+}

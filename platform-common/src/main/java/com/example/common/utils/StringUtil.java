@@ -3,6 +3,7 @@ package com.example.common.utils;
 import cn.hutool.core.util.StrUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -37,7 +38,7 @@ public class StringUtil extends StringUtils {
      * @param str 驼峰字符串
      * @return 下划线字符串
      */
-    public static String camelToUnderscore(String str) {
+    public static String camelToUnderscore(final String str) {
         return StrUtil.toUnderlineCase(str);
     }
 
@@ -47,7 +48,7 @@ public class StringUtil extends StringUtils {
      * @param str 下划线字符串
      * @return 驼峰字符串
      */
-    public static String underscoreToCamel(String str) {
+    public static String underscoreToCamel(final String str) {
         return StrUtil.toCamelCase(str);
     }
 
@@ -57,7 +58,7 @@ public class StringUtil extends StringUtils {
      * @param str 下划线字符串
      * @return 帕斯卡字符串
      */
-    public static String underscoreToPascal(String str) {
+    public static String underscoreToPascal(final String str) {
         return StrUtil.upperFirst(StrUtil.toCamelCase(str));
     }
 
@@ -67,8 +68,9 @@ public class StringUtil extends StringUtils {
      * @param str 字符串
      * @return 字节长度
      */
-    public static int getByteLength(String str) {
-        return str == null ? 0 : str.getBytes().length;
+    public static int getByteLength(final String str) {
+        // 修复默认编码问题，明确指定UTF-8编码
+        return str == null ? 0 : str.getBytes(StandardCharsets.UTF_8).length;
     }
 
     /**
@@ -78,15 +80,16 @@ public class StringUtil extends StringUtils {
      * @param length 字节长度
      * @return 截取后的字符串
      */
-    public static String subByteLength(String str, int length) {
+    public static String subByteLength(final String str, final int length) {
         if (str == null) {
             return null;
         }
-        byte[] bytes = str.getBytes();
+        // 修复默认编码问题，明确指定UTF-8编码
+        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
         if (bytes.length <= length) {
             return str;
         }
-        return new String(bytes, 0, length);
+        return new String(bytes, 0, length, StandardCharsets.UTF_8);
     }
 
     /**
@@ -95,7 +98,7 @@ public class StringUtil extends StringUtils {
      * @param str 字符串
      * @return 数字字符串
      */
-    public static String getNumbers(String str) {
+    public static String getNumbers(final String str) {
         if (str == null) {
             return "";
         }
@@ -108,7 +111,7 @@ public class StringUtil extends StringUtils {
      * @param str 字符串
      * @return 字母字符串
      */
-    public static String getLetters(String str) {
+    public static String getLetters(final String str) {
         if (str == null) {
             return "";
         }
@@ -121,7 +124,7 @@ public class StringUtil extends StringUtils {
      * @param str 字符串
      * @return 是否包含中文
      */
-    public static boolean containsChinese(String str) {
+    public static boolean containsChinese(final String str) {
         return str != null && str.matches(".*[\\u4e00-\\u9fa5].*");
     }
 }

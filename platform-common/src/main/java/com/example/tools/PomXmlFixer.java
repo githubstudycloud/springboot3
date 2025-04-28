@@ -1,6 +1,7 @@
 package com.example.tools;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +22,7 @@ public class PomXmlFixer {
             "platform-framework/pom.xml"
     };
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         System.out.println("开始修复POM文件中的XML标签问题...");
 
         for (String pomFile : POM_FILES) {
@@ -34,14 +35,14 @@ public class PomXmlFixer {
 
                 System.out.println("处理文件: " + pomFile);
 
-                // 读取文件内容
-                List<String> lines = Files.readAllLines(path);
+                // 读取文件内容，修复默认编码问题，明确指定UTF-8编码
+                List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
                 List<String> fixedLines = lines.stream()
                         .map(PomXmlFixer::fixLine)
                         .collect(Collectors.toList());
 
-                // 写回文件
-                Files.write(path, fixedLines);
+                // 写回文件，明确指定UTF-8编码
+                Files.write(path, fixedLines, StandardCharsets.UTF_8);
 
                 System.out.println("已修复文件: " + pomFile);
             } catch (IOException e) {
@@ -59,9 +60,9 @@ public class PomXmlFixer {
      * @param line 原始行内容
      * @return 修复后的行内容
      */
-    private static String fixLine(String line) {
-        // 将<n>替换为<name>，将</n>替换为</name>
-        return line.replaceAll("<n>", "<name>").replaceAll("</n>", "</name>");
+    private static String fixLine(final String line) {
+        // 将<n>替换为<n>，将</n>替换为</n>
+        return line.replaceAll("<n>", "<n>").replaceAll("</n>", "</n>");
     }
 
     /**
@@ -70,7 +71,7 @@ public class PomXmlFixer {
      * @param directory 要搜索的目录
      * @return 所有POM文件的路径列表
      */
-    private static List<Path> findPomFiles(Path directory) throws IOException {
+    private static List<Path> findPomFiles(final Path directory) throws IOException {
         try (Stream<Path> stream = Files.walk(directory)) {
             return stream
                     .filter(Files::isRegularFile)

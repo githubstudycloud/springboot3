@@ -7,7 +7,7 @@ import java.io.Serializable;
  *
  * @param <T> 数据类型
  */
-public class Result<T> implements Serializable {
+public class ApiResult<T> implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
@@ -35,16 +35,16 @@ public class Result<T> implements Serializable {
      */
     private long timestamp;
 
-    public Result() {
+    public ApiResult() {
         this.timestamp = System.currentTimeMillis();
     }
 
-    public static <T> Result<T> success() {
+    public static <T> ApiResult<T> success() {
         return success(null);
     }
 
-    public static <T> Result<T> success(T data) {
-        Result<T> result = new Result<>();
+    public static <T> ApiResult<T> success(final T data) {
+        ApiResult<T> result = new ApiResult<>();
         result.setSuccess(true);
         result.setCode("200");
         result.setMessage("操作成功");
@@ -52,15 +52,15 @@ public class Result<T> implements Serializable {
         return result;
     }
 
-    public static <T> Result<T> error(String code, String message) {
-        Result<T> result = new Result<>();
+    public static <T> ApiResult<T> error(final String code, final String message) {
+        ApiResult<T> result = new ApiResult<>();
         result.setSuccess(false);
         result.setCode(code);
         result.setMessage(message);
         return result;
     }
 
-    public static <T> Result<T> error(String message) {
+    public static <T> ApiResult<T> error(final String message) {
         return error("500", message);
     }
 
@@ -69,7 +69,7 @@ public class Result<T> implements Serializable {
         return success;
     }
 
-    public void setSuccess(boolean success) {
+    public void setSuccess(final boolean success) {
         this.success = success;
     }
 
@@ -77,7 +77,7 @@ public class Result<T> implements Serializable {
         return code;
     }
 
-    public void setCode(String code) {
+    public void setCode(final String code) {
         this.code = code;
     }
 
@@ -85,7 +85,7 @@ public class Result<T> implements Serializable {
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -93,7 +93,7 @@ public class Result<T> implements Serializable {
         return data;
     }
 
-    public void setData(T data) {
+    public void setData(final T data) {
         this.data = data;
     }
 
@@ -101,7 +101,7 @@ public class Result<T> implements Serializable {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
+    public void setTimestamp(final long timestamp) {
         this.timestamp = timestamp;
     }
-} 
+}

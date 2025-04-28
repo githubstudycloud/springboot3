@@ -41,9 +41,10 @@ public class PageQuery implements Serializable {
         this.count = Boolean.TRUE;
     }
 
-    public PageQuery(Integer pageNum, Integer pageSize) {
-        this.pageNum = (pageNum == null || pageNum < 1) ? CommonConstants.DEFAULT_PAGE_INDEX : pageNum;
-        this.pageSize = (pageSize == null || pageSize < 1) ? CommonConstants.DEFAULT_PAGE_SIZE : pageSize;
+    public PageQuery(final Integer pageNum, final Integer pageSize) {
+        // 避免装箱拆箱问题，使用Integer.valueOf
+        this.pageNum = (pageNum == null || pageNum < 1) ? Integer.valueOf(CommonConstants.DEFAULT_PAGE_INDEX) : pageNum;
+        this.pageSize = (pageSize == null || pageSize < 1) ? Integer.valueOf(CommonConstants.DEFAULT_PAGE_SIZE) : pageSize;
         this.count = Boolean.TRUE;
     }
 
@@ -60,24 +61,26 @@ public class PageQuery implements Serializable {
         return pageNum;
     }
 
-    public void setPageNum(Integer pageNum) {
-        this.pageNum = (pageNum == null || pageNum < 1) ? CommonConstants.DEFAULT_PAGE_INDEX : pageNum;
+    public void setPageNum(final Integer pageNum) {
+        // 避免装箱拆箱问题，使用Integer.valueOf
+        this.pageNum = (pageNum == null || pageNum < 1) ? Integer.valueOf(CommonConstants.DEFAULT_PAGE_INDEX) : pageNum;
     }
 
     public Integer getPageSize() {
         return pageSize;
     }
 
-    public void setPageSize(Integer pageSize) {
-        this.pageSize = (pageSize == null || pageSize < 1) ? CommonConstants.DEFAULT_PAGE_SIZE :
-                (pageSize > CommonConstants.MAX_PAGE_SIZE ? CommonConstants.MAX_PAGE_SIZE : pageSize);
+    public void setPageSize(final Integer pageSize) {
+        // 避免装箱拆箱问题，使用Integer.valueOf并修复换行格式
+        this.pageSize = (pageSize == null || pageSize < 1) ? Integer.valueOf(CommonConstants.DEFAULT_PAGE_SIZE) :
+                (pageSize > CommonConstants.MAX_PAGE_SIZE ? Integer.valueOf(CommonConstants.MAX_PAGE_SIZE) : pageSize);
     }
 
     public String getOrderBy() {
         return orderBy;
     }
 
-    public void setOrderBy(String orderBy) {
+    public void setOrderBy(final String orderBy) {
         this.orderBy = orderBy;
     }
 
@@ -85,7 +88,7 @@ public class PageQuery implements Serializable {
         return orderDirection;
     }
 
-    public void setOrderDirection(String orderDirection) {
+    public void setOrderDirection(final String orderDirection) {
         this.orderDirection = "desc".equalsIgnoreCase(orderDirection) ? "desc" : "asc";
     }
 
@@ -93,7 +96,7 @@ public class PageQuery implements Serializable {
         return count;
     }
 
-    public void setCount(Boolean count) {
+    public void setCount(final Boolean count) {
         this.count = count == null ? Boolean.TRUE : count;
     }
 
@@ -109,4 +112,4 @@ public class PageQuery implements Serializable {
 
         return orderBy + " " + (("desc".equalsIgnoreCase(orderDirection)) ? "desc" : "asc");
     }
-} 
+}

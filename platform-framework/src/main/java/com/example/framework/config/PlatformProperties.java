@@ -16,11 +16,11 @@ public class PlatformProperties {
     /**
      * 线程配置
      */
-    private final Thread thread = new Thread();
+    private final ThreadConfig threadConfig = new ThreadConfig();
     /**
      * 会话配置
      */
-    private final Session session = new Session();
+    private final SessionConfig sessionConfig = new SessionConfig();
     /**
      * 是否启用平台功能
      */
@@ -30,17 +30,17 @@ public class PlatformProperties {
      * 线程配置类
      */
     @Data
-    public static class Thread {
+    public static class ThreadConfig {
         /**
          * 虚拟线程配置
          */
-        private final Virtual virtual = new Virtual();
+        private final VirtualThreadConfig virtualConfig = new VirtualThreadConfig();
 
         /**
          * 虚拟线程配置类
          */
         @Data
-        public static class Virtual {
+        public static class VirtualThreadConfig {
             /**
              * 是否启用虚拟线程
              */
@@ -52,17 +52,17 @@ public class PlatformProperties {
      * 会话配置类
      */
     @Data
-    public static class Session {
+    public static class SessionConfig {
         /**
          * JDBC会话配置
          */
-        private final Jdbc jdbc = new Jdbc();
+        private final JdbcSessionConfig jdbcConfig = new JdbcSessionConfig();
 
         /**
          * JDBC会话配置类
          */
         @Data
-        public static class Jdbc {
+        public static class JdbcSessionConfig {
             /**
              * 是否启用JDBC会话
              */

@@ -1,7 +1,7 @@
 package com.example.demo.domain.event;
 
 /**
- * 领域事件发布器接口
+ * 领域事件发布者接口
  */
 public interface DomainEventPublisher {
     /**

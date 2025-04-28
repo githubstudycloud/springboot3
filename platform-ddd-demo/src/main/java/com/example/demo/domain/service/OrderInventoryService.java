@@ -1,5 +1,6 @@
 package com.example.demo.domain.service;
 
+import com.example.demo.domain.event.DomainEvent;
 import com.example.demo.domain.event.DomainEventPublisher;
 import com.example.demo.domain.model.inventory.Inventory;
 import com.example.demo.domain.model.order.Order;
@@ -74,7 +75,9 @@ public class OrderInventoryService {
                 inventoryRepository.save(inventory);
 
                 // 发布领域事件
-                eventPublisher.publish(inventory.popDomainEvents());
+                for (DomainEvent event : inventory.popDomainEvents()) {
+                    eventPublisher.publish(event);
+                }
             }
 
             // 确认订单
@@ -82,7 +85,9 @@ public class OrderInventoryService {
             orderRepository.save(order);
 
             // 发布领域事件
-            eventPublisher.publish(order.popDomainEvents());
+            for (DomainEvent event : order.popDomainEvents()) {
+                eventPublisher.publish(event);
+            }
         } else {
             // 库存不足，抛出异常
             String unavailableProductsStr = unavailableProducts.toString();
@@ -124,12 +129,16 @@ public class OrderInventoryService {
                     inventoryRepository.save(inventory);
 
                     // 发布领域事件
-                    eventPublisher.publish(inventory.popDomainEvents());
+                    for (DomainEvent event : inventory.popDomainEvents()) {
+                        eventPublisher.publish(event);
+                    }
                 }
             }
 
             // 发布领域事件
-            eventPublisher.publish(order.popDomainEvents());
+            for (DomainEvent event : order.popDomainEvents()) {
+                eventPublisher.publish(event);
+            }
         } else {
             throw new IllegalStateException("只有已确认但未支付的订单才能取消并释放库存");
         }
@@ -165,12 +174,16 @@ public class OrderInventoryService {
                     inventoryRepository.save(inventory);
 
                     // 发布领域事件
-                    eventPublisher.publish(inventory.popDomainEvents());
+                    for (DomainEvent event : inventory.popDomainEvents()) {
+                        eventPublisher.publish(event);
+                    }
                 }
             }
 
             // 发布领域事件
-            eventPublisher.publish(order.popDomainEvents());
+            for (DomainEvent event : order.popDomainEvents()) {
+                eventPublisher.publish(event);
+            }
         } else {
             throw new IllegalStateException("只有已确认的订单才能支付并完成库存预留");
         }

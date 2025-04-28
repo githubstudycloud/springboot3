@@ -1,12 +1,13 @@
 package com.example.framework.core.aspect;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -21,10 +22,11 @@ import java.util.UUID;
  * @author platform
  * @since 1.0.0
  */
-@Slf4j
 @Aspect
 @Component
 public class WebLogAspect {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(WebLogAspect.class);
 
     /**
      * 线程本地变量，用于存储请求开始时间
@@ -50,7 +52,7 @@ public class WebLogAspect {
      * @param joinPoint 切点
      */
     @Before("webLog()")
-    public void doBefore(JoinPoint joinPoint) {
+    public void doBefore(final JoinPoint joinPoint) {
         startTime.set(System.currentTimeMillis());
         requestId.set(UUID.randomUUID().toString().replace("-", ""));
 
@@ -60,7 +62,7 @@ public class WebLogAspect {
             HttpServletRequest request = attributes.getRequest();
 
             // 记录请求信息
-            log.info("RequestId: {}, URL: {}, HTTP Method: {}, IP: {}, Class Method: {}.{}, Args: {}",
+            LOG.info("RequestId: {}, URL: {}, HTTP Method: {}, IP: {}, Class Method: {}.{}, Args: {}",
                     requestId.get(),
                     request.getRequestURL().toString(),
                     request.getMethod(),
@@ -69,7 +71,7 @@ public class WebLogAspect {
                     joinPoint.getSignature().getName(),
                     Arrays.toString(joinPoint.getArgs()));
         } else {
-            log.info("RequestId: {}, Method: {}.{}, Args: {}",
+            LOG.info("RequestId: {}, Method: {}.{}, Args: {}",
                     requestId.get(),
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
@@ -83,12 +85,12 @@ public class WebLogAspect {
      * @param result 方法返回值
      */
     @AfterReturning(returning = "result", pointcut = "webLog()")
-    public void doAfterReturning(Object result) {
+    public void doAfterReturning(final Object result) {
         // 计算执行时间
         long executionTime = System.currentTimeMillis() - startTime.get();
 
         // 记录响应信息
-        log.info("RequestId: {}, Response: {}, Execution Time: {} ms",
+        LOG.info("RequestId: {}, Response: {}, Execution Time: {} ms",
                 requestId.get(),
                 result,
                 executionTime);

@@ -1,6 +1,7 @@
 package com.example.framework.service;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,10 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
  * @author platform
  * @since 1.0.0
  */
-@Slf4j
 @Service
 public class ExampleService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ExampleService.class);
     private final ExampleRepository repository;
 
     /**
@@ -34,7 +35,7 @@ public class ExampleService {
      */
     @Transactional(readOnly = true)
     public String getEntityName(Long id) {
-        log.info("当前线程: {}", Thread.currentThread());
+        LOG.info("当前线程: {}", Thread.currentThread());
         return repository.findNameById(id);
     }
 

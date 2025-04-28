@@ -2,7 +2,11 @@ package com.example.demo.application.event;
 
 import com.example.demo.domain.event.OrderCreatedEvent;
 import com.example.demo.domain.event.OrderStatusChangedEvent;
-import lombok.extern.slf4j.Slf4j;
+import com.example.demo.domain.model.order.OrderStatus;
+import com.example.demo.domain.service.OrderInventoryService;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -10,8 +14,12 @@ import org.springframework.stereotype.Component;
  * 订单事件监听器
  */
 @Component
-@Slf4j
+@RequiredArgsConstructor
 public class OrderEventListener {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderEventListener.class);
+
+    private final OrderInventoryService orderInventoryService;
 
     /**
      * 监听订单创建事件

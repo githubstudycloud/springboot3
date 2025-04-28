@@ -32,7 +32,7 @@ public class OrderRepositoryImpl implements OrderRepository {
         orderJpaRepository.save(entity);
 
         // 发布所有未发布的领域事件
-        List<DomainEvent> events = order.getAndClearDomainEvents();
+        List<DomainEvent> events = order.popDomainEvents();
         for (DomainEvent event : events) {
             eventPublisher.publish(event);
         }
@@ -128,7 +128,7 @@ public class OrderRepositoryImpl implements OrderRepository {
             orderItemsField.set(order, orderItems);
 
             // 清除加载的领域对象的所有领域事件，因为这些事件已经被处理过了
-            order.getAndClearDomainEvents();
+            order.clearDomainEvents();
 
             return order;
         } catch (Exception e) {

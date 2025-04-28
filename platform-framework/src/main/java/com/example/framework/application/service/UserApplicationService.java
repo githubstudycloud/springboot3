@@ -1,7 +1,8 @@
 package com.example.framework.application.service;
 
 import com.example.framework.application.dto.UserDTO;
-import com.example.framework.domain.repository.Repository;
+import com.example.framework.core.BaseEntity;
+import com.example.framework.domain.repository.DomainRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,8 +20,9 @@ import java.util.Optional;
 @Service
 public class UserApplicationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserApplicationService.class);
-    private final Repository userRepository;
+    private static final Logger LOG = LoggerFactory.getLogger(UserApplicationService.class);
+    
+    private final DomainRepository<? extends BaseEntity<Long>, Long> userRepository;
 
     /**
      * 构造函数注入依赖
@@ -28,7 +30,7 @@ public class UserApplicationService {
      *
      * @param userRepository 用户仓储接口
      */
-    public UserApplicationService(Repository userRepository) {
+    public UserApplicationService(final DomainRepository<? extends BaseEntity<Long>, Long> userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -40,8 +42,8 @@ public class UserApplicationService {
      * @return 用户DTO
      */
     @Transactional(readOnly = true)
-    public Optional<UserDTO> getUserById(Long id) {
-        logger.info("Fetching user with ID: {}", id);
+    public Optional<UserDTO> getUserById(final Long id) {
+        LOG.info("获取用户信息，用户ID: {}", id);
         // 实际项目中，这里会调用领域层获取领域对象，然后转换为DTO
         return Optional.empty();
     }
@@ -54,8 +56,8 @@ public class UserApplicationService {
      * @return 创建的用户ID
      */
     @Transactional
-    public Long createUser(UserDTO userDTO) {
-        logger.info("Creating new user: {}", userDTO.getUsername());
+    public Long createUser(final UserDTO userDTO) {
+        LOG.info("创建新用户: {}", userDTO.getUsername());
         // 实际项目中，这里会创建领域对象，并使用仓储保存
         return 0L;
     }

@@ -130,7 +130,7 @@ public class OrderApplicationService {
                         .unitPrice(item.getUnitPrice())
                         .subtotal(item.calculateSubtotal())
                         .build())
-                .collect(Collectors.toList());
+                .collect(Collectors.<OrderDTO.OrderItemDTO>toList());
 
         return OrderDTO.builder()
                 .id(order.getId().getValue())

@@ -3,9 +3,15 @@ package com.example.framework.interfaces.rest;
 import com.example.common.model.R;
 import com.example.framework.application.dto.UserDTO;
 import com.example.framework.application.service.UserApplicationService;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 用户REST控制器
@@ -14,11 +20,11 @@ import org.springframework.web.bind.annotation.*;
  * @author platform
  * @since 1.0.0
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
 
+    private static final Logger LOG = LoggerFactory.getLogger(UserController.class);
     private final UserApplicationService userApplicationService;
 
     /**
@@ -26,7 +32,7 @@ public class UserController {
      *
      * @param userApplicationService 用户应用服务
      */
-    public UserController(UserApplicationService userApplicationService) {
+    public UserController(final UserApplicationService userApplicationService) {
         this.userApplicationService = userApplicationService;
     }
 
@@ -37,8 +43,8 @@ public class UserController {
      * @return 用户信息
      */
     @GetMapping("/{id}")
-    public ResponseEntity<R<UserDTO>> getUser(@PathVariable Long id) {
-        log.info("REST request to get User : {}", id);
+    public ResponseEntity<?> getUser(@PathVariable final Long id) {
+        LOG.info("REST请求获取用户信息: {}", id);
         return userApplicationService.getUserById(id)
                 .map(userDTO -> ResponseEntity.ok(R.ok(userDTO)))
                 .orElse(ResponseEntity.notFound().build());
@@ -51,8 +57,8 @@ public class UserController {
      * @return 创建结果
      */
     @PostMapping
-    public ResponseEntity<R<Long>> createUser(@RequestBody UserDTO userDTO) {
-        log.info("REST request to create User : {}", userDTO);
+    public ResponseEntity<R<Long>> createUser(@RequestBody final UserDTO userDTO) {
+        LOG.info("REST请求创建用户: {}", userDTO);
         Long userId = userApplicationService.createUser(userDTO);
         return ResponseEntity.ok(R.ok(userId));
     }

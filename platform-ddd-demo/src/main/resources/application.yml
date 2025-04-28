@@ -14,11 +14,17 @@ spring:
     username: sa
     password:
   
+  # 数据库初始化
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  
   # JPA配置
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:

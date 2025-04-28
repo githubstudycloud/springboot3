@@ -1,38 +1,36 @@
 package com.example.demo.domain.model.inventory;
 
-import com.example.demo.domain.model.common.ValueObject;
-import lombok.Getter;
+import java.util.Objects;
 
 /**
  * 库存ID值对象
  */
-@Getter
-public class InventoryId extends ValueObject {
-    private final String value;
-
-    public InventoryId(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException("库存ID不能为空");
-        }
+public class InventoryId {
+    private final Long value;
+    
+    public InventoryId(Long value) {
         this.value = value;
     }
-
+    
+    public Long getValue() {
+        return value;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
-        InventoryId inventoryId = (InventoryId) o;
-        return value.equals(inventoryId.value);
+        InventoryId that = (InventoryId) o;
+        return Objects.equals(value, that.value);
     }
-
+    
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return Objects.hash(value);
     }
-
+    
     @Override
     public String toString() {
-        return "InventoryId{" + value + '}';
+        return value.toString();
     }
 }

@@ -201,6 +201,39 @@ public class R<T> implements Serializable {
     }
 
     /**
+     * 成功返回（带数据）- 别名方法
+     *
+     * @param data 数据
+     * @param <E>  数据类型
+     * @return 响应对象
+     */
+    public static <E> R<E> ok(final E data) {
+        return success(data);
+    }
+
+    /**
+     * 成功返回 - 别名方法
+     *
+     * @param <E> 数据类型
+     * @return 响应对象
+     */
+    public static <E> R<E> ok() {
+        return success();
+    }
+
+    /**
+     * 成功返回（带消息和数据）- 别名方法
+     *
+     * @param message 消息
+     * @param data    数据
+     * @param <E>     数据类型
+     * @return 响应对象
+     */
+    public static <E> R<E> ok(final String message, final E data) {
+        return success(message, data);
+    }
+
+    /**
      * 失败返回
      *
      * @param <E> 数据类型

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * 订单查询服务
@@ -63,7 +64,7 @@ public class OrderQueryService {
         String orderSql = "SELECT o.id, o.customer_id, o.status, o.total_amount, o.created_at, o.updated_at " +
                 "FROM orders o WHERE o.id = ?";
 
-        OrderDTO order = jdbcTemplate.queryForObject(orderSql, (rs, rowNum) -> {
+        List<OrderDTO> orders = jdbcTemplate.query(orderSql, (rs, rowNum) -> {
             OrderDTO dto = new OrderDTO();
             dto.setId(rs.getString("id"));
             dto.setCustomerId(rs.getString("customer_id"));
@@ -74,9 +75,11 @@ public class OrderQueryService {
             return dto;
         }, orderId);
 
-        if (order == null) {
+        if (orders.isEmpty()) {
             return null;
         }
+
+        OrderDTO order = orders.get(0);
 
         // 查询订单项
         String itemsSql = "SELECT i.product_id, i.quantity, i.unit_price " +
@@ -91,6 +94,7 @@ public class OrderQueryService {
             return item;
         }, orderId);
 
+        // 设置订单项
         order.setItems(items);
 
         return order;

@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/users")
 public class UserController {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UserController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
     private final UserApplicationService userApplicationService;
 
     /**
@@ -44,7 +44,7 @@ public class UserController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable final Long id) {
-        LOG.info("REST请求获取用户信息: {}", id);
+        LOGGER.info("REST请求获取用户信息: {}", id);
         return userApplicationService.getUserById(id)
                 .map(userDTO -> ResponseEntity.ok(R.ok(userDTO)))
                 .orElse(ResponseEntity.notFound().build());
@@ -58,7 +58,7 @@ public class UserController {
      */
     @PostMapping
     public ResponseEntity<R<Long>> createUser(@RequestBody final UserDTO userDTO) {
-        LOG.info("REST请求创建用户: {}", userDTO);
+        LOGGER.info("REST请求创建用户: {}", userDTO);
         Long userId = userApplicationService.createUser(userDTO);
         return ResponseEntity.ok(R.ok(userId));
     }

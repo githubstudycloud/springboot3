@@ -30,6 +30,27 @@ public class OrderItem {
     }
 
     /**
+     * 获取产品ID
+     */
+    public ProductId getProductId() {
+        return productId;
+    }
+
+    /**
+     * 获取单价
+     */
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    /**
+     * 获取数量
+     */
+    public int getQuantity() {
+        return quantity;
+    }
+
+    /**
      * 更新数量
      */
     public void updateQuantity(int newQuantity) {

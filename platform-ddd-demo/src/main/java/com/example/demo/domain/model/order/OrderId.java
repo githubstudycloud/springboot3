@@ -17,6 +17,13 @@ public class OrderId extends ValueObject {
         this.value = value;
     }
 
+    /**
+     * 获取订单ID值
+     */
+    public String getValue() {
+        return value;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -24,7 +24,7 @@ public class Order extends AggregateRoot<OrderId> {
     // 客户ID (值对象)
     private CustomerId customerId;
     // 订单项列表
-    private List<OrderItem> orderItems;
+    private List<OrderItem> items;
     // 订单状态
     private OrderStatus status;
     // 订单最后更新时间
@@ -34,7 +34,7 @@ public class Order extends AggregateRoot<OrderId> {
     private Order(OrderId id, CustomerId customerId) {
         this.id = id;
         this.customerId = customerId;
-        this.orderItems = new ArrayList<>();
+        this.items = new ArrayList<>();
         this.status = OrderStatus.CREATED;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = this.createdAt;
@@ -68,7 +68,7 @@ public class Order extends AggregateRoot<OrderId> {
         }
 
         // 检查是否已有相同产品的订单项，如有则更新数量
-        for (OrderItem item : orderItems) {
+        for (OrderItem item : items) {
             if (item.getProductId().equals(productId)) {
                 item.updateQuantity(item.getQuantity() + quantity);
                 this.updatedAt = LocalDateTime.now();
@@ -78,7 +78,7 @@ public class Order extends AggregateRoot<OrderId> {
 
         // 添加新的订单项
         OrderItem newItem = new OrderItem(productId, quantity, unitPrice);
-        orderItems.add(newItem);
+        items.add(newItem);
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -86,7 +86,7 @@ public class Order extends AggregateRoot<OrderId> {
      * 移除订单项
      */
     public void removeItem(ProductId productId) {
-        orderItems.removeIf(item -> item.getProductId().equals(productId));
+        items.removeIf(item -> item.getProductId().equals(productId));
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -94,16 +94,16 @@ public class Order extends AggregateRoot<OrderId> {
      * 计算订单总金额
      */
     public BigDecimal calculateTotalAmount() {
-        return orderItems.stream()
+        return items.stream()
                 .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
     }
 
     /**
      * 确认订单
      */
     public void confirm() {
-        if (orderItems.isEmpty()) {
+        if (items.isEmpty()) {
             throw new IllegalStateException("订单不能为空");
         }
 
@@ -202,7 +202,7 @@ public class Order extends AggregateRoot<OrderId> {
     /**
      * 获取订单项的不可变列表
      */
-    public List<OrderItem> getOrderItems() {
-        return Collections.unmodifiableList(orderItems);
+    public List<OrderItem> getItems() {
+        return Collections.unmodifiableList(items);
     }
 }

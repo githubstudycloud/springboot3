@@ -1,7 +1,7 @@
 package com.example.demo.infrastructure.event;
 
-import com.example.demo.domain.event.DomainEvent;
 import com.example.demo.domain.event.DomainEventPublisher;
+import com.example.framework.domain.BaseDomainEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +18,7 @@ public class SpringDomainEventPublisher implements DomainEventPublisher {
     }
     
     @Override
-    public void publish(DomainEvent event) {
+    public void publish(BaseDomainEvent event) {
         applicationEventPublisher.publishEvent(event);
     }
 }

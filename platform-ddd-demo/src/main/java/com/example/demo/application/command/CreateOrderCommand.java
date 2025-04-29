@@ -15,4 +15,18 @@ import jakarta.validation.constraints.NotEmpty;
 public class CreateOrderCommand {
     @NotEmpty(message = "客户ID不能为空")
     private String customerId;
+    
+    /**
+     * 获取客户ID
+     */
+    public String getCustomerId() {
+        return customerId;
+    }
+    
+    /**
+     * 设置客户ID
+     */
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
 }

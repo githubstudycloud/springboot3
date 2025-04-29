@@ -21,7 +21,7 @@ import java.util.Optional;
 @Component
 public class JpaRepositoryImpl<T extends BaseEntity<ID>, ID> implements DomainRepository<T, ID> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JpaRepositoryImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JpaRepositoryImpl.class);
 
     /**
      * JPA实体管理器
@@ -45,7 +45,7 @@ public class JpaRepositoryImpl<T extends BaseEntity<ID>, ID> implements DomainRe
 
     @Override
     public T save(final T entity) {
-        LOG.info("保存实体: {}", entity);
+        LOGGER.info("保存实体: {}", entity);
         if (entity.getId() == null) {
             entityManager.persist(entity);
             return entity;
@@ -56,20 +56,20 @@ public class JpaRepositoryImpl<T extends BaseEntity<ID>, ID> implements DomainRe
 
     @Override
     public Optional<T> findById(final ID id) {
-        LOG.info("根据ID查找实体: {}, 实体类: {}", id, entityClass.getSimpleName());
+        LOGGER.info("根据ID查找实体: {}, 实体类: {}", id, entityClass.getSimpleName());
         T entity = entityManager.find(entityClass, id);
         return Optional.ofNullable(entity);
     }
 
     @Override
     public void delete(final T entity) {
-        LOG.info("删除实体: {}", entity);
+        LOGGER.info("删除实体: {}", entity);
         entityManager.remove(entity);
     }
 
     @Override
     public void deleteById(final ID id) {
-        LOG.info("根据ID删除实体: {}, 实体类: {}", id, entityClass.getSimpleName());
+        LOGGER.info("根据ID删除实体: {}, 实体类: {}", id, entityClass.getSimpleName());
         findById(id).ifPresent(this::delete);
     }
 }

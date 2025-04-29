@@ -17,6 +17,13 @@ public class ProductId extends ValueObject {
         this.value = value;
     }
 
+    /**
+     * 获取产品ID值
+     */
+    public String getValue() {
+        return value;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

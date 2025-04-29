@@ -27,4 +27,60 @@ public class AddOrderItemCommand {
 
     @NotNull(message = "单价不能为空")
     private BigDecimal unitPrice;
+    
+    /**
+     * 获取订单ID
+     */
+    public String getOrderId() {
+        return orderId;
+    }
+    
+    /**
+     * 设置订单ID
+     */
+    public void setOrderId(String orderId) {
+        this.orderId = orderId;
+    }
+    
+    /**
+     * 获取产品ID
+     */
+    public String getProductId() {
+        return productId;
+    }
+    
+    /**
+     * 设置产品ID
+     */
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+    
+    /**
+     * 获取数量
+     */
+    public int getQuantity() {
+        return quantity;
+    }
+    
+    /**
+     * 设置数量
+     */
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+    
+    /**
+     * 获取单价
+     */
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+    
+    /**
+     * 设置单价
+     */
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
 }

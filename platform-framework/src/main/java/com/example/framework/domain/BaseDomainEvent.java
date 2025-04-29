@@ -2,6 +2,7 @@ package com.example.framework.domain;
 
 import lombok.Getter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,7 +14,8 @@ import java.util.UUID;
  * @since 1.0.0
  */
 @Getter
-public abstract class BaseDomainEvent implements Serializable {
+public abstract class BaseDomainEvent implements DomainEvent, Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

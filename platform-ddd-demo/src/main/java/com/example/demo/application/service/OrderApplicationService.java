@@ -123,14 +123,14 @@ public class OrderApplicationService {
      * 将领域对象转换为DTO
      */
     private OrderDTO convertToDTO(Order order) {
-        List<OrderDTO.OrderItemDTO> itemDTOs = order.getOrderItems().stream()
+        List<OrderDTO.OrderItemDTO> itemDTOs = order.getItems().stream()
                 .map(item -> OrderDTO.OrderItemDTO.builder()
                         .productId(item.getProductId().getValue())
                         .quantity(item.getQuantity())
                         .unitPrice(item.getUnitPrice())
                         .subtotal(item.calculateSubtotal())
                         .build())
-                .collect(Collectors.<OrderDTO.OrderItemDTO>toList());
+                .collect(Collectors.toList());
 
         return OrderDTO.builder()
                 .id(order.getId().getValue())

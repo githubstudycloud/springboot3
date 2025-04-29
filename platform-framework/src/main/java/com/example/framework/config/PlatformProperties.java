@@ -24,6 +24,7 @@ public class PlatformProperties {
     /**
      * 是否启用平台功能
      */
+    @SuppressWarnings("unused")
     private boolean enabled = true;
 
     /**
@@ -44,6 +45,7 @@ public class PlatformProperties {
             /**
              * 是否启用虚拟线程
              */
+            @SuppressWarnings("unused")
             private boolean enabled = false;
         }
     }
@@ -66,6 +68,7 @@ public class PlatformProperties {
             /**
              * 是否启用JDBC会话
              */
+            @SuppressWarnings("unused")
             private boolean enabled = false;
         }
     }

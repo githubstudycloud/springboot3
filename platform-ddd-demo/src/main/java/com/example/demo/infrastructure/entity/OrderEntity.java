@@ -41,6 +41,104 @@ public class OrderEntity {
     private List<OrderItemEntity> items = new ArrayList<>();
 
     /**
+     * 获取订单ID
+     */
+    public String getId() {
+        return id;
+    }
+    
+    /**
+     * 设置订单ID
+     */
+    public void setId(String id) {
+        this.id = id;
+    }
+    
+    /**
+     * 获取客户ID
+     */
+    public String getCustomerId() {
+        return customerId;
+    }
+    
+    /**
+     * 设置客户ID
+     */
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+    
+    /**
+     * 获取订单状态
+     */
+    public OrderStatus getStatus() {
+        return status;
+    }
+    
+    /**
+     * 设置订单状态
+     */
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
+    
+    /**
+     * 获取订单总金额
+     */
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+    
+    /**
+     * 设置订单总金额
+     */
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+    
+    /**
+     * 获取创建时间
+     */
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    /**
+     * 设置创建时间
+     */
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
+    /**
+     * 获取更新时间
+     */
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+    
+    /**
+     * 设置更新时间
+     */
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+    
+    /**
+     * 获取订单项列表
+     */
+    public List<OrderItemEntity> getItems() {
+        return items;
+    }
+    
+    /**
+     * 设置订单项列表
+     */
+    public void setItems(List<OrderItemEntity> items) {
+        this.items = items;
+    }
+
+    /**
      * 添加订单项
      */
     public void addItem(OrderItemEntity item) {

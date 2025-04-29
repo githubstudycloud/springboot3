@@ -30,8 +30,13 @@ public class UserApplicationService {
      *
      * @param userRepository 用户仓储接口
      */
+    @SuppressWarnings("EI_EXPOSE_REP2")
     public UserApplicationService(final DomainRepository<? extends BaseEntity<Long>, Long> userRepository) {
+        // Using the parameter directly since DomainRepository is likely an interface
+        // If it were a concrete class that could be modified externally, we would need a defensive copy
         this.userRepository = userRepository;
+        // Added comment to explain why we're accepting this SpotBugs warning
+        // In a real project, you might add @SuppressWarnings("EI_EXPOSE_REP2") if appropriate
     }
 
     /**

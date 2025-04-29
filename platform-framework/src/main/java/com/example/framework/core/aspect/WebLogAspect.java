@@ -26,7 +26,7 @@ import java.util.UUID;
 @Component
 public class WebLogAspect {
     
-    private static final Logger LOG = LoggerFactory.getLogger(WebLogAspect.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebLogAspect.class);
 
     /**
      * 线程本地变量，用于存储请求开始时间
@@ -62,7 +62,7 @@ public class WebLogAspect {
             HttpServletRequest request = attributes.getRequest();
 
             // 记录请求信息
-            LOG.info("RequestId: {}, URL: {}, HTTP Method: {}, IP: {}, Class Method: {}.{}, Args: {}",
+            LOGGER.info("RequestId: {}, URL: {}, HTTP Method: {}, IP: {}, Class Method: {}.{}, Args: {}",
                     requestId.get(),
                     request.getRequestURL().toString(),
                     request.getMethod(),
@@ -71,7 +71,7 @@ public class WebLogAspect {
                     joinPoint.getSignature().getName(),
                     Arrays.toString(joinPoint.getArgs()));
         } else {
-            LOG.info("RequestId: {}, Method: {}.{}, Args: {}",
+            LOGGER.info("RequestId: {}, Method: {}.{}, Args: {}",
                     requestId.get(),
                     joinPoint.getSignature().getDeclaringTypeName(),
                     joinPoint.getSignature().getName(),
@@ -90,7 +90,7 @@ public class WebLogAspect {
         long executionTime = System.currentTimeMillis() - startTime.get();
 
         // 记录响应信息
-        LOG.info("RequestId: {}, Response: {}, Execution Time: {} ms",
+        LOGGER.info("RequestId: {}, Response: {}, Execution Time: {} ms",
                 requestId.get(),
                 result,
                 executionTime);

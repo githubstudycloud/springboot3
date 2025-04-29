@@ -1,6 +1,7 @@
 package com.example.demo.interfaces.rest.exception;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,10 +27,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
+            HttpStatus.BAD_REQUEST.value(),
+            ex.getMessage(),
+            LocalDateTime.now()
         );
+        
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
@@ -39,10 +41,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                ex.getMessage(),
-                LocalDateTime.now()
+            HttpStatus.CONFLICT.value(),
+            ex.getMessage(),
+            LocalDateTime.now()
         );
+        
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
@@ -59,12 +62,12 @@ public class GlobalExceptionHandler {
         });
 
         ValidationErrorResponse errorResponse = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "数据验证失败",
-                LocalDateTime.now(),
-                errors
+            HttpStatus.BAD_REQUEST.value(),
+            "数据验证失败",
+            LocalDateTime.now(),
+            errors
         );
-
+        
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
@@ -74,10 +77,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "服务器内部错误",
-                LocalDateTime.now()
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "服务器内部错误",
+            LocalDateTime.now()
         );
+        
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -99,10 +103,26 @@ public class GlobalExceptionHandler {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ValidationErrorResponse {
-        private int status;
-        private String message;
-        private LocalDateTime timestamp;
+    public static class ValidationErrorResponse extends ErrorResponse {
         private Map<String, String> errors;
+        
+        public ValidationErrorResponse(int status, String message, LocalDateTime timestamp, Map<String, String> errors) {
+            super(status, message, timestamp);
+            this.errors = errors;
+        }
+        
+        /**
+         * 获取错误信息
+         */
+        public Map<String, String> getErrors() {
+            return errors;
+        }
+        
+        /**
+         * 设置错误信息
+         */
+        public void setErrors(Map<String, String> errors) {
+            this.errors = errors;
+        }
     }
 }

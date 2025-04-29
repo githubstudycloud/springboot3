@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * 平台基础异常处理
@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(PlatformException.class)
     public R<Void> handlePlatformException(PlatformException e, HttpServletRequest request) {
-        LOG.error("Platform exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI(), e);
+        LOGGER.error("Platform exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI(), e);
         return R.error(SystemConstants.ERROR_CODE, e.getMessage());
     }
 
@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public R<Void> handleBusinessException(BusinessException e, HttpServletRequest request) {
-        LOG.warn("Business exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI());
+        LOGGER.warn("Business exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.ERROR_CODE, e.getMessage());
     }
 
@@ -75,7 +75,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(SystemException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public R<Void> handleSystemException(SystemException e, HttpServletRequest request) {
-        LOG.error("System exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI(), e);
+        LOGGER.error("System exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI(), e);
         return R.error(SystemConstants.ERROR_CODE, e.getMessage());
     }
 
@@ -93,7 +93,7 @@ public class GlobalExceptionHandler {
         String message = bindingResult.getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        LOG.warn("Method argument validation failed: {}, URI: {}", message, request.getRequestURI());
+        LOGGER.warn("Method argument validation failed: {}, URI: {}", message, request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, message);
     }
 
@@ -110,7 +110,7 @@ public class GlobalExceptionHandler {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        LOG.warn("Parameter bind failed: {}, URI: {}", message, request.getRequestURI());
+        LOGGER.warn("Parameter bind failed: {}, URI: {}", message, request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, message);
     }
 
@@ -128,7 +128,7 @@ public class GlobalExceptionHandler {
         String message = violations.stream()
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining(", "));
-        LOG.warn("Constraint violation: {}, URI: {}", message, request.getRequestURI());
+        LOGGER.warn("Constraint violation: {}, URI: {}", message, request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, message);
     }
 
@@ -142,7 +142,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public R<Void> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
-        LOG.warn("Method argument type mismatch: {}, URI: {}", e.getMessage(), request.getRequestURI());
+        LOGGER.warn("Method argument type mismatch: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, "参数类型不匹配: " + e.getName());
     }
 
@@ -156,7 +156,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public R<Void> handleMissingServletRequestParameterException(MissingServletRequestParameterException e, HttpServletRequest request) {
-        LOG.warn("Missing request parameter: {}, URI: {}", e.getMessage(), request.getRequestURI());
+        LOGGER.warn("Missing request parameter: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, "缺少必要参数: " + e.getParameterName());
     }
 
@@ -170,7 +170,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     public R<Void> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
-        LOG.warn("Request method not supported: {}, URI: {}", e.getMessage(), request.getRequestURI());
+        LOGGER.warn("Request method not supported: {}, URI: {}", e.getMessage(), request.getRequestURI());
         String supportedMethods = StringUtils.join(e.getSupportedMethods(), ", ");
         return R.error(HttpStatus.METHOD_NOT_ALLOWED.value(), "不支持的请求方法: " + e.getMethod() + ", 支持的方法: " + supportedMethods);
     }
@@ -185,7 +185,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public R<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e, HttpServletRequest request) {
-        LOG.warn("HTTP message not readable: {}, URI: {}", e.getMessage(), request.getRequestURI());
+        LOGGER.warn("HTTP message not readable: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.BAD_REQUEST_CODE, "请求体格式错误");
     }
 
@@ -199,7 +199,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public R<Void> handleNoHandlerFoundException(NoHandlerFoundException e, HttpServletRequest request) {
-        LOG.warn("No handler found: {}, URI: {}", e.getMessage(), request.getRequestURI());
+        LOGGER.warn("No handler found: {}, URI: {}", e.getMessage(), request.getRequestURI());
         return R.error(SystemConstants.NOT_FOUND_CODE, "请求的资源不存在");
     }
 
@@ -213,7 +213,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public R<Void> handleException(Exception e, HttpServletRequest request) {
-        LOG.error("Unexpected exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI(), e);
+        LOGGER.error("Unexpected exception occurred: {}, URI: {}", e.getMessage(), request.getRequestURI(), e);
         return R.error(SystemConstants.ERROR_CODE, "服务器内部错误，请稍后再试");
     }
 }

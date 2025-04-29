@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ExampleService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ExampleService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExampleService.class);
     private final ExampleRepository repository;
 
     /**
@@ -35,7 +35,7 @@ public class ExampleService {
      */
     @Transactional(readOnly = true)
     public String getEntityName(Long id) {
-        LOG.info("当前线程: {}", Thread.currentThread());
+        LOGGER.info("当前线程: {}", Thread.currentThread());
         return repository.findNameById(id);
     }
 

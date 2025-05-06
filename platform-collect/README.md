@@ -73,6 +73,14 @@ Platform Collect 适用于以下场景：
 6. **数据质量控制**：与数据治理系统集成，确保数据质量
 7. **增量数据同步**：精细化控制增量采集策略
 
+## 已完成工作
+
+1. **核心领域模型**：已定义完整的领域模型，包括 DataSource、CollectTask、PipelineStage、ExecutionContext 和 WatermarkConfig 等
+2. **核心接口**：已定义完整的端口接口，包括 DataSourceConnector、Processor、Loader 等，以及领域服务接口
+3. **仓储接口**：已定义 DataSourceRepository、TaskRepository、ExecutionRepository 等仓储接口
+4. **适配器接口**：已实现 SchedulerAdapter 和 DataGovernanceAdapter 接口
+5. **自动配置**：已提供 Spring Boot 自动配置类和配置属性类
+
 ## 快速开始
 
 ### 环境要求
@@ -91,6 +99,38 @@ git clone https://github.com/yourusername/platform-collect.git
 # 构建项目
 cd platform-collect
 mvn clean install
+```
+
+### 引入依赖
+
+```xml
+<!-- 引入核心模块 -->
+<dependency>
+    <groupId>com.example.platform</groupId>
+    <artifactId>platform-collect-core</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+
+<!-- 引入需要的连接器 -->
+<dependency>
+    <groupId>com.example.platform</groupId>
+    <artifactId>platform-collect-api</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+
+<!-- 引入需要的处理器 -->
+<dependency>
+    <groupId>com.example.platform</groupId>
+    <artifactId>platform-collect-transform</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+
+<!-- 引入需要的加载器 -->
+<dependency>
+    <groupId>com.example.platform</groupId>
+    <artifactId>platform-collect-db-loader</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
 ```
 
 ### 配置数据源
@@ -203,6 +243,37 @@ public class CustomTransformer implements Processor {
     }
 }
 ```
+
+## 两阶段采集流程
+
+对于复杂API采集场景，框架设计了两阶段采集流程：
+
+1. **阶段一：ID获取**
+   - 通过初始查询获取对象ID列表
+   - 支持分页和条件过滤
+   - 实现ID去重和合并
+
+2. **阶段二：详情获取**
+   - 基于ID列表，批量获取详情数据
+   - 动态调整批量大小，避免请求过大
+   - 并行处理和错误恢复
+   - 增量策略应用
+
+## 高级增量采集
+
+框架支持高级增量采集机制，基于以下设计：
+
+1. **多字段水印**
+   - 支持基于时间戳字段的水印跟踪
+   - 支持基于版本号的水印跟踪
+   - 支持多字段组合水印
+   - 支持水印比较策略定制
+
+2. **水印管理**
+   - 水印存储和恢复
+   - 水印版本控制
+   - 水印回滚支持
+   - 增量条件生成
 
 ## 贡献指南
 

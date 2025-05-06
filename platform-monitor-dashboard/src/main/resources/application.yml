@@ -1,0 +1,125 @@
+server:
+  port: 8085
+  servlet:
+    context-path: /monitor
+
+spring:
+  application:
+    name: platform-monitor-dashboard
+  
+  # 配置中心
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:localhost}:${NACOS_PORT:8848}
+        namespace: ${NACOS_NAMESPACE:}
+      config:
+        server-addr: ${spring.cloud.nacos.discovery.server-addr}
+        namespace: ${spring.cloud.nacos.discovery.namespace}
+        file-extension: yaml
+        refresh-enabled: true
+  
+  # MongoDB配置
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/platform_monitor}
+  
+  # Redis配置
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    database: 0
+    password: ${REDIS_PASSWORD:}
+    timeout: 5000
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+  
+  # Kafka配置
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      retries: 3
+    consumer:
+      group-id: ${spring.application.name}
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.platform.monitor.domain.model,com.platform.monitor.domain.event
+    
+  # 邮件服务配置
+  mail:
+    host: ${MAIL_HOST:smtp.example.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:notify@example.com}
+    password: ${MAIL_PASSWORD:password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+# 监控和指标配置  
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.platform: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.kafka: INFO
+
+# 应用自定义配置
+monitor:
+  # 指标收集配置
+  metrics:
+    collection:
+      enabled: true
+      interval-seconds: 30
+  
+  # 告警配置
+  alerts:
+    enabled: true
+    notification:
+      email:
+        enabled: true
+        recipients: ${ALERT_EMAIL_RECIPIENTS:admin@example.com}
+      kafka:
+        enabled: true
+        topic: platform-alerts
+  
+  # 服务发现配置
+  discovery:
+    service-scan-interval-seconds: 60
+    health-check-interval-seconds: 30
+    
+  # 仪表板配置
+  dashboard:
+    # 默认保留数据时长
+    default-retention-days: 30
+    # 默认刷新间隔
+    default-refresh-interval-seconds: 60

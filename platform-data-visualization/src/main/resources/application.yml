@@ -1,0 +1,74 @@
+spring:
+  application:
+    name: platform-data-visualization
+  
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/platform_data_visualization?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      pool-name: HikariCP-visualization
+  
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    open-in-view: false
+  
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+
+# 服务器配置
+server:
+  port: 8083
+  servlet:
+    context-path: /
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 30
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.platform.visualization: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# 数据可视化模块配置
+visualization:
+  # 数据源配置
+  datasource:
+    connection-timeout: 30000
+    max-connections: 10
+    enable-caching: true
+  
+  # 报表引擎配置
+  report-engine:
+    template-path: classpath:/templates/reports
+    output-path: /tmp/reports
+    enable-async: true
+    worker-threads: 5
+  
+  # 图表配置
+  chart:
+    renderer: echarts
+    enable-animation: true
+    theme: default
+    max-data-points: 10000

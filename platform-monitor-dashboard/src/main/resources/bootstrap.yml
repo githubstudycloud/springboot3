@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: platform-monitor-dashboard
+  
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_HOST:localhost}:${NACOS_PORT:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        file-extension: yaml
+        group: DEFAULT_GROUP
+        # 共享配置
+        shared-configs:
+          - data-id: common-db.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: common-redis.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: common-log.yaml
+            group: DEFAULT_GROUP
+            refresh: true

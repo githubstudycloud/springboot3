@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: platform-report-engine
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/platform_report?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL57Dialect
+        format_sql: true
+  
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: report@example.com
+    password: password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# 报表引擎配置
+report:
+  storage:
+    path: ./report-storage
+  scheduler:
+    thread-pool-size: 5
+  distribution:
+    thread-pool-size: 10
+  
+# Web配置
+server:
+  port: 8082
+  servlet:
+    context-path: /report-engine
+
+# Swagger/OpenAPI配置
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.platform.report: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

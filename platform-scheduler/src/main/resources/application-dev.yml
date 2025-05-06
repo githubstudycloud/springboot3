@@ -1,0 +1,166 @@
+spring:
+  application:
+    name: platform-scheduler
+  
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/platform_scheduler?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 30000
+      connection-timeout: 30000
+      max-lifetime: 1800000
+  
+  # JPA配置
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        jdbc:
+          time_zone: Asia/Shanghai
+  
+  # Flyway数据库迁移配置
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+  
+  # Quartz调度器配置
+  quartz:
+    job-store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    properties:
+      org.quartz.scheduler.instanceName: PlatformScheduler
+      org.quartz.scheduler.instanceId: AUTO
+      org.quartz.jobStore.class: org.quartz.impl.jdbcjobstore.JobStoreTX
+      org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+      org.quartz.jobStore.useProperties: true
+      org.quartz.jobStore.isClustered: true
+      org.quartz.jobStore.clusterCheckinInterval: 10000
+      org.quartz.jobStore.tablePrefix: QRTZ_
+      org.quartz.jobStore.misfireThreshold: 60000
+      org.quartz.threadPool.class: org.quartz.simpl.SimpleThreadPool
+      org.quartz.threadPool.threadCount: 20
+      org.quartz.threadPool.threadPriority: 5
+      org.quartz.scheduler.batchTriggerAcquisitionMaxCount: 10
+  
+  # Redis配置
+  redis:
+    host: localhost
+    port: 6379
+    password: 
+    database: 0
+    timeout: 10000
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
+  
+  # Kafka配置
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      retries: 3
+      acks: all
+    consumer:
+      group-id: platform-scheduler
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: false
+  
+  # Nacos配置
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        file-extension: yaml
+
+# 服务器配置
+server:
+  port: 8081
+  servlet:
+    context-path: /scheduler
+
+# 调度系统配置
+scheduler:
+  # 执行器配置
+  executor:
+    # 核心线程数
+    core-pool-size: 10
+    # 最大线程数
+    max-pool-size: 50
+    # 队列容量
+    queue-capacity: 200
+    # 线程存活时间(秒)
+    keep-alive-seconds: 60
+    # 线程名称前缀
+    thread-name-prefix: scheduler-executor-
+  
+  # 集群配置
+  cluster:
+    # 集群协调模式: redis, zookeeper
+    coordination-mode: redis
+    # 节点心跳间隔(毫秒)
+    heartbeat-interval: 5000
+    # 节点超时时间(毫秒)
+    node-timeout: 15000
+    # 集群节点ID (默认为自动生成)
+    node-id: ${NODE_ID:}
+  
+  # 任务配置
+  job:
+    # 最大重试次数
+    max-retry-count: 3
+    # 重试间隔(秒)
+    retry-interval: 30
+    # 超时时间(秒)，0表示不超时
+    timeout: 3600
+    # 并发处理任务数限制，0表示不限制
+    concurrent-limit: 0
+    # 默认任务优先级(1-10)
+    default-priority: 5
+    # 历史数据保留天数
+    history-retention-days: 30
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.platform.scheduler: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.quartz: INFO
+
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: true

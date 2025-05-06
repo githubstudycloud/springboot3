@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: platform-auth-service
+  profiles:
+    active: dev
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.${spring.cloud.nacos.config.file-extension}

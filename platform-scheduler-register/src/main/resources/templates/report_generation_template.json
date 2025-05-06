@@ -1,0 +1,95 @@
+{
+  "name": "标准报表生成模板",
+  "description": "用于报表生成的标准任务模板，支持数据源配置、报表类型和输出格式配置",
+  "type": "REPORT",
+  "handlerName": "com.platform.scheduler.handler.ReportGenerationJobHandler",
+  "category": "REPORT",
+  "labels": ["报表", "数据分析", "内置模板"],
+  "parameterTemplates": [
+    {
+      "name": "reportType",
+      "displayName": "报表类型",
+      "description": "要生成的报表类型",
+      "type": "STRING",
+      "defaultValue": "SUMMARY",
+      "required": true,
+      "allowedValues": ["SUMMARY", "DETAILED", "CHART", "DASHBOARD", "CUSTOM"]
+    },
+    {
+      "name": "reportTitle",
+      "displayName": "报表标题",
+      "description": "报表的标题",
+      "type": "STRING",
+      "required": true
+    },
+    {
+      "name": "dataSourceType",
+      "displayName": "数据源类型",
+      "description": "报表数据来源类型",
+      "type": "STRING",
+      "defaultValue": "SQL",
+      "required": true,
+      "allowedValues": ["SQL", "API", "FILE", "CUBE"]
+    },
+    {
+      "name": "dataSourceConfig",
+      "displayName": "数据源配置",
+      "description": "数据源配置JSON，包含连接信息",
+      "type": "JSON",
+      "required": true
+    },
+    {
+      "name": "queryConfig",
+      "displayName": "查询配置",
+      "description": "用于查询数据的SQL或配置",
+      "type": "STRING",
+      "required": true
+    },
+    {
+      "name": "parameters",
+      "displayName": "报表参数",
+      "description": "报表参数JSON配置，如日期范围、过滤条件等",
+      "type": "JSON",
+      "required": false
+    },
+    {
+      "name": "templateId",
+      "displayName": "报表模板ID",
+      "description": "报表模板的唯一标识符",
+      "type": "STRING",
+      "required": false
+    },
+    {
+      "name": "outputFormat",
+      "displayName": "输出格式",
+      "description": "报表的输出格式",
+      "type": "STRING",
+      "defaultValue": "PDF",
+      "required": true,
+      "allowedValues": ["PDF", "EXCEL", "HTML", "CSV", "JSON"]
+    },
+    {
+      "name": "outputPath",
+      "displayName": "输出路径",
+      "description": "报表保存路径",
+      "type": "STRING",
+      "required": true
+    },
+    {
+      "name": "sendEmail",
+      "displayName": "发送邮件",
+      "description": "是否发送邮件",
+      "type": "BOOLEAN",
+      "defaultValue": "false",
+      "required": false
+    },
+    {
+      "name": "emailConfig",
+      "displayName": "邮件配置",
+      "description": "邮件发送配置JSON",
+      "type": "JSON",
+      "required": false
+    }
+  ],
+  "isBuiltIn": true
+}

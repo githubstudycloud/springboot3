@@ -1,0 +1,90 @@
+{
+  "name": "标准数据处理模板",
+  "description": "用于数据处理的标准任务模板，支持数据源配置、处理逻辑和目标数据配置",
+  "type": "DATA_PROCESSING",
+  "handlerName": "com.platform.scheduler.handler.DataProcessingJobHandler",
+  "category": "DATA_PROCESSING",
+  "labels": ["ETL", "数据处理", "内置模板"],
+  "parameterTemplates": [
+    {
+      "name": "sourceType",
+      "displayName": "数据源类型",
+      "description": "数据来源的类型",
+      "type": "STRING",
+      "defaultValue": "MYSQL",
+      "required": true,
+      "allowedValues": ["MYSQL", "POSTGRESQL", "ORACLE", "MONGODB", "CSV", "JSON", "API"]
+    },
+    {
+      "name": "sourceConfig",
+      "displayName": "数据源配置",
+      "description": "数据源配置JSON，包含连接信息",
+      "type": "JSON",
+      "required": true
+    },
+    {
+      "name": "sourceQuery",
+      "displayName": "数据源查询",
+      "description": "用于获取数据的查询语句或配置",
+      "type": "STRING",
+      "required": true
+    },
+    {
+      "name": "transformScript",
+      "displayName": "转换脚本",
+      "description": "用于转换数据的脚本或配置",
+      "type": "STRING",
+      "required": false
+    },
+    {
+      "name": "targetType",
+      "displayName": "目标类型",
+      "description": "数据写入的目标类型",
+      "type": "STRING",
+      "defaultValue": "MYSQL",
+      "required": true,
+      "allowedValues": ["MYSQL", "POSTGRESQL", "ORACLE", "MONGODB", "CSV", "JSON", "KAFKA"]
+    },
+    {
+      "name": "targetConfig",
+      "displayName": "目标配置",
+      "description": "目标数据源配置JSON，包含连接信息",
+      "type": "JSON",
+      "required": true
+    },
+    {
+      "name": "targetTable",
+      "displayName": "目标表",
+      "description": "数据写入的目标表或位置",
+      "type": "STRING",
+      "required": true
+    },
+    {
+      "name": "writeMode",
+      "displayName": "写入模式",
+      "description": "数据写入模式",
+      "type": "STRING",
+      "defaultValue": "APPEND",
+      "required": true,
+      "allowedValues": ["APPEND", "OVERWRITE", "UPDATE", "UPSERT"]
+    },
+    {
+      "name": "batchSize",
+      "displayName": "批处理大小",
+      "description": "每批处理的记录数",
+      "type": "NUMBER",
+      "defaultValue": "1000",
+      "required": false,
+      "minValue": "1",
+      "maxValue": "10000"
+    },
+    {
+      "name": "validation",
+      "displayName": "数据验证",
+      "description": "数据验证配置JSON",
+      "type": "JSON",
+      "required": false
+    }
+  ],
+  "isBuiltIn": true
+}

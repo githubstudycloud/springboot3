@@ -1,0 +1,163 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /scheduler-register
+
+spring:
+  application:
+    name: platform-scheduler-register
+  datasource:
+    url: jdbc:mysql://localhost:3306/platform_scheduler?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: platform
+    password: platform123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 30000
+      pool-name: SchedulerRegisterHikariCP
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    table: schema_version
+    baseline-version: 0
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 5000
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+
+platform:
+  scheduler:
+    register:
+      # 模板配置
+      template:
+        default-category: DATA_PROCESSING
+        max-labels-per-template: 20
+        builtin-templates-location: classpath:templates/
+      
+      # 版本配置
+      version:
+        max-versions-per-job: 50
+        auto-cleanup-enabled: true
+        auto-cleanup-keep-versions: 10
+      
+      # 依赖配置
+      dependency:
+        max-dependency-depth: 5
+        cycle-detection-enabled: true
+      
+      # 安全配置
+      security:
+        enabled: true
+        admin-roles: ROLE_ADMIN,ROLE_SCHEDULER_ADMIN
+        user-roles: ROLE_USER,ROLE_SCHEDULER_USER
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.platform.scheduler: DEBUG
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+
+# 开放管理端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  info:
+    git:
+      mode: full
+
+---
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:mysql://localhost:3306/platform_scheduler_dev?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+  jpa:
+    show-sql: true
+  redis:
+    host: localhost
+    
+logging:
+  level:
+    com.platform.scheduler: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+---
+# 测试环境配置
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:platform_scheduler_test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+  h2:
+    console:
+      enabled: true
+  redis:
+    host: localhost
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    show-sql: false
+  flyway:
+    locations: classpath:db/migration,classpath:db/prod
+
+logging:
+  level:
+    root: WARN
+    com.platform.scheduler: INFO
+    org.springframework: WARN

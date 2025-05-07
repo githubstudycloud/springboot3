@@ -1,0 +1,345 @@
+version: '3.8'
+
+# 平台数据服务栈
+# 部署命令：docker stack deploy -c platform-data.yml platform-data
+
+services:
+  # MySQL主节点
+  mysql-master:
+    image: mysql:latest
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --server-id=1 --log-bin=mysql-bin --binlog-format=ROW
+    networks:
+      - platform_net
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_DATABASE: platform
+    volumes:
+      - mysql_master_data:/var/lib/mysql
+      - ./init/mysql:/docker-entrypoint-initdb.d
+      - ./config/mysql/master:/etc/mysql/conf.d
+    secrets:
+      - mysql_root_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      placement:
+        constraints:
+          - node.labels.role == data
+          - node.labels.db == mysql-master
+
+  # MySQL从节点
+  mysql-slave:
+    image: mysql:latest
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --server-id=2 --relay-log=mysql-relay-bin
+    networks:
+      - platform_net
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+    volumes:
+      - mysql_slave_data:/var/lib/mysql
+      - ./config/mysql/slave:/etc/mysql/conf.d
+    secrets:
+      - mysql_root_password
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      placement:
+        constraints:
+          - node.labels.role == data
+          - node.labels.db == mysql-slave
+        preferences:
+          - spread: node.id
+
+  # Redis主节点
+  redis-master:
+    image: redis:latest
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    networks:
+      - platform_net
+    volumes:
+      - redis_master_data:/data
+      - ./config/redis/master:/usr/local/etc/redis
+    environment:
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - redis_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      placement:
+        constraints:
+          - node.labels.role == data
+          - node.labels.db == redis-master
+
+  # Redis从节点
+  redis-slave:
+    image: redis:latest
+    command: redis-server --requirepass ${REDIS_PASSWORD} --replicaof redis-master 6379 --masterauth ${REDIS_PASSWORD} --appendonly yes
+    networks:
+      - platform_net
+    volumes:
+      - redis_slave_data:/data
+      - ./config/redis/slave:/usr/local/etc/redis
+    environment:
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - redis_password
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      placement:
+        constraints:
+          - node.labels.role == data
+          - node.labels.db == redis-slave
+        preferences:
+          - spread: node.id
+
+  # MongoDB复制集
+  mongo1:
+    image: mongo:latest
+    command: mongod --replSet rs0 --bind_ip_all --wiredTigerCacheSizeGB 1
+    networks:
+      - platform_net
+    volumes:
+      - mongo1_data:/data/db
+      - ./config/mongo:/etc/mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_root_username
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
+    secrets:
+      - mongo_root_username
+      - mongo_root_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      placement:
+        constraints:
+          - node.labels.role == data
+          - node.labels.db == mongo1
+
+  mongo2:
+    image: mongo:latest
+    command: mongod --replSet rs0 --bind_ip_all --wiredTigerCacheSizeGB 1
+    networks:
+      - platform_net
+    volumes:
+      - mongo2_data:/data/db
+      - ./config/mongo:/etc/mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_root_username
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
+    secrets:
+      - mongo_root_username
+      - mongo_root_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      placement:
+        constraints:
+          - node.labels.role == data
+          - node.labels.db == mongo2
+
+  mongo3:
+    image: mongo:latest
+    command: mongod --replSet rs0 --bind_ip_all --wiredTigerCacheSizeGB 1
+    networks:
+      - platform_net
+    volumes:
+      - mongo3_data:/data/db
+      - ./config/mongo:/etc/mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_root_username
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
+    secrets:
+      - mongo_root_username
+      - mongo_root_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+      placement:
+        constraints:
+          - node.labels.role == data
+          - node.labels.db == mongo3
+
+  # MongoDB初始化复制集
+  mongo-init:
+    image: mongo:latest
+    networks:
+      - platform_net
+    volumes:
+      - ./scripts/init-mongo-rs.sh:/scripts/init-mongo-rs.sh
+    command: >
+      bash -c "
+        echo 'Waiting for MongoDB to start...'
+        sleep 30
+        bash /scripts/init-mongo-rs.sh
+      "
+    environment:
+      MONGO_ROOT_USERNAME_FILE: /run/secrets/mongo_root_username
+      MONGO_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
+    secrets:
+      - mongo_root_username
+      - mongo_root_password
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+      placement:
+        constraints:
+          - node.labels.role == data
+
+networks:
+  platform_net:
+    external: true
+
+volumes:
+  mysql_master_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/mysql-master"
+  mysql_slave_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/mysql-slave"
+  redis_master_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/redis-master"
+  redis_slave_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/redis-slave"
+  mongo1_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/mongo1"
+  mongo2_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/mongo2"
+  mongo3_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/mongo3"
+
+secrets:
+  mysql_root_password:
+    external: true
+  redis_password:
+    external: true
+  mongo_root_username:
+    external: true
+  mongo_root_password:
+    external: true

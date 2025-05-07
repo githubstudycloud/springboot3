@@ -1,6 +1,6 @@
 # Platform Data Governance - 数据治理框架
 
-## 概述
+## 项目概述
 
 Platform Data Governance 是一个全面的数据治理框架，专注于数据标准化、元数据管理、数据质量控制和数据清洗规则管理。该框架基于领域驱动设计(DDD)和六边形架构，为企业数据资产提供统一的治理能力。
 
@@ -18,12 +18,40 @@ Platform Data Governance 是一个全面的数据治理框架，专注于数据�
 ## 模块结构
 
 - **platform-data-governance-core**：核心接口和领域模型
-- **platform-data-governance-metadata**：元数据管理模块
+  - 数据资产领域模型
+  - 规则领域模型
+  - 清洗规则领域模型
+  
+- **platform-data-governance-metadata**：元数据管理模块（已实现）
+  - 元数据项管理
+  - 元数据分类管理
+  - 元数据API接口
+  - MongoDB存储实现
+  
 - **platform-data-governance-standard**：数据标准管理模块
+  - 数据标准定义
+  - 标准版本管理
+  - 标准合规检查
+
 - **platform-data-governance-quality**：数据质量管理模块
+  - 质量规则定义
+  - 质量检查执行
+  - 质量评分和报告
+
 - **platform-data-governance-cleansing**：数据清洗规则模块
+  - 清洗规则定义
+  - 规则引擎实现
+  - 清洗流程管理
+
 - **platform-data-governance-lineage**：数据血缘追踪模块
+  - 血缘关系建模
+  - 血缘分析算法
+  - 血缘可视化支持
+
 - **platform-data-governance-api**：API和集成接口模块
+  - 统一API管理
+  - 采集系统集成
+  - 调度系统集成
 
 ## 架构设计
 
@@ -53,17 +81,17 @@ Platform Data Governance 遵循六边形架构原则：
 +----------------------------------------------------------+
 ```
 
-## 使用场景
+## 当前进度
 
-Platform Data Governance 适用于以下场景：
-
-1. **数据标准统一**：定义和管理企业级数据标准
-2. **数据质量管控**：设置数据质量规则并监控数据质量
-3. **数据清洗流程**：为数据采集和处理提供标准化清洗规则
-4. **元数据管理**：建立统一的数据资产目录
-5. **数据血缘分析**：追踪数据来源和流转路径
-6. **规则生命周期管理**：管理数据治理规则的版本和生命周期
-7. **数据采集支持**：为采集系统提供清洗规则和元数据注册
+已完成:
+- 项目整体架构设计
+- 核心领域模型定义
+- 元数据管理模块完整实现，包括:
+  - 元数据项领域模型
+  - 元数据分类领域模型
+  - 元数据服务和分类服务实现
+  - MongoDB存储适配器
+  - REST API接口
 
 ## 快速开始
 
@@ -85,49 +113,43 @@ cd platform-data-governance
 mvn clean install
 ```
 
-### 配置数据清洗规则
+### 启动元数据服务
 
-```yaml
-platform:
-  data-governance:
-    cleansing:
-      ruleSets:
-        - id: customer-data-cleansing
-          name: "客户数据清洗规则集"
-          version: "1.0.0"
-          rules:
-            - id: r001
-              name: "手机号码格式化"
-              field: "phone_number"
-              action: "FORMAT"
-              pattern: "^1[3-9]\\d{9}$"
-              format: "${REGEX_REPLACE:([3-9]\\d{2})(\\d{4})(\\d{4}),1\\1\\2\\3}"
+```bash
+# 进入元数据模块目录
+cd platform-data-governance-metadata
+
+# 启动服务
+mvn spring-boot:run
 ```
 
-### 配置数据质量规则
+### 使用API
 
-```yaml
-platform:
-  data-governance:
-    quality:
-      ruleSets:
-        - id: customer-data-quality
-          name: "客户数据质量规则集"
-          version: "1.0.0"
-          rules:
-            - id: q001
-              name: "身份证号有效性"
-              field: "id_number"
-              type: "REGEX"
-              pattern: "^\\d{17}[\\dXx]$"
-              severity: "ERROR"
-            - id: q002
-              name: "年龄范围检查"
-              field: "age"
-              type: "RANGE"
-              min: 0
-              max: 120
-              severity: "WARNING"
+元数据项管理:
+```
+# 创建元数据项
+POST /data-governance/api/v1/metadata
+
+# 获取元数据项
+GET /data-governance/api/v1/metadata/{id}
+
+# 更新元数据项
+PUT /data-governance/api/v1/metadata/{id}
+
+# 删除元数据项
+DELETE /data-governance/api/v1/metadata/{id}
+```
+
+元数据分类管理:
+```
+# 创建顶级分类
+POST /data-governance/api/v1/metadata/categories
+
+# 创建子分类
+POST /data-governance/api/v1/metadata/categories/{parentId}/children
+
+# 获取分类树
+GET /data-governance/api/v1/metadata/categories/{rootId}/tree
 ```
 
 ## 与其他模块集成
@@ -174,56 +196,14 @@ public class DataQualityCheckTask implements ScheduledTaskHandler {
 }
 ```
 
-## 数据清洗流程
-
-Platform Data Governance 提供完整的数据清洗流程：
-
-1. **结构验证**：验证数据结构是否符合预期
-2. **数据类型转换**：确保数据类型的一致性
-3. **值域检查**：验证数据是否在合法范围内
-4. **数据标准化**：按照数据标准进行格式化
-5. **数据去重**：识别和处理重复数据
-6. **数据补全**：处理缺失值和默认值
-7. **业务规则校验**：应用业务逻辑进行数据校验
-8. **数据脱敏**：处理敏感信息
-9. **数据关联**：与主数据或参考数据关联验证
-10. **数据标记**：标记数据质量和处理状态
-
-## 可扩展性设计
-
-### 添加新的清洗规则类型
-
-实现`CleansingRule`接口并注册为Spring组件：
-
-```java
-@Component
-@RuleType("CUSTOM_FORMAT")
-public class CustomFormatRule implements CleansingRule {
-    @Override
-    public CleansingResult apply(Object value, RuleConfig config) {
-        // 实现自定义格式化逻辑
-    }
-}
-```
-
-### 添加新的质量规则类型
-
-实现`QualityRule`接口并注册为Spring组件：
-
-```java
-@Component
-@RuleType("CUSTOM_VALIDATION")
-public class CustomValidationRule implements QualityRule {
-    @Override
-    public QualityResult validate(Object value, RuleConfig config) {
-        // 实现自定义验证逻辑
-    }
-}
-```
-
 ## 贡献指南
 
-我们欢迎社区贡献，请参阅[CONTRIBUTING.md](CONTRIBUTING.md)了解贡献流程。
+欢迎贡献代码和提出问题。请遵循以下原则：
+
+1. 遵循领域驱动设计和六边形架构
+2. 编写单元测试，确保代码覆盖率
+3. 遵循Java编码规范，使用Javadoc注释
+4. 提交前进行代码格式化和静态检查
 
 ## 许可证
 

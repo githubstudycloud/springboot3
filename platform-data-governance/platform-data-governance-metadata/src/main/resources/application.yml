@@ -1,0 +1,40 @@
+server:
+  port: 8081
+  servlet:
+    context-path: /data-governance
+
+spring:
+  application:
+    name: platform-data-governance
+  
+  # MongoDB配置
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017
+      database: data_governance
+  
+  # 日志配置
+  logging:
+    level:
+      root: INFO
+      com.example.platform.governance: DEBUG
+      org.springframework.data.mongodb: INFO
+
+# 自定义配置
+platform:
+  governance:
+    # 元数据模块配置
+    metadata:
+      # 是否启用自动分类
+      auto-categorize: true
+      # 是否启用审核流程
+      approval-required: false
+      # 默认分类ID
+      default-category-id: ""
+    
+    # 共用配置
+    common:
+      # 分页默认大小
+      page-size: 20
+      # 最大分页大小
+      max-page-size: 100

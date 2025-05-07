@@ -1,0 +1,283 @@
+version: '3.8'
+
+# 平台核心服务栈
+# 部署命令：docker stack deploy -c platform-core.yml platform-core
+
+services:
+  # API网关服务
+  gateway:
+    image: ${REGISTRY_URL:-localhost:5000}/platform/gateway:${TAG:-latest}
+    networks:
+      - platform_net
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == app
+          - node.labels.zone == core
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 认证服务
+  auth-service:
+    image: ${REGISTRY_URL:-localhost:5000}/platform/auth-service:${TAG:-latest}
+    networks:
+      - platform_net
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-master:3306/auth?useUnicode=true&characterEncoding=utf8
+      - SPRING_DATASOURCE_USERNAME=auth_user
+      - SPRING_DATASOURCE_PASSWORD_FILE=/run/secrets/auth_db_password
+      - SPRING_REDIS_HOST=redis-master
+      - SPRING_REDIS_PASSWORD_FILE=/run/secrets/redis_password
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+    secrets:
+      - auth_db_password
+      - redis_password
+    deploy:
+      mode: replicated
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == app
+        preferences:
+          - spread: node.labels.zone
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 采集服务
+  collect-service:
+    image: ${REGISTRY_URL:-localhost:5000}/platform/collect-service:${TAG:-latest}
+    networks:
+      - platform_net
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-master:3306/collect?useUnicode=true&characterEncoding=utf8
+      - SPRING_DATASOURCE_USERNAME=collect_user
+      - SPRING_DATASOURCE_PASSWORD_FILE=/run/secrets/collect_db_password
+      - SPRING_REDIS_HOST=redis-master
+      - SPRING_REDIS_PASSWORD_FILE=/run/secrets/redis_password
+      - SPRING_KAFKA_BOOTSTRAP-SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+    secrets:
+      - collect_db_password
+      - redis_password
+    volumes:
+      - collect_data:/app/data
+    deploy:
+      mode: replicated
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      placement:
+        constraints:
+          - node.labels.role == app
+          - node.labels.zone == data
+
+  # 数据治理服务
+  governance-service:
+    image: ${REGISTRY_URL:-localhost:5000}/platform/governance-service:${TAG:-latest}
+    networks:
+      - platform_net
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-master:3306/governance?useUnicode=true&characterEncoding=utf8
+      - SPRING_DATASOURCE_USERNAME=governance_user
+      - SPRING_DATASOURCE_PASSWORD_FILE=/run/secrets/governance_db_password
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo1:27017,mongo2:27017,mongo3:27017/governance
+      - SPRING_DATA_MONGODB_USERNAME=governance_user
+      - SPRING_DATA_MONGODB_PASSWORD_FILE=/run/secrets/mongo_password
+      - SPRING_REDIS_HOST=redis-master
+      - SPRING_REDIS_PASSWORD_FILE=/run/secrets/redis_password
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+    secrets:
+      - governance_db_password
+      - mongo_password
+      - redis_password
+    volumes:
+      - governance_data:/app/data
+    deploy:
+      mode: replicated
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+      placement:
+        constraints:
+          - node.labels.role == app
+          - node.labels.zone == data
+
+  # 调度服务
+  scheduler-service:
+    image: ${REGISTRY_URL:-localhost:5000}/platform/scheduler-service:${TAG:-latest}
+    networks:
+      - platform_net
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-master:3306/scheduler?useUnicode=true&characterEncoding=utf8
+      - SPRING_DATASOURCE_USERNAME=scheduler_user
+      - SPRING_DATASOURCE_PASSWORD_FILE=/run/secrets/scheduler_db_password
+      - SPRING_REDIS_HOST=redis-master
+      - SPRING_REDIS_PASSWORD_FILE=/run/secrets/redis_password
+      - SPRING_KAFKA_BOOTSTRAP-SERVERS=kafka1:9092,kafka2:9092,kafka3:9092
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER-ADDR=nacos1:8848,nacos2:8848,nacos3:8848
+    secrets:
+      - scheduler_db_password
+      - redis_password
+    deploy:
+      mode: global
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == app
+
+  # 前端服务
+  frontend:
+    image: ${REGISTRY_URL:-localhost:5000}/platform/frontend:${TAG:-latest}
+    networks:
+      - platform_net
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/ssl:/etc/nginx/ssl:ro
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    deploy:
+      mode: replicated
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+      placement:
+        constraints:
+          - node.labels.role == edge
+
+networks:
+  platform_net:
+    external: true
+    
+volumes:
+  collect_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/collect"
+  governance_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/governance"
+
+secrets:
+  auth_db_password:
+    external: true
+  collect_db_password:
+    external: true
+  governance_db_password:
+    external: true
+  scheduler_db_password:
+    external: true
+  redis_password:
+    external: true
+  mongo_password:
+    external: true

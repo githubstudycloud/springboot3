@@ -1,0 +1,486 @@
+version: '3.8'
+
+# 平台消息服务栈
+# 部署命令：docker stack deploy -c platform-msg.yml platform-msg
+
+services:
+  # ZooKeeper集群
+  zookeeper1:
+    image: zookeeper:latest
+    networks:
+      - platform_net
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+      JVMFLAGS: "-Xmx512m -Xms256m"
+    volumes:
+      - zookeeper1_data:/data
+      - zookeeper1_logs:/datalog
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.zookeeper == zk1
+
+  zookeeper2:
+    image: zookeeper:latest
+    networks:
+      - platform_net
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+      JVMFLAGS: "-Xmx512m -Xms256m"
+    volumes:
+      - zookeeper2_data:/data
+      - zookeeper2_logs:/datalog
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.zookeeper == zk2
+
+  zookeeper3:
+    image: zookeeper:latest
+    networks:
+      - platform_net
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+      JVMFLAGS: "-Xmx512m -Xms256m"
+    volumes:
+      - zookeeper3_data:/data
+      - zookeeper3_logs:/datalog
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.zookeeper == zk3
+
+  # Kafka集群
+  kafka1:
+    image: bitnami/kafka:latest
+    networks:
+      - platform_net
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_CFG_BROKER_ID: 1
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_CFG_NUM_PARTITIONS: 3
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_HEAP_OPTS: "-Xmx1024m -Xms512m"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka1_data:/bitnami/kafka
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.kafka == k1
+
+  kafka2:
+    image: bitnami/kafka:latest
+    networks:
+      - platform_net
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_CFG_BROKER_ID: 2
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_CFG_NUM_PARTITIONS: 3
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_HEAP_OPTS: "-Xmx1024m -Xms512m"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka2_data:/bitnami/kafka
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.kafka == k2
+
+  kafka3:
+    image: bitnami/kafka:latest
+    networks:
+      - platform_net
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_CFG_BROKER_ID: 3
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_CFG_NUM_PARTITIONS: 3
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_HEAP_OPTS: "-Xmx1024m -Xms512m"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    volumes:
+      - kafka3_data:/bitnami/kafka
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.kafka == k3
+
+  # Kafka管理界面
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    networks:
+      - platform_net
+    ports:
+      - "8989:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: PlatformCluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:9092,kafka2:9092,kafka3:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+      placement:
+        constraints:
+          - node.labels.role == msg
+
+  # RabbitMQ集群
+  rabbitmq1:
+    image: rabbitmq:management
+    hostname: rabbitmq1
+    networks:
+      - platform_net
+    environment:
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-admin}
+      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_password
+    ports:
+      - "15672:15672"  # 管理界面端口
+    volumes:
+      - rabbitmq1_data:/var/lib/rabbitmq
+      - ./config/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    secrets:
+      - rabbitmq_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.rabbitmq == rmq1
+
+  rabbitmq2:
+    image: rabbitmq:management
+    hostname: rabbitmq2
+    networks:
+      - platform_net
+    environment:
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-admin}
+      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_password
+    volumes:
+      - rabbitmq2_data:/var/lib/rabbitmq
+      - ./config/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    secrets:
+      - rabbitmq_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.rabbitmq == rmq2
+
+  rabbitmq3:
+    image: rabbitmq:management
+    hostname: rabbitmq3
+    networks:
+      - platform_net
+    environment:
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-admin}
+      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_password
+    volumes:
+      - rabbitmq3_data:/var/lib/rabbitmq
+      - ./config/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    secrets:
+      - rabbitmq_password
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      placement:
+        constraints:
+          - node.labels.role == msg
+          - node.labels.rabbitmq == rmq3
+
+  # RabbitMQ集群初始化
+  rabbitmq-init:
+    image: rabbitmq:management
+    networks:
+      - platform_net
+    entrypoint: >
+      /bin/bash -c "
+        echo 'Waiting for RabbitMQ nodes to start...'
+        sleep 30
+        rabbitmqctl --host rabbitmq1 stop_app
+        rabbitmqctl --host rabbitmq1 reset
+        rabbitmqctl --host rabbitmq1 start_app
+        rabbitmqctl --host rabbitmq2 stop_app
+        rabbitmqctl --host rabbitmq2 reset
+        rabbitmqctl --host rabbitmq2 join_cluster rabbit@rabbitmq1
+        rabbitmqctl --host rabbitmq2 start_app
+        rabbitmqctl --host rabbitmq3 stop_app
+        rabbitmqctl --host rabbitmq3 reset
+        rabbitmqctl --host rabbitmq3 join_cluster rabbit@rabbitmq1
+        rabbitmqctl --host rabbitmq3 start_app
+        rabbitmqctl --host rabbitmq1 set_policy ha-all '^(?!amq\\.).*' '{\"ha-mode\":\"all\",\"ha-sync-mode\":\"automatic\"}'
+      "
+    environment:
+      RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-admin}
+      RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_password
+    secrets:
+      - rabbitmq_password
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+      placement:
+        constraints:
+          - node.labels.role == msg
+
+networks:
+  platform_net:
+    external: true
+
+volumes:
+  zookeeper1_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/zookeeper1-data"
+  zookeeper1_logs:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/zookeeper1-logs"
+  zookeeper2_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/zookeeper2-data"
+  zookeeper2_logs:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/zookeeper2-logs"
+  zookeeper3_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/zookeeper3-data"
+  zookeeper3_logs:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/zookeeper3-logs"
+  kafka1_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/kafka1"
+  kafka2_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/kafka2"
+  kafka3_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/kafka3"
+  rabbitmq1_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/rabbitmq1"
+  rabbitmq2_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/rabbitmq2"
+  rabbitmq3_data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=nfs-server,rw
+      device: ":/exports/rabbitmq3"
+
+secrets:
+  rabbitmq_password:
+    external: true

@@ -1,0 +1,261 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: platform-data
+data:
+  redis.conf: |
+    # Redis配置
+    dir /data
+    appendonly yes
+    maxmemory 512mb
+    maxmemory-policy allkeys-lru
+    # 集群配置
+    cluster-enabled yes
+    cluster-config-file /data/nodes.conf
+    cluster-node-timeout 5000
+    # 保护模式配置
+    protected-mode no
+    # 性能优化配置
+    tcp-backlog 511
+    tcp-keepalive 300
+    timeout 0
+    # 持久化配置
+    save 900 1
+    save 300 10
+    save 60 10000
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    # 日志配置
+    loglevel notice
+    logfile /data/redis.log
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-secrets
+  namespace: platform-data
+type: Opaque
+data:
+  redis-password: cmVkaXNwYXNz # base64编码的密码
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-headless
+  namespace: platform-data
+  labels:
+    app: redis
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  - port: 16379
+    targetPort: 16379
+    name: gossip
+  clusterIP: None
+  selector:
+    app: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: platform-data
+  labels:
+    app: redis
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    app: redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: platform-data
+spec:
+  serviceName: redis-headless
+  replicas: 6
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - redis
+            topologyKey: "kubernetes.io/hostname"
+      initContainers:
+      - name: config
+        image: busybox:1.28
+        command: ['sh', '-c']
+        args:
+        - |
+          cp /readonly-config/redis.conf /config/redis.conf
+          echo "requirepass $(cat /secret/redis-password)" >> /config/redis.conf
+          echo "masterauth $(cat /secret/redis-password)" >> /config/redis.conf
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: config-map
+          mountPath: /readonly-config
+        - name: secret
+          mountPath: /secret
+      containers:
+      - name: redis
+        image: redis:latest
+        command: ["redis-server"]
+        args: ["/config/redis.conf"]
+        ports:
+        - name: redis
+          containerPort: 6379
+        - name: gossip
+          containerPort: 16379
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: config
+          mountPath: /config
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              redis-cli -a $(cat /secret/redis-password) ping | grep PONG
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              redis-cli -a $(cat /secret/redis-password) ping | grep PONG
+          initialDelaySeconds: 20
+          periodSeconds: 5
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: config
+          mountPath: /config
+        - name: secret
+          mountPath: /secret
+      volumes:
+      - name: config
+        emptyDir: {}
+      - name: config-map
+        configMap:
+          name: redis-config
+      - name: secret
+        secret:
+          secretName: redis-secrets
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: redis-cluster-init
+  namespace: platform-data
+spec:
+  template:
+    spec:
+      containers:
+      - name: redis-cluster-init
+        image: redis:latest
+        command: ['sh', '-c']
+        args:
+        - |
+          echo "Waiting for redis nodes to be ready..."
+          sleep 30
+          redis-cli --cluster create \
+            redis-0.redis-headless:6379 \
+            redis-1.redis-headless:6379 \
+            redis-2.redis-headless:6379 \
+            redis-3.redis-headless:6379 \
+            redis-4.redis-headless:6379 \
+            redis-5.redis-headless:6379 \
+            -a $(cat /secret/redis-password) \
+            --cluster-replicas 1 \
+            --cluster-yes
+        volumeMounts:
+        - name: secret
+          mountPath: /secret
+      volumes:
+      - name: secret
+        secret:
+          secretName: redis-secrets
+      restartPolicy: OnFailure
+      serviceAccountName: redis-cluster-init-sa
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis-cluster-init-sa
+  namespace: platform-data
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: redis-cluster-init-role
+  namespace: platform-data
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: redis-cluster-init-rolebinding
+  namespace: platform-data
+subjects:
+- kind: ServiceAccount
+  name: redis-cluster-init-sa
+  namespace: platform-data
+roleRef:
+  kind: Role
+  name: redis-cluster-init-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-pdb
+  namespace: platform-data
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app: redis

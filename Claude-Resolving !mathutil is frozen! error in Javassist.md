@@ -1,8 +1,8 @@
 # Resolving !mathutil is frozen! error in Javassist
 
 **Created:** 5/21/2025 14:06  
-**Updated:** 5/21/2025 14:40  
-**Exported:** 5/21/2025 14:42  
+**Updated:** 5/21/2025 14:46  
+**Exported:** 5/21/2025 14:46  
 
 ## Prompt:
 > File: paste.txt
@@ -1810,6 +1810,483 @@ public static void checkAgentAvailable() {
 这样，在没有Agent的构建过程中，测试会被标记为"跳过"而不是"失败"。
 
 选择最适合你团队和项目需求的方案。方案1是最直接和可靠的，但其他方案在特定场景下也有其优势。
+
+
+
+## Prompt:
+现在的代码运行时要求打开打包的jar，我现在打包报这个错还怎么打包，改改
+
+
+
+## Response:
+```plaintext
+Thought process
+
+好的，我理解问题所在。当前代码依赖于Java Agent，但是在打包过程中，Maven会尝试运行测试，而此时Java Agent JAR还没有生成，导致测试失败并中断构建过程。
+
+我们需要修改代码和Maven配置，使得：
+1. 测试可以在没有Java Agent的情况下优雅地跳过或者使用备用方案
+2. 打包过程不会因为缺少Agent而失败
+3. 最终生成的包含Agent功能的JAR可以正常使用
+
+让我们来修改代码：
+```
+
+我理解问题所在 - 当前代码中打包过程中的测试无法运行，因为它们需要一个尚未构建好的Java Agent JAR文件。我将对代码进行如下修改以解决这个问题：
+
+## 1. 修改StaticMocker.java - 添加无Agent模式支持
+
+```java
+package com.example.staticmock;
+
+import javassist.*;
+
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+/**
+ * 静态方法Mock的核心引擎类，使用Javassist实现
+ */
+public class StaticMocker {
+    // 单例模式
+    private static final StaticMocker INSTANCE = new StaticMocker();
+    
+    // 存储原始类的字节码，用于恢复
+    private final Map<String, byte[]> originalClassBytes = new ConcurrentHashMap<>();
+    // 跟踪已修改的类
+    private final Map<String, Class<?>> modifiedClasses = new ConcurrentHashMap<>();
+    // 类池
+    private final ClassPool classPool;
+    // 是否有Agent支持
+    private final boolean hasAgentSupport;
+    
+    private StaticMocker() {
+        // 初始化类池
+        classPool = ClassPool.getDefault();
+        classPool.importPackage("com.example.staticmock");
+        
+        // 检测是否有Agent支持
+        hasAgentSupport = checkAgentSupport();
+        
+        if (!hasAgentSupport) {
+            System.out.println("警告: 没有检测到Java Agent支持，Mock功能将有限制");
+        }
+    }
+    
+    /**
+     * 检查是否有Agent支持
+     */
+    private boolean checkAgentSupport() {
+        try {
+            return MockAgent.getInstrumentation() != null;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+    
+    public static StaticMocker getInstance() {
+        return INSTANCE;
+    }
+
+    /**
+     * 开始对特定类的静态方法进行Mock
+     */
+    public <T> WhenBuilder<T> when(Class<T> clazz, String methodName, Class<?>... paramTypes) {
+        return new WhenBuilder<>(clazz, methodName, paramTypes);
+    }
+    
+    /**
+     * 重置所有Mock
+     */
+    public void resetAll() {
+        MockContext.reset();
+        modifiedClasses.clear();
+        originalClassBytes.clear();
+    }
+
+    /**
+     * 验证静态方法被调用的次数
+     */
+    public void verify(Class<?> clazz, String methodName, int times, Class<?>... paramTypes) {
+        String methodSignature = buildMethodSignature(clazz, methodName, paramTypes);
+        int actualCalls = MockContext.getCallCount(methodSignature);
+        
+        if (actualCalls != times) {
+            throw new AssertionError(
+                String.format("方法 %s 预期被调用 %d 次，实际被调用 %d 次", 
+                              methodSignature, times, actualCalls));
+        }
+    }
+    
+    /**
+     * Mock流式API的构建器
+     */
+    public class WhenBuilder<T> {
+        private final Class<T> clazz;
+        private final String methodName;
+        private final Class<?>[] paramTypes;
+        
+        private WhenBuilder(Class<T> clazz, String methodName, Class<?>[] paramTypes) {
+            this.clazz = clazz;
+            this.methodName = methodName;
+            this.paramTypes = paramTypes;
+        }
+        
+        /**
+         * 设置返回值
+         */
+        public void thenReturn(Object returnValue) {
+            String methodSignature = buildMethodSignature(clazz, methodName, paramTypes);
+            
+            // 注册Mock行为
+            MockContext.registerMock(methodSignature, args -> returnValue);
+            
+            // 修改类字节码
+            try {
+                if (hasAgentSupport) {
+                    modifyClassBytecode();
+                } else {
+                    // 在无Agent模式下尝试使用替代方法，如果失败会抛出异常
+                    modifyClassBytecodeNonAgent();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("无法修改类字节码: " + e.getMessage(), e);
+            }
+        }
+        
+        /**
+         * 设置异常抛出
+         */
+        public void thenThrow(Throwable throwable) {
+            String methodSignature = buildMethodSignature(clazz, methodName, paramTypes);
+            
+            // 注册抛出异常的Mock行为
+            MockContext.registerMock(methodSignature, args -> {
+                throw new RuntimeException(throwable);
+            });
+            
+            // 修改类字节码
+            try {
+                if (hasAgentSupport) {
+                    modifyClassBytecode();
+                } else {
+                    // 在无Agent模式下尝试使用替代方法，如果失败会抛出异常
+                    modifyClassBytecodeNonAgent();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("无法修改类字节码: " + e.getMessage(), e);
+            }
+        }
+        
+        /**
+         * 使用Java Agent修改类的字节码（有Agent支持时）
+         */
+        private void modifyClassBytecode() throws Exception {
+            String className = clazz.getName();
+            
+            // 如果类已被修改，不需要再次修改
+            if (modifiedClasses.containsKey(className)) {
+                return;
+            }
+            
+            // 获取类
+            CtClass ctClass = classPool.get(className);
+            
+            // 如果类已被冻结，则解冻
+            if (ctClass.isFrozen()) {
+                ctClass.defrost();
+            }
+            
+            // 保存原始字节码
+            if (!originalClassBytes.containsKey(className)) {
+                originalClassBytes.put(className, ctClass.toBytecode());
+            }
+            
+            // 查找方法
+            CtMethod ctMethod = findMethod(ctClass, methodName, paramTypes);
+            
+            if (ctMethod == null) {
+                throw new RuntimeException("找不到方法: " + className + "." + methodName);
+            }
+            
+            // 生成拦截代码
+            String interceptCode = generateInterceptCode(className, methodName, paramTypes, ctMethod);
+            
+            // 替换方法体
+            ctMethod.setBody(interceptCode);
+            
+            try {
+                // 重定义类
+                byte[] bytecode = ctClass.toBytecode();
+                MockAgent.getInstrumentation().redefineClasses(
+                    new ClassDefinition(clazz, bytecode)
+                );
+                modifiedClasses.put(className, clazz);
+            } catch (Exception e) {
+                throw new RuntimeException("无法重定义类: " + e.getMessage(), e);
+            } finally {
+                // 释放资源
+                ctClass.detach();
+            }
+        }
+        
+        /**
+         * 在无Agent情况下尝试修改类（有限功能）
+         */
+        private void modifyClassBytecodeNonAgent() throws Exception {
+            String className = clazz.getName();
+            
+            // 如果类已被修改，不需要再次修改
+            if (modifiedClasses.containsKey(className)) {
+                return;
+            }
+            
+            // 获取类
+            CtClass ctClass = classPool.get(className);
+            
+            // 如果类已被冻结，则解冻
+            if (ctClass.isFrozen()) {
+                ctClass.defrost();
+            }
+            
+            // 保存原始字节码
+            if (!originalClassBytes.containsKey(className)) {
+                originalClassBytes.put(className, ctClass.toBytecode());
+            }
+            
+            // 查找方法
+            CtMethod ctMethod = findMethod(ctClass, methodName, paramTypes);
+            
+            if (ctMethod == null) {
+                throw new RuntimeException("找不到方法: " + className + "." + methodName);
+            }
+            
+            // 生成拦截代码
+            String interceptCode = generateInterceptCode(className, methodName, paramTypes, ctMethod);
+            
+            // 替换方法体
+            ctMethod.setBody(interceptCode);
+            
+            try {
+                // 尝试直接加载修改后的类
+                // 注意：这仅适用于首次加载，对已加载的类无效
+                Class<?> redefinedClass = ctClass.toClass();
+                modifiedClasses.put(className, redefinedClass);
+                
+                // 记录已尝试修改的类
+                System.out.println("已尝试Mock类: " + className);
+            } catch (Exception e) {
+                System.err.println("警告: 类已加载，无法在没有Agent的情况下重定义: " + e.getMessage());
+                throw new RuntimeException("需要Java Agent支持。请添加JVM参数: -javaagent:path/to/agent.jar", e);
+            } finally {
+                // 释放资源
+                ctClass.detach();
+            }
+        }
+    }
+    
+    // 其余方法保持不变...
+}
+```
+
+## 2. 修改MockAgent.java - 防止NPE
+
+```java
+package com.example.staticmock;
+
+import java.lang.instrument.ClassDefinition;
+import java.lang.instrument.Instrumentation;
+
+/**
+ * Java Agent用于支持类重定义
+ */
+public class MockAgent {
+    private static Instrumentation instrumentation;
+    
+    /**
+     * 当作为Java Agent启动时调用
+     */
+    public static void premain(String args, Instrumentation inst) {
+        instrumentation = inst;
+        System.out.println("JavassistMockAgent已加载 - 支持静态方法Mock");
+    }
+    
+    /**
+     * 当作为动态代理启动时调用
+     */
+    public static void agentmain(String args, Instrumentation inst) {
+        instrumentation = inst;
+        System.out.println("JavassistMockAgent已动态加载 - 支持静态方法Mock");
+    }
+    
+    /**
+     * 获取Instrumentation实例
+     */
+    public static Instrumentation getInstrumentation() {
+        return instrumentation;
+    }
+    
+    /**
+     * 安全地重定义类，如果没有Agent将返回false
+     */
+    public static boolean safeRedefineClasses(ClassDefinition... definitions) {
+        if (instrumentation != null) {
+            try {
+                instrumentation.redefineClasses(definitions);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * 主方法，用于独立运行时
+     */
+    public static void main(String[] args) {
+        System.out.println("MockAgent需要作为Java Agent运行");
+        System.out.println("添加JVM参数: -javaagent:javassist-static-mock-1.0-SNAPSHOT.jar");
+    }
+}
+```
+
+## 3. 修改MathUtilsTest.java - 添加条件跳过
+
+```java
+package com.example.demo;
+
+import com.example.staticmock.MockAgent;
+import com.example.staticmock.StaticMocker;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Assumptions;
+
+/**
+ * MathUtils测试类
+ */
+class MathUtilsTest {
+    
+    private final StaticMocker mocker = StaticMocker.getInstance();
+    
+    @BeforeAll
+    static void checkAgentAvailable() {
+        // 如果在没有Agent的环境中运行，输出警告信息
+        if (MockAgent.getInstrumentation() == null) {
+            System.out.println("警告: 没有检测到Java Agent支持，某些测试可能会被跳过");
+            System.out.println("请使用参数运行: -javaagent:target/javassist-static-mock-1.0-SNAPSHOT.jar");
+        }
+    }
+    
+    @AfterEach
+    void tearDown() {
+        // 每个测试结束后重置所有Mock
+        mocker.resetAll();
+    }
+    
+    @Test
+    void testAddWithMock() {
+        try {
+            // 对静态方法add进行Mock
+            mocker.when(MathUtils.class, "add", int.class, int.class)
+                  .thenReturn(100);
+            
+            // 验证Mock生效
+            assertEquals(100, MathUtils.add(5, 10));
+            
+            // 验证方法被调用了1次
+            mocker.verify(MathUtils.class, "add", 1, int.class, int.class);
+        } catch (RuntimeException e) {
+            // 如果失败并且提示需要Agent，则优雅地跳过测试
+            if (e.getMessage() != null && e.getMessage().contains("需要Java Agent支持")) {
+                Assumptions.assumeTrue(false, "此测试需要Java Agent支持");
+            } else {
+                // 其他异常则正常传播
+                throw e;
+            }
+        }
+    }
+    
+    // 其他测试方法类似修改...
+}
+```
+
+## 4. 修改pom.xml - 分离测试和打包
+
+```xml
+<build>
+    <plugins>
+        <!-- 跳过测试但保留编译 -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.1.2</version>
+            <configuration>
+                <!-- 允许测试失败不影响构建 -->
+                <testFailureIgnore>true</testFailureIgnore>
+                <!-- 或者完全跳过测试 -->
+                <!-- <skipTests>true</skipTests> -->
+            </configuration>
+        </plugin>
+        
+        <!-- 创建带Premain的可执行jar -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.3.0</version>
+            <configuration>
+                <archive>
+                    <manifest>
+                        <addClasspath>true</addClasspath>
+                        <mainClass>com.example.staticmock.MockAgent</mainClass>
+                    </manifest>
+                    <manifestEntries>
+                        <Premain-Class>com.example.staticmock.MockAgent</Premain-Class>
+                        <Agent-Class>com.example.staticmock.MockAgent</Agent-Class>
+                        <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                        <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                    </manifestEntries>
+                </archive>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+## 修改说明
+
+1. **StaticMocker类修改**:
+   - 添加了检测Agent支持的逻辑
+   - 实现了无Agent模式的备用方案（虽然功能有限）
+   - 增加了异常处理，在没有Agent时提供更明确的错误信息
+
+2. **MockAgent类改进**:
+   - 添加了安全获取Instrumentation的方法，防止NPE
+
+3. **测试类修改**:
+   - 添加了Agent检测
+   - 使用JUnit的`Assumptions`优雅地跳过需要Agent的测试，而不是让它们失败
+
+4. **POM配置修改**:
+   - 配置maven-surefire-plugin允许测试失败，但继续构建
+   - 或者选择完全跳过测试，专注于打包
+
+这些修改允许你在没有Java Agent的情况下成功打包，同时保留Agent支持的功能。在有Agent的环境中仍能完整地运行所有功能。
+
+运行命令:
+```bash
+# 先打包
+mvn clean package
+
+# 然后使用Agent运行测试
+java -javaagent:target/javassist-static-mock-1.0-SNAPSHOT.jar -cp target/test-classes:target/classes:~/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar org.junit.platform.console.ConsoleLauncher --scan-classpath
+```
 
 
 

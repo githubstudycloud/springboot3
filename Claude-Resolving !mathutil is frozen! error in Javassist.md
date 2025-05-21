@@ -1,8 +1,8 @@
 # Resolving !mathutil is frozen! error in Javassist
 
 **Created:** 5/21/2025 14:06  
-**Updated:** 5/21/2025 14:46  
-**Exported:** 5/21/2025 14:46  
+**Updated:** 5/21/2025 14:56  
+**Exported:** 5/21/2025 14:59  
 
 ## Prompt:
 > File: paste.txt
@@ -2287,6 +2287,152 @@ mvn clean package
 # 然后使用Agent运行测试
 java -javaagent:target/javassist-static-mock-1.0-SNAPSHOT.jar -cp target/test-classes:target/classes:~/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.jar org.junit.platform.console.ConsoleLauncher --scan-classpath
 ```
+
+
+
+## Prompt:
+我用命令行提示找不到consolelauncher，这个我怎么弄呢？还有我如何在idea直接运行测试类时设置这个，我直接跑测试类提示类冻结
+
+
+
+## Response:
+```plaintext
+Thought process
+
+让我解决以下两个问题：
+
+1. 找不到ConsoleLauncher的问题
+2. 如何在IntelliJ IDEA中直接运行测试类并添加Java Agent参数
+
+对于第一个问题，我们需要确保有JUnit Platform Console Launcher的依赖。对于第二个问题，我们需要在IDEA中配置运行/调试配置以添加Java Agent参数。
+
+让我分别解决这两个问题：
+```
+
+# 在IntelliJ IDEA中运行带Java Agent的测试
+
+我将分别解决命令行和IDE环境下的问题：
+
+## 一、解决找不到ConsoleLauncher的问题
+
+如果想通过命令行运行JUnit测试，需要添加JUnit Platform Console Launcher依赖：
+
+1. **在pom.xml中添加依赖**:
+
+```xml
+<dependency>
+    <groupId>org.junit.platform</groupId>
+    <artifactId>junit-platform-console</artifactId>
+    <version>1.10.0</version>
+    <scope>test</scope>
+</dependency>
+```
+
+2. **正确的命令行运行命令**:
+
+```bash
+# Maven方式运行测试
+mvn test -DargLine="-javaagent:target/javassist-static-mock-1.0-SNAPSHOT.jar"
+
+# 或者直接使用Java命令
+java -javaagent:target/javassist-static-mock-1.0-SNAPSHOT.jar -cp "target/test-classes:target/classes:target/dependency/*" org.junit.platform.console.ConsoleLauncher --scan-class-path
+```
+
+## 二、在IntelliJ IDEA中配置Java Agent
+
+在IntelliJ IDEA中直接运行测试类时添加Java Agent:
+
+1. **编辑运行配置**:
+
+   - 点击测试类方法左侧的绿色运行按钮
+   - 选择"修改运行配置"或者"Edit Configurations..."
+   - 找到"VM options"字段
+
+2. **添加Java Agent参数**:
+
+   在"VM options"字段中添加:
+   ```
+   -javaagent:target/javassist-static-mock-1.0-SNAPSHOT.jar
+   ```
+
+   ![IDEA配置截图](https://i.imgur.com/QQdMkpT.png)
+
+3. **应用并保存配置**
+
+## 三、为所有测试配置Java Agent
+
+如果您想为所有JUnit测试默认添加这个Java Agent:
+
+1. **打开设置(Settings)**: 
+   - Windows/Linux: File -> Settings
+   - macOS: IntelliJ IDEA -> Preferences
+
+2. **找到模板配置**:
+   - 导航到 Build, Execution, Deployment -> Templates -> JUnit
+
+3. **修改默认VM选项**:
+   - 在VM Options字段添加: `-javaagent:target/javassist-static-mock-1.0-SNAPSHOT.jar`
+   - 点击Apply和OK
+
+## 四、使用环境变量配置全局Agent
+
+另一种方法是通过IDEA的环境变量配置:
+
+1. **打开帮助菜单(Help)**:
+   - 选择"Edit Custom VM Options..."
+
+2. **添加全局代理设置**:
+   ```
+   -Djava.test.vmoptions="-javaagent:target/javassist-static-mock-1.0-SNAPSHOT.jar"
+   ```
+
+3. **重启IDEA**
+
+## 五、解决测试中的类冻结问题
+
+如果仍然遇到类冻结问题，您可以采取以下额外措施:
+
+1. **确保首先构建项目**:
+   ```bash
+   mvn clean package
+   ```
+
+2. **在每个测试类上添加注解**:
+   在`MathUtilsTest`类上添加:
+   ```java
+   @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+   ```
+   这会使JUnit为每个测试类只创建一个实例。
+
+3. **添加测试重载检测**:
+   在`StaticMocker`中添加测试重载检测，避免多次修改同一个类:
+   ```java
+   private final Set<String> testedMethods = new ConcurrentHashMap<String, Boolean>().keySet(Boolean.TRUE);
+   
+   // 在when方法中
+   public <T> WhenBuilder<T> when(Class<T> clazz, String methodName, Class<?>... paramTypes) {
+       String key = buildMethodSignature(clazz, methodName, paramTypes);
+       if (testedMethods.contains(key)) {
+           // 如果已经测试过，直接返回现有的构建器
+           return new WhenBuilder<>(clazz, methodName, paramTypes);
+       }
+       testedMethods.add(key);
+       return new WhenBuilder<>(clazz, methodName, paramTypes);
+   }
+   
+   // 在resetAll中
+   public void resetAll() {
+       MockContext.reset();
+       modifiedClasses.clear();
+       testedMethods.clear();
+   }
+   ```
+
+4. **如果使用IDEA内置JUnit启动器，请确保在设置中配置使用Gradle/Maven执行测试**:
+   - Build, Execution, Deployment -> Build Tools -> Maven/Gradle
+   - 勾选"Run tests using Maven/Gradle"选项
+
+这些修改应该可以解决在IDEA中直接运行测试时遇到的"类冻结"问题。
 
 
 

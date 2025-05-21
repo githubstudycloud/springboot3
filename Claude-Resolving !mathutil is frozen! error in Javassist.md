@@ -1,8 +1,8 @@
 # Resolving !mathutil is frozen! error in Javassist
 
 **Created:** 5/21/2025 14:06  
-**Updated:** 5/21/2025 14:25  
-**Exported:** 5/21/2025 14:25  
+**Updated:** 5/21/2025 14:40  
+**Exported:** 5/21/2025 14:42  
 
 ## Prompt:
 > File: paste.txt
@@ -1560,6 +1560,256 @@ Java Agent提供了JVM官方支持的类重定义机制：
 ## 总结
 
 Java Agent是本框架的关键部分，它允许框架在测试过程中多次修改同一个类的行为，确保每个测试用例都能在干净的环境中运行，而不会受到先前测试中类修改的影响。
+
+
+
+## Prompt:
+打包时自动运行测试类，但测试类没有agent不通过怎么搞
+
+
+
+## Response:
+```plaintext
+Thought process
+
+这是一个常见的问题，在Maven构建过程中自动运行测试，但测试需要Java Agent才能通过。有几种解决方案：
+
+1. 在Maven的Surefire插件中配置Java Agent参数
+2. 使用Maven插件打包Agent，并在Surefire配置中引用它
+3. 跳过自动测试阶段，提供单独的测试运行脚本
+4. 使用测试级别的替代方案，避免对Java Agent的依赖
+
+让我提供这几种方案的具体实现：
+```
+
+# Maven项目中自动运行需要Java Agent的测试
+
+当你需要在Maven构建过程中自动运行依赖Java Agent的测试时，有以下几种方案：
+
+## 方案1：配置Surefire插件使用Java Agent（推荐）
+
+这种方法最直接，在pom.xml中配置maven-surefire-plugin使用预先构建的Agent：
+
+```xml
+<build>
+    <plugins>
+        <!-- 先打包Agent -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.3.0</version>
+            <executions>
+                <execution>
+                    <id>package-agent</id>
+                    <phase>prepare-package</phase>
+                    <goals>
+                        <goal>jar</goal>
+                    </goals>
+                    <configuration>
+                        <archive>
+                            <manifestEntries>
+                                <Premain-Class>com.example.staticmock.MockAgent</Premain-Class>
+                                <Agent-Class>com.example.staticmock.MockAgent</Agent-Class>
+                                <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                                <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                            </manifestEntries>
+                        </archive>
+                        <finalName>static-mock-agent</finalName>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+        
+        <!-- 然后配置测试插件使用Agent -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.1.2</version>
+            <configuration>
+                <argLine>-javaagent:${project.build.directory}/static-mock-agent.jar</argLine>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+## 方案2：使用maven-dependency-plugin复制已有的Agent
+
+如果你的Agent在另一个模块或依赖中：
+
+```xml
+<build>
+    <plugins>
+        <!-- 复制Agent JAR -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>3.5.0</version>
+            <executions>
+                <execution>
+                    <id>copy-agent</id>
+                    <phase>process-test-classes</phase>
+                    <goals>
+                        <goal>copy</goal>
+                    </goals>
+                    <configuration>
+                        <artifactItems>
+                            <artifactItem>
+                                <groupId>com.example</groupId>
+                                <artifactId>javassist-agent</artifactId>
+                                <version>${project.version}</version>
+                                <outputDirectory>${project.build.directory}</outputDirectory>
+                                <destFileName>agent.jar</destFileName>
+                            </artifactItem>
+                        </artifactItems>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+        
+        <!-- 配置测试使用Agent -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>3.1.2</version>
+            <configuration>
+                <argLine>-javaagent:${project.build.directory}/agent.jar</argLine>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+## 方案3：使用测试替代方案 - 修改StaticMocker以支持非Agent模式
+
+如果你不想在构建中使用Agent，可以修改StaticMocker类以支持非Agent模式：
+
+```java
+// 在StaticMocker类中添加这些方法
+
+/**
+ * 修改类的字节码以拦截静态方法调用（非Agent模式）
+ */
+private void modifyClassBytecodeNonAgent() throws Exception {
+    String className = clazz.getName();
+    
+    // 获取类
+    ClassPool classPool = ClassPool.getDefault();
+    classPool.appendClassPath(new LoaderClassPath(clazz.getClassLoader()));
+    CtClass ctClass = classPool.get(className);
+    
+    if (ctClass.isFrozen()) {
+        ctClass.defrost();
+    }
+    
+    // 保存原始字节码
+    if (!originalClassBytes.containsKey(className)) {
+        originalClassBytes.put(className, ctClass.toBytecode());
+    }
+    
+    // 查找方法
+    CtMethod ctMethod = findMethod(ctClass, methodName, paramTypes);
+    
+    // 生成代理方法
+    String proxyClassName = className + "$StaticMockProxy";
+    CtClass proxyClass = null;
+    
+    try {
+        proxyClass = classPool.get(proxyClassName);
+        if (proxyClass.isFrozen()) {
+            proxyClass.defrost();
+        }
+    } catch (NotFoundException e) {
+        proxyClass = classPool.makeClass(proxyClassName);
+    }
+    
+    // 在代理类中添加静态方法
+    String proxyMethodName = methodName + "$proxy";
+    CtMethod proxyMethod = findOrCreateProxyMethod(proxyClass, proxyMethodName, ctMethod);
+    
+    // 修改原始方法以调用代理方法
+    String interceptCode = generateProxyCallCode(className, proxyMethodName);
+    ctMethod.setBody(interceptCode);
+    
+    // 加载类
+    proxyClass.toClass(clazz.getClassLoader(), clazz.getProtectionDomain());
+    ctClass.toClass(clazz.getClassLoader(), clazz.getProtectionDomain());
+    
+    // 记录已修改的类
+    modifiedClasses.put(className, clazz);
+}
+
+// 生成调用代理方法的代码
+private String generateProxyCallCode(String className, String proxyMethodName) {
+    // 实现代理调用逻辑
+    // ...
+}
+
+// 在构造函数中添加检测
+public StaticMocker() {
+    classPool = ClassPool.getDefault();
+    classPool.importPackage("com.example.staticmock");
+    
+    // 检测是否有Agent支持
+    hasAgentSupport = MockAgent.getInstrumentation() != null;
+    
+    if (!hasAgentSupport) {
+        System.out.println("警告: 没有检测到Java Agent支持，将使用替代方案（功能可能受限）");
+    }
+}
+```
+
+## 方案4：使用代码生成或构建时编织
+
+使用AspectJ、ByteBuddy或其他工具来实现构建时编织(compile-time weaving)：
+
+```xml
+<!-- AspectJ Maven插件示例 -->
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>aspectj-maven-plugin</artifactId>
+    <version>1.14.0</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>compile</goal>
+                <goal>test-compile</goal>
+            </goals>
+        </execution>
+    </executions>
+    <configuration>
+        <source>${maven.compiler.source}</source>
+        <target>${maven.compiler.target}</target>
+        <complianceLevel>${maven.compiler.target}</complianceLevel>
+    </configuration>
+</plugin>
+```
+
+## 最简单方案：在测试中处理缺少Agent的情况
+
+在测试类中添加检测并适当处理：
+
+```java
+@BeforeAll
+public static void checkAgentAvailable() {
+    boolean hasAgent = false;
+    try {
+        // 尝试获取Instrumentation
+        Class<?> agentClass = Class.forName("com.example.staticmock.MockAgent");
+        Method getInstrumentation = agentClass.getDeclaredMethod("getInstrumentation");
+        hasAgent = getInstrumentation.invoke(null) != null;
+    } catch (Exception e) {
+        hasAgent = false;
+    }
+    
+    // 如果没有Agent，跳过依赖Agent的测试
+    Assumptions.assumeTrue(hasAgent, "需要Java Agent支持，运行时添加: -javaagent:path/to/agent.jar");
+}
+```
+
+这样，在没有Agent的构建过程中，测试会被标记为"跳过"而不是"失败"。
+
+选择最适合你团队和项目需求的方案。方案1是最直接和可靠的，但其他方案在特定场景下也有其优势。
 
 
 

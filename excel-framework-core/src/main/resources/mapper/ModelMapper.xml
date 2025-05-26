@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.ModelMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.Model">
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="version" property="version"/>
+        <result column="description" property="description"/>
+        <result column="model_type" property="modelType"/>
+        <result column="file_path" property="filePath"/>
+        <result column="file_size" property="fileSize"/>
+        <result column="checksum" property="checksum"/>
+        <result column="status" property="status"/>
+        <result column="tags" property="tags"/>
+        <result column="metadata" property="metadata"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 包含分类信息的结果映射 -->
+    <resultMap id="WithCategoryResultMap" type="com.framework.excel.entity.Model" extends="BaseResultMap">
+        <result column="category_name" property="categoryName"/>
+        <association property="category" javaType="com.framework.excel.entity.ModelCategory">
+            <id column="category_id" property="id"/>
+            <result column="category_name" property="name"/>
+            <result column="category_code" property="code"/>
+            <result column="category_description" property="description"/>
+        </association>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, code, name, category_id, version, description, model_type, file_path, file_size, 
+        checksum, status, tags, metadata, create_by, update_by, create_time, update_time
+    </sql>
+
+    <!-- 包含分类信息的列 -->
+    <sql id="With_Category_Column_List">
+        m.id, m.code, m.name, m.category_id, m.version, m.description, m.model_type, m.file_path, 
+        m.file_size, m.checksum, m.status, m.tags, m.metadata, m.create_by, m.update_by, 
+        m.create_time, m.update_time,
+        mc.name as category_name, mc.code as category_code, mc.description as category_description
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            <if test="code != null and code != ''">
+                AND m.code = #{code}
+            </if>
+            <if test="name != null and name != ''">
+                AND m.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND m.category_id = #{categoryId}
+            </if>
+            <if test="modelType != null and modelType != ''">
+                AND m.model_type = #{modelType}
+            </if>
+            <if test="status != null">
+                AND m.status = #{status}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                AND m.create_by = #{createBy}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据编码查询 -->
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model
+        WHERE code = #{code}
+    </select>
+
+    <!-- 根据编码查询（包含分类信息） -->
+    <select id="selectWithCategoryByCode" resultMap="WithCategoryResultMap">
+        SELECT <include refid="With_Category_Column_List"/>
+        FROM model m
+        LEFT JOIN model_category mc ON m.category_id = mc.id
+        WHERE m.code = #{code}
+    </select>
+
+    <!-- 根据名称查询 -->
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model
+        WHERE name LIKE CONCAT('%', #{name}, '%')
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据分类ID查询 -->
+    <select id="selectByCategoryId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model
+        WHERE category_id = #{categoryId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据模型类型查询 -->
+    <select id="selectByModelType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model
+        WHERE model_type = #{modelType}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据状态查询 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model
+        WHERE status = #{status}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据创建人查询 -->
+    <select id="selectByCreateBy" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model
+        WHERE create_by = #{createBy}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model m
+        <include refid="Where_Clause"/>
+        ORDER BY m.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 分页查询（包含分类信息） -->
+    <select id="selectWithCategoryByPage" resultMap="WithCategoryResultMap">
+        SELECT <include refid="With_Category_Column_List"/>
+        FROM model m
+        LEFT JOIN model_category mc ON m.category_id = mc.id
+        <include refid="Where_Clause"/>
+        ORDER BY m.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM model m
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" parameterType="com.framework.excel.entity.Model" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO model (
+            code, name, category_id, version, description, model_type, file_path, file_size, 
+            checksum, status, tags, metadata, create_by, update_by, create_time, update_time
+        ) VALUES (
+            #{code}, #{name}, #{categoryId}, #{version}, #{description}, #{modelType}, #{filePath}, #{fileSize}, 
+            #{checksum}, #{status}, #{tags}, #{metadata}, #{createBy}, #{updateBy}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 批量插入 -->
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO model (
+            code, name, category_id, version, description, model_type, file_path, file_size, 
+            checksum, status, tags, metadata, create_by, update_by, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.code}, #{item.name}, #{item.categoryId}, #{item.version}, #{item.description}, #{item.modelType}, 
+             #{item.filePath}, #{item.fileSize}, #{item.checksum}, #{item.status}, #{item.tags}, #{item.metadata}, 
+             #{item.createBy}, #{item.updateBy}, NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <!-- 更新 -->
+    <update id="updateById" parameterType="com.framework.excel.entity.Model">
+        UPDATE model
+        SET name = #{name},
+            category_id = #{categoryId},
+            version = #{version},
+            description = #{description},
+            model_type = #{modelType},
+            file_path = #{filePath},
+            file_size = #{fileSize},
+            checksum = #{checksum},
+            status = #{status},
+            tags = #{tags},
+            metadata = #{metadata},
+            update_by = #{updateBy},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据编码更新 -->
+    <update id="updateByCode" parameterType="com.framework.excel.entity.Model">
+        UPDATE model
+        SET name = #{name},
+            category_id = #{categoryId},
+            version = #{version},
+            description = #{description},
+            model_type = #{modelType},
+            file_path = #{filePath},
+            file_size = #{fileSize},
+            checksum = #{checksum},
+            status = #{status},
+            tags = #{tags},
+            metadata = #{metadata},
+            update_by = #{updateBy},
+            update_time = NOW()
+        WHERE code = #{code}
+    </update>
+
+    <!-- 批量更新状态 -->
+    <update id="updateStatusByIds">
+        UPDATE model
+        SET status = #{status}, update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 更新模型版本 -->
+    <update id="updateVersionById">
+        UPDATE model
+        SET version = #{version}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除 -->
+    <delete id="deleteById">
+        DELETE FROM model WHERE id = #{id}
+    </delete>
+
+    <!-- 根据编码删除 -->
+    <delete id="deleteByCode">
+        DELETE FROM model WHERE code = #{code}
+    </delete>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM model
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 检查编码是否存在 -->
+    <select id="existsByCode" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM model
+        WHERE code = #{code}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 统计各状态的模型数量 -->
+    <select id="countByStatus" resultType="java.util.Map">
+        SELECT status, COUNT(*) as count
+        FROM model
+        GROUP BY status
+    </select>
+
+    <!-- 统计各类型的模型数量 -->
+    <select id="countByModelType" resultType="java.util.Map">
+        SELECT model_type, COUNT(*) as count
+        FROM model
+        WHERE model_type IS NOT NULL
+        GROUP BY model_type
+    </select>
+
+    <!-- 统计各分类的模型数量 -->
+    <select id="countByCategory" resultType="java.util.Map">
+        SELECT mc.name as category_name, COUNT(m.id) as count
+        FROM model_category mc
+        LEFT JOIN model m ON mc.id = m.category_id
+        WHERE mc.enabled = true
+        GROUP BY mc.id, mc.name
+        ORDER BY count DESC
+    </select>
+
+    <!-- 获取最新版本号 -->
+    <select id="getLatestVersionByCode" resultType="string">
+        SELECT version
+        FROM model
+        WHERE code = #{code}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- Excel导入时根据编码查询或插入 -->
+    <insert id="insertOrUpdateByCode" parameterType="com.framework.excel.entity.Model">
+        INSERT INTO model (
+            code, name, category_id, version, description, model_type, file_path, file_size, 
+            checksum, status, tags, metadata, create_by, update_by, create_time, update_time
+        ) VALUES (
+            #{code}, #{name}, #{categoryId}, #{version}, #{description}, #{modelType}, #{filePath}, #{fileSize}, 
+            #{checksum}, #{status}, #{tags}, #{metadata}, #{createBy}, #{updateBy}, NOW(), NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            category_id = VALUES(category_id),
+            version = VALUES(version),
+            description = VALUES(description),
+            model_type = VALUES(model_type),
+            file_path = VALUES(file_path),
+            file_size = VALUES(file_size),
+            checksum = VALUES(checksum),
+            status = VALUES(status),
+            tags = VALUES(tags),
+            metadata = VALUES(metadata),
+            update_by = VALUES(update_by),
+            update_time = NOW()
+    </insert>
+
+    <!-- 查询热门模型 -->
+    <select id="selectPopularModels" resultMap="WithCategoryResultMap">
+        SELECT <include refid="With_Category_Column_List"/>
+        FROM model m
+        LEFT JOIN model_category mc ON m.category_id = mc.id
+        WHERE m.status = 2
+        ORDER BY m.create_time DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

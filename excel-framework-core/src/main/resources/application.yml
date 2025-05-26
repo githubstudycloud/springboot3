@@ -1,0 +1,64 @@
+# Excel Framework 主配置文件
+spring:
+  application:
+    n: excel-framework
+  profiles:
+    active: dev
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      enabled: true
+  
+  # Jackson配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+    
+  # 国际化配置
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+
+# 服务器配置
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+# 日志配置
+logging:
+  level:
+    com.framework.excel: DEBUG
+    org.springframework.web: INFO
+    org.mybatis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# Excel框架配置
+excel:
+  temp-dir: ${java.io.tmpdir}/excel
+  max-import-rows: 10000
+  template-cache-time: 3600
+  enable-cache: true
+  default-date-format: yyyy-MM-dd
+  default-date-time-format: yyyy-MM-dd HH:mm:ss
+  batch-size: 1000

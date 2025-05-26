@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.FaultMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.Fault">
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="function_id" property="functionId"/>
+        <result column="classification_id" property="classificationId"/>
+        <result column="system_element_id" property="systemElementId"/>
+        <result column="severity_level" property="severityLevel"/>
+        <result column="description" property="description"/>
+        <result column="solution" property="solution"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 包含分类信息的结果映射 -->
+    <resultMap id="WithClassificationResultMap" type="com.framework.excel.entity.Fault" extends="BaseResultMap">
+        <result column="classification_name" property="classificationName"/>
+        <association property="classification" javaType="com.framework.excel.entity.FaultClassification">
+            <id column="classification_id" property="id"/>
+            <result column="classification_name" property="name"/>
+            <result column="classification_code" property="code"/>
+            <result column="classification_scope_type" property="scopeType"/>
+        </association>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, code, name, function_id, classification_id, system_element_id, severity_level, 
+        description, solution, status, create_time, update_time
+    </sql>
+
+    <!-- 包含分类信息的列 -->
+    <sql id="With_Classification_Column_List">
+        f.id, f.code, f.name, f.function_id, f.classification_id, f.system_element_id, f.severity_level, 
+        f.description, f.solution, f.status, f.create_time, f.update_time,
+        fc.name as classification_name, fc.code as classification_code, fc.scope_type as classification_scope_type
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            <if test="code != null and code != ''">
+                AND f.code = #{code}
+            </if>
+            <if test="name != null and name != ''">
+                AND f.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="functionId != null">
+                AND f.function_id = #{functionId}
+            </if>
+            <if test="classificationId != null">
+                AND f.classification_id = #{classificationId}
+            </if>
+            <if test="severityLevel != null">
+                AND f.severity_level = #{severityLevel}
+            </if>
+            <if test="status != null">
+                AND f.status = #{status}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据编码查询 -->
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault
+        WHERE code = #{code}
+    </select>
+
+    <!-- 根据编码查询（包含分类信息） -->
+    <select id="selectWithClassificationByCode" resultMap="WithClassificationResultMap">
+        SELECT <include refid="With_Classification_Column_List"/>
+        FROM fault f
+        LEFT JOIN fault_classification fc ON f.classification_id = fc.id
+        WHERE f.code = #{code}
+    </select>
+
+    <!-- 根据名称查询 -->
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault
+        WHERE name LIKE CONCAT('%', #{name}, '%')
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据功能ID查询 -->
+    <select id="selectByFunctionId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault
+        WHERE function_id = #{functionId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据分类ID查询 -->
+    <select id="selectByClassificationId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault
+        WHERE classification_id = #{classificationId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据严重级别查询 -->
+    <select id="selectBySeverityLevel" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault
+        WHERE severity_level = #{severityLevel}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据状态查询 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault
+        WHERE status = #{status}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault f
+        <include refid="Where_Clause"/>
+        ORDER BY f.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 分页查询（包含分类信息） -->
+    <select id="selectWithClassificationByPage" resultMap="WithClassificationResultMap">
+        SELECT <include refid="With_Classification_Column_List"/>
+        FROM fault f
+        LEFT JOIN fault_classification fc ON f.classification_id = fc.id
+        <include refid="Where_Clause"/>
+        ORDER BY f.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM fault f
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" parameterType="com.framework.excel.entity.Fault" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fault (
+            code, name, function_id, classification_id, system_element_id, severity_level, 
+            description, solution, status, create_time, update_time
+        ) VALUES (
+            #{code}, #{name}, #{functionId}, #{classificationId}, #{systemElementId}, #{severityLevel}, 
+            #{description}, #{solution}, #{status}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 批量插入 -->
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO fault (
+            code, name, function_id, classification_id, system_element_id, severity_level, 
+            description, solution, status, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.code}, #{item.name}, #{item.functionId}, #{item.classificationId}, #{item.systemElementId}, 
+             #{item.severityLevel}, #{item.description}, #{item.solution}, #{item.status}, NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <!-- 更新 -->
+    <update id="updateById" parameterType="com.framework.excel.entity.Fault">
+        UPDATE fault
+        SET name = #{name},
+            function_id = #{functionId},
+            classification_id = #{classificationId},
+            system_element_id = #{systemElementId},
+            severity_level = #{severityLevel},
+            description = #{description},
+            solution = #{solution},
+            status = #{status},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据编码更新 -->
+    <update id="updateByCode" parameterType="com.framework.excel.entity.Fault">
+        UPDATE fault
+        SET name = #{name},
+            function_id = #{functionId},
+            classification_id = #{classificationId},
+            system_element_id = #{systemElementId},
+            severity_level = #{severityLevel},
+            description = #{description},
+            solution = #{solution},
+            status = #{status},
+            update_time = NOW()
+        WHERE code = #{code}
+    </update>
+
+    <!-- 批量更新状态 -->
+    <update id="updateStatusByIds">
+        UPDATE fault
+        SET status = #{status}, update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 删除 -->
+    <delete id="deleteById">
+        DELETE FROM fault WHERE id = #{id}
+    </delete>
+
+    <!-- 根据编码删除 -->
+    <delete id="deleteByCode">
+        DELETE FROM fault WHERE code = #{code}
+    </delete>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM fault
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 检查编码是否存在 -->
+    <select id="existsByCode" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM fault
+        WHERE code = #{code}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 统计各状态的故障数量 -->
+    <select id="countByStatus" resultType="java.util.Map">
+        SELECT status, COUNT(*) as count
+        FROM fault
+        GROUP BY status
+    </select>
+
+    <!-- 统计各严重级别的故障数量 -->
+    <select id="countBySeverityLevel" resultType="java.util.Map">
+        SELECT severity_level, COUNT(*) as count
+        FROM fault
+        GROUP BY severity_level
+    </select>
+
+    <!-- 统计各分类的故障数量 -->
+    <select id="countByClassification" resultType="java.util.Map">
+        SELECT fc.name as classification_name, COUNT(f.id) as count
+        FROM fault_classification fc
+        LEFT JOIN fault f ON fc.id = f.classification_id
+        WHERE fc.enabled = true
+        GROUP BY fc.id, fc.name
+        ORDER BY count DESC
+    </select>
+
+    <!-- Excel导入时根据编码查询或插入 -->
+    <insert id="insertOrUpdateByCode" parameterType="com.framework.excel.entity.Fault">
+        INSERT INTO fault (
+            code, name, function_id, classification_id, system_element_id, severity_level, 
+            description, solution, status, create_time, update_time
+        ) VALUES (
+            #{code}, #{name}, #{functionId}, #{classificationId}, #{systemElementId}, #{severityLevel}, 
+            #{description}, #{solution}, #{status}, NOW(), NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+            name = VALUES(name),
+            function_id = VALUES(function_id),
+            classification_id = VALUES(classification_id),
+            system_element_id = VALUES(system_element_id),
+            severity_level = VALUES(severity_level),
+            description = VALUES(description),
+            solution = VALUES(solution),
+            status = VALUES(status),
+            update_time = NOW()
+    </insert>
+
+</mapper>

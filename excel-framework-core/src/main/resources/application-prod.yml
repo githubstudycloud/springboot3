@@ -1,0 +1,77 @@
+# 生产环境配置
+spring:
+  # 数据源配置
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:excel_framework}?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    
+    # Druid连接池配置 - 生产环境
+    druid:
+      initial-size: 10
+      min-idle: 10
+      max-active: 50
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      # 生产环境监控配置
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: "*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*"
+      stat-view-servlet:
+        enabled: false  # 生产环境关闭监控页面
+
+# MyBatis配置 - 生产环境
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.framework.excel.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    lazy-loading-enabled: true
+    multiple-result-sets-enabled: true
+    use-column-label: true
+    use-generated-keys: true
+    auto-mapping-behavior: partial
+    default-executor-type: reuse
+    default-statement-timeout: 25000
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# 日志配置 - 生产环境
+logging:
+  level:
+    root: WARN
+    com.framework.excel: INFO
+    org.springframework.web: WARN
+  file:
+    n: /var/log/excel-framework/app.log
+    max-size: 500MB
+    max-history: 60
+  logback:
+    rollingpolicy:
+      max-file-size: 500MB
+      max-history: 60
+
+# Knife4j配置 - 生产环境
+knife4j:
+  enable: false  # 生产环境关闭API文档
+  production: true
+
+# Excel生产环境配置
+excel:
+  temp-dir: /tmp/excel
+  max-import-rows: 50000  # 生产环境支持更大文件
+  enable-cache: true
+  template-cache-time: 7200  # 2小时缓存
+
+# JVM参数建议
+# -Xms2g -Xmx4g -XX:+UseG1GC -XX:MaxGCPauseMillis=200

@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.ExcelOperationLogMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.ExcelOperationLog">
+        <id column="id" property="id"/>
+        <result column="template_key" property="templateKey"/>
+        <result column="operation_type" property="operationType"/>
+        <result column="file_name" property="fileName"/>
+        <result column="file_size" property="fileSize"/>
+        <result column="record_count" property="recordCount"/>
+        <result column="success_count" property="successCount"/>
+        <result column="fail_count" property="failCount"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="cost_time" property="costTime"/>
+        <result column="operator" property="operator"/>
+        <result column="ip_address" property="ipAddress"/>
+        <result column="user_agent" property="userAgent"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, template_key, operation_type, file_name, file_size, record_count, success_count, 
+        fail_count, error_message, cost_time, operator, ip_address, user_agent, status, create_time
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            <if test="templateKey != null and templateKey != ''">
+                AND template_key = #{templateKey}
+            </if>
+            <if test="operationType != null and operationType != ''">
+                AND operation_type = #{operationType}
+            </if>
+            <if test="operator != null and operator != ''">
+                AND operator = #{operator}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="startTime != null">
+                AND create_time >= #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND create_time <= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据模板标识查询 -->
+    <select id="selectByTemplateKey" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        WHERE template_key = #{templateKey}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据操作类型查询 -->
+    <select id="selectByOperationType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        WHERE operation_type = #{operationType}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据操作人查询 -->
+    <select id="selectByOperator" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        WHERE operator = #{operator}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据状态查询 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        WHERE status = #{status}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据时间范围查询 -->
+    <select id="selectByTimeRange" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        WHERE create_time BETWEEN #{startTime} AND #{endTime}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        <include refid="Where_Clause"/>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM excel_operation_log
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" parameterType="com.framework.excel.entity.ExcelOperationLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO excel_operation_log (
+            template_key, operation_type, file_name, file_size, record_count, success_count, 
+            fail_count, error_message, cost_time, operator, ip_address, user_agent, status, create_time
+        ) VALUES (
+            #{templateKey}, #{operationType}, #{fileName}, #{fileSize}, #{recordCount}, #{successCount}, 
+            #{failCount}, #{errorMessage}, #{costTime}, #{operator}, #{ipAddress}, #{userAgent}, #{status}, NOW()
+        )
+    </insert>
+
+    <!-- 批量插入 -->
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO excel_operation_log (
+            template_key, operation_type, file_name, file_size, record_count, success_count, 
+            fail_count, error_message, cost_time, operator, ip_address, user_agent, status, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.templateKey}, #{item.operationType}, #{item.fileName}, #{item.fileSize}, #{item.recordCount}, 
+             #{item.successCount}, #{item.failCount}, #{item.errorMessage}, #{item.costTime}, #{item.operator}, 
+             #{item.ipAddress}, #{item.userAgent}, #{item.status}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 更新 -->
+    <update id="updateById" parameterType="com.framework.excel.entity.ExcelOperationLog">
+        UPDATE excel_operation_log
+        SET template_key = #{templateKey},
+            operation_type = #{operationType},
+            file_name = #{fileName},
+            file_size = #{fileSize},
+            record_count = #{recordCount},
+            success_count = #{successCount},
+            fail_count = #{failCount},
+            error_message = #{errorMessage},
+            cost_time = #{costTime},
+            operator = #{operator},
+            ip_address = #{ipAddress},
+            user_agent = #{userAgent},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除 -->
+    <delete id="deleteById">
+        DELETE FROM excel_operation_log WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM excel_operation_log
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 根据时间删除旧日志 -->
+    <delete id="deleteByCreateTimeBefore">
+        DELETE FROM excel_operation_log 
+        WHERE create_time < #{beforeTime}
+    </delete>
+
+    <!-- 统计操作类型分布 -->
+    <select id="countByOperationType" resultType="java.util.Map">
+        SELECT operation_type as operationType, COUNT(*) as count
+        FROM excel_operation_log
+        GROUP BY operation_type
+        ORDER BY count DESC
+    </select>
+
+    <!-- 统计操作状态分布 -->
+    <select id="countByStatus" resultType="java.util.Map">
+        SELECT status, COUNT(*) as count
+        FROM excel_operation_log
+        GROUP BY status
+    </select>
+
+    <!-- 统计模板使用频率 -->
+    <select id="countByTemplateKey" resultType="java.util.Map">
+        SELECT template_key as templateKey, COUNT(*) as count
+        FROM excel_operation_log
+        GROUP BY template_key
+        ORDER BY count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 统计操作人活跃度 -->
+    <select id="countByOperator" resultType="java.util.Map">
+        SELECT operator, COUNT(*) as count
+        FROM excel_operation_log
+        WHERE operator IS NOT NULL
+        GROUP BY operator
+        ORDER BY count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 统计每日操作数量 -->
+    <select id="countByDate" resultType="java.util.Map">
+        SELECT 
+            DATE(create_time) as date, 
+            COUNT(*) as count
+        FROM excel_operation_log
+        WHERE create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        GROUP BY DATE(create_time)
+        ORDER BY date DESC
+    </select>
+
+    <!-- 查询最近操作记录 -->
+    <select id="selectRecentLogs" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询失败操作记录 -->
+    <select id="selectFailedLogs" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        WHERE status = 2
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询耗时最长的操作 -->
+    <select id="selectSlowestOperations" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_operation_log
+        WHERE cost_time IS NOT NULL
+        ORDER BY cost_time DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

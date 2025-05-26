@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.ExcelTemplateConfigMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.ExcelTemplateConfig">
+        <id column="id" property="id"/>
+        <result column="template_key" property="templateKey"/>
+        <result column="template_name" property="templateName"/>
+        <result column="entity_class" property="entityClass"/>
+        <result column="table_name" property="tableName"/>
+        <result column="sheet_name" property="sheetName"/>
+        <result column="primary_key_fields" property="primaryKeyFields"/>
+        <result column="update_mode" property="updateMode"/>
+        <result column="description" property="description"/>
+        <result column="enabled" property="enabled"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 包含字段配置的结果映射 -->
+    <resultMap id="WithFieldsResultMap" type="com.framework.excel.entity.ExcelTemplateConfig" extends="BaseResultMap">
+        <collection property="fieldConfigs" ofType="com.framework.excel.entity.ExcelFieldConfig">
+            <id column="field_id" property="id"/>
+            <result column="field_template_id" property="templateId"/>
+            <result column="field_name" property="fieldName"/>
+            <result column="column_name" property="columnName"/>
+            <result column="column_index" property="columnIndex"/>
+            <result column="data_type" property="dataType"/>
+            <result column="required" property="required"/>
+            <result column="visible" property="visible"/>
+            <result column="width" property="width"/>
+            <result column="date_format" property="dateFormat"/>
+            <result column="number_format" property="numberFormat"/>
+            <result column="dropdown_config" property="dropdownConfig"/>
+            <result column="validation_rules" property="validationRules"/>
+            <result column="default_value" property="defaultValue"/>
+            <result column="sort_order" property="sortOrder"/>
+            <result column="field_create_time" property="createTime"/>
+            <result column="field_update_time" property="updateTime"/>
+        </collection>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, template_key, template_name, entity_class, table_name, sheet_name,
+        primary_key_fields, update_mode, description, enabled, create_time, update_time
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            <if test="templateName != null and templateName != ''">
+                AND template_name LIKE CONCAT('%', #{templateName}, '%')
+            </if>
+            <if test="enabled != null">
+                AND enabled = #{enabled}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_template_config
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据模板标识查询 -->
+    <select id="selectByTemplateKey" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_template_config
+        WHERE template_key = #{templateKey}
+    </select>
+
+    <!-- 根据模板标识查询（包含字段配置） -->
+    <select id="selectWithFieldsByTemplateKey" resultMap="WithFieldsResultMap">
+        SELECT 
+            t.id, t.template_key, t.template_name, t.entity_class, t.table_name, t.sheet_name,
+            t.primary_key_fields, t.update_mode, t.description, t.enabled, t.create_time, t.update_time,
+            f.id as field_id, f.template_id as field_template_id, f.field_name, f.column_name, f.column_index,
+            f.data_type, f.required, f.visible, f.width, f.date_format, f.number_format,
+            f.dropdown_config, f.validation_rules, f.default_value, f.sort_order,
+            f.create_time as field_create_time, f.update_time as field_update_time
+        FROM excel_template_config t
+        LEFT JOIN excel_field_config f ON t.id = f.template_id
+        WHERE t.template_key = #{templateKey}
+        ORDER BY f.column_index ASC
+    </select>
+
+    <!-- 查询所有启用的模板 -->
+    <select id="selectEnabledTemplates" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_template_config
+        WHERE enabled = true
+        ORDER BY template_name ASC
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_template_config
+        <include refid="Where_Clause"/>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM excel_template_config
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" parameterType="com.framework.excel.entity.ExcelTemplateConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO excel_template_config (
+            template_key, template_name, entity_class, table_name, sheet_name,
+            primary_key_fields, update_mode, description, enabled, create_time, update_time
+        ) VALUES (
+            #{templateKey}, #{templateName}, #{entityClass}, #{tableName}, #{sheetName},
+            #{primaryKeyFields}, #{updateMode}, #{description}, #{enabled}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新 -->
+    <update id="updateById" parameterType="com.framework.excel.entity.ExcelTemplateConfig">
+        UPDATE excel_template_config
+        SET template_name = #{templateName},
+            entity_class = #{entityClass},
+            table_name = #{tableName},
+            sheet_name = #{sheetName},
+            primary_key_fields = #{primaryKeyFields},
+            update_mode = #{updateMode},
+            description = #{description},
+            enabled = #{enabled},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新启用状态 -->
+    <update id="updateEnabledById">
+        UPDATE excel_template_config
+        SET enabled = #{enabled}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除 -->
+    <delete id="deleteById">
+        DELETE FROM excel_template_config WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM excel_template_config
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 检查模板标识是否存在 -->
+    <select id="existsByTemplateKey" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM excel_template_config
+        WHERE template_key = #{templateKey}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 检查表名是否存在 -->
+    <select id="existsByTableName" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM excel_template_config
+        WHERE table_name = #{tableName}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+</mapper>

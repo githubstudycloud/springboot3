@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.ModelCategoryMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.ModelCategory">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="description" property="description"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="level" property="level"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="icon" property="icon"/>
+        <result column="enabled" property="enabled"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 树形结构结果映射 -->
+    <resultMap id="TreeResultMap" type="com.framework.excel.entity.ModelCategory" extends="BaseResultMap">
+        <result column="model_count" property="modelCount"/>
+        <collection property="children" ofType="com.framework.excel.entity.ModelCategory" 
+                   column="id" select="selectByParentId"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, name, code, description, parent_id, level, sort_order, icon, enabled, create_time, update_time
+    </sql>
+
+    <!-- 查询条件 -->
+    <sql id="Where_Clause">
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="enabled != null">
+                AND enabled = #{enabled}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model_category
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据名称查询 -->
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model_category
+        WHERE name = #{name}
+    </select>
+
+    <!-- 根据编码查询 -->
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model_category
+        WHERE code = #{code}
+    </select>
+
+    <!-- 查询所有启用的分类 -->
+    <select id="selectAllEnabled" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model_category
+        WHERE enabled = true
+        ORDER BY level ASC, sort_order ASC, name ASC
+    </select>
+
+    <!-- 查询顶级分类 -->
+    <select id="selectTopLevel" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model_category
+        WHERE parent_id IS NULL AND enabled = true
+        ORDER BY sort_order ASC, name ASC
+    </select>
+
+    <!-- 根据父ID查询子分类 -->
+    <select id="selectByParentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model_category
+        WHERE parent_id = #{parentId} AND enabled = true
+        ORDER BY sort_order ASC, name ASC
+    </select>
+
+    <!-- 查询分类树 -->
+    <select id="selectTree" resultMap="TreeResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model_category
+        WHERE parent_id IS NULL AND enabled = true
+        ORDER BY sort_order ASC, name ASC
+    </select>
+
+    <!-- 查询分类树（包含模型数量统计） -->
+    <select id="selectTreeWithModelCount" resultMap="TreeResultMap">
+        SELECT 
+            c.id, c.name, c.code, c.description, c.parent_id, c.level, c.sort_order, 
+            c.icon, c.enabled, c.create_time, c.update_time,
+            COUNT(m.id) as model_count
+        FROM model_category c
+        LEFT JOIN model m ON c.id = m.category_id
+        WHERE c.parent_id IS NULL AND c.enabled = true
+        GROUP BY c.id, c.name, c.code, c.description, c.parent_id, c.level, c.sort_order, 
+                 c.icon, c.enabled, c.create_time, c.update_time
+        ORDER BY c.sort_order ASC, c.name ASC
+    </select>
+
+    <!-- 分页查询 -->
+    <select id="selectByPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM model_category
+        <include refid="Where_Clause"/>
+        ORDER BY level ASC, sort_order ASC, name ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询总数 -->
+    <select id="countByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM model_category
+        <include refid="Where_Clause"/>
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" parameterType="com.framework.excel.entity.ModelCategory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO model_category (
+            name, code, description, parent_id, level, sort_order, icon, enabled, create_time, update_time
+        ) VALUES (
+            #{name}, #{code}, #{description}, #{parentId}, #{level}, #{sortOrder}, #{icon}, #{enabled}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 批量插入 -->
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO model_category (
+            name, code, description, parent_id, level, sort_order, icon, enabled, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.name}, #{item.code}, #{item.description}, #{item.parentId}, #{item.level}, 
+             #{item.sortOrder}, #{item.icon}, #{item.enabled}, NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <!-- 更新 -->
+    <update id="updateById" parameterType="com.framework.excel.entity.ModelCategory">
+        UPDATE model_category
+        SET name = #{name},
+            code = #{code},
+            description = #{description},
+            parent_id = #{parentId},
+            level = #{level},
+            sort_order = #{sortOrder},
+            icon = #{icon},
+            enabled = #{enabled},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新启用状态 -->
+    <update id="updateEnabledById">
+        UPDATE model_category
+        SET enabled = #{enabled}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除 -->
+    <delete id="deleteById">
+        DELETE FROM model_category WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除 -->
+    <delete id="deleteByIds">
+        DELETE FROM model_category
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 检查名称是否存在 -->
+    <select id="existsByName" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM model_category
+        WHERE name = #{name}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 检查编码是否存在 -->
+    <select id="existsByCode" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM model_category
+        WHERE code = #{code}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 检查是否有子分类 -->
+    <select id="hasChildren" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM model_category
+        WHERE parent_id = #{parentId}
+    </select>
+
+    <!-- 检查是否被模型引用 -->
+    <select id="isReferencedByModel" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM model
+        WHERE category_id = #{categoryId}
+    </select>
+
+    <!-- 获取下一个排序号 -->
+    <select id="getNextSortOrder" resultType="java.lang.Integer">
+        SELECT COALESCE(MAX(sort_order), 0) + 1
+        FROM model_category
+        WHERE 
+        <choose>
+            <when test="parentId != null">
+                parent_id = #{parentId}
+            </when>
+            <otherwise>
+                parent_id IS NULL
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 统计分类下的模型数量 -->
+    <select id="countModelsByCategoryId" resultType="long">
+        SELECT COUNT(*)
+        FROM model
+        WHERE category_id = #{categoryId}
+    </select>
+
+</mapper>

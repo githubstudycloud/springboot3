@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: spring-ai-rag-demo
+  
+  datasource:
+    url: ${PGVECTOR_URL:jdbc:postgresql://localhost:5432/vectordb}
+    username: ${PGVECTOR_USER:postgres}
+    password: ${PGVECTOR_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  ai:
+    # OpenAI for embeddings
+    openai:
+      api-key: ${OPENAI_API_KEY:your-api-key-here}
+      embedding:
+        options:
+          model: text-embedding-3-small
+          dimensions: 1536
+    
+    # Vector Store Configurations
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+        schema: public
+        table: embeddings
+        initialize-schema: true
+      
+      chroma:
+        collection-name: spring-ai-docs
+        url: ${CHROMA_URL:http://localhost:8000}
+      
+      qdrant:
+        host: ${QDRANT_HOST:localhost}
+        port: ${QDRANT_PORT:6333}
+        collection-name: spring-ai-collection
+        use-tls: false
+
+server:
+  port: 8081
+
+logging:
+  level:
+    com.example.springai.rag: DEBUG
+    org.springframework.ai: DEBUG

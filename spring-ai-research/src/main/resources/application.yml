@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: spring-ai-research
+  
+  ai:
+    # OpenAI Configuration
+    openai:
+      api-key: ${OPENAI_API_KEY:demo}
+      chat:
+        options:
+          model: gpt-4o
+          temperature: 0.7
+    
+    # Anthropic Configuration  
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:demo}
+      chat:
+        options:
+          model: claude-3-5-sonnet-20241022
+    
+    # Ollama Configuration (for local models)
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:llama3.2}
+    
+    # Vector Store Configuration
+    vectorstore:
+      pgvector:
+        dimensions: 1536
+        distance-type: cosine
+        initialize-schema: true
+
+# Logging Configuration
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    com.example.springai.research: DEBUG
+
+# Server Configuration
+server:
+  port: 8080

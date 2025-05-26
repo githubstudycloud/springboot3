@@ -1,0 +1,38 @@
+### ChatClient API Test Requests
+### You can use these with IntelliJ IDEA HTTP Client or similar tools
+
+### 1. Simple Chat
+POST http://localhost:8080/api/chat/simple
+Content-Type: text/plain
+
+Tell me a short joke about Spring Framework
+
+### 2. Chat with System Prompt
+POST http://localhost:8080/api/chat/system
+Content-Type: application/json
+
+{
+  "message": "What is Spring AI?",
+  "systemPrompt": "You are an expert in Spring Framework and AI technologies. Provide concise but informative answers."
+}
+
+### 3. Templated Chat
+POST http://localhost:8080/api/chat/template
+Content-Type: application/json
+
+{
+  "template": "Write a haiku about {topic} in {language}",
+  "params": {
+    "topic": "Spring Boot",
+    "language": "English"
+  }
+}
+
+### 4. Chat with Metadata
+POST http://localhost:8080/api/chat/metadata
+Content-Type: text/plain
+
+Explain the benefits of using Spring AI for enterprise applications
+
+### 5. Health Check
+GET http://localhost:8080/api/chat/health

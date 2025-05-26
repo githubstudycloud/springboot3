@@ -1,0 +1,57 @@
+### Structured Output API Test Requests
+### Test Spring AI's ability to map responses to Java objects
+
+### 1. Get Movie Recommendation
+GET http://localhost:8080/api/structured/movie/sci-fi
+
+### 2. Get Multiple Movie Recommendations
+GET http://localhost:8080/api/structured/movies/thriller?count=2
+
+### 3. Generate Person Profile
+POST http://localhost:8080/api/structured/person
+Content-Type: application/json
+
+{
+  "description": "senior Java developer with expertise in Spring Framework and microservices"
+}
+
+### 4. Analyze Technical Topic
+POST http://localhost:8080/api/structured/analyze
+Content-Type: application/json
+
+{
+  "topic": "Spring AI and its applications in enterprise software"
+}
+
+### 5. Custom Structured Output
+POST http://localhost:8080/api/structured/custom
+Content-Type: application/json
+
+{
+  "prompt": "Analyze the benefits of using Spring Boot for microservices. Provide analysis, key points, and a confidence score."
+}
+
+### 6. Health Check
+GET http://localhost:8080/api/structured/health
+
+### 7. Horror Movie Recommendation
+GET http://localhost:8080/api/structured/movie/horror
+
+### 8. Comedy Movies
+GET http://localhost:8080/api/structured/movies/comedy?count=5
+
+### 9. Profile for Data Scientist
+POST http://localhost:8080/api/structured/person
+Content-Type: application/json
+
+{
+  "description": "data scientist specializing in machine learning and AI"
+}
+
+### 10. Analyze Kubernetes
+POST http://localhost:8080/api/structured/analyze
+Content-Type: application/json
+
+{
+  "topic": "Kubernetes orchestration and container management"
+}

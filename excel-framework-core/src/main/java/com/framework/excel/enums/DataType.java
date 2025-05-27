@@ -12,7 +12,10 @@ public enum DataType {
     INTEGER("INTEGER", "整数"),
     LONG("LONG", "长整数"),
     DOUBLE("DOUBLE", "小数"),
+    FLOAT("FLOAT", "浮点数"),
+    BIGDECIMAL("BIGDECIMAL", "高精度小数"),
     DATE("DATE", "日期"),
+    TIME("TIME", "时间"),
     DATETIME("DATETIME", "日期时间"),
     BOOLEAN("BOOLEAN", "布尔值");
     

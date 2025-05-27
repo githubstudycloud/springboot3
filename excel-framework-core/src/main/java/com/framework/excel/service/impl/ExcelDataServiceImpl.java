@@ -187,11 +187,11 @@ public class ExcelDataServiceImpl implements ExcelDataService {
             case "fault":
                 return faultMapper.selectByConditions(conditions).stream()
                         .map(this::entityToMap)
-                        .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+                        .collect(Collectors.toList());
             case "model":
                 return modelMapper.selectByConditions(conditions).stream()
                         .map(this::entityToMap)
-                        .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+                        .collect(Collectors.toList());
             default:
                 log.warn("Unsupported template for query: {}", templateKey);
                 return new ArrayList<>();

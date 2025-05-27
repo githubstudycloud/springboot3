@@ -119,7 +119,7 @@ public class ExcelDataReader {
         
         // 按列索引排序
         return visibleFields.stream()
-                .sorted(Comparator.comparing(ExcelFieldConfig::getColumnIndex))
+                .sorted(Comparator.comparing(f -> f.getColumnIndex()))
                 .collect(Collectors.toList());
     }
     
@@ -216,7 +216,7 @@ public class ExcelDataReader {
             }
             
             // 其他验证规则
-            ValidationUtils.validateField(value, field, rowData.get("_rowIndex"));
+            ValidationUtils.validateField(value, field, (Integer) rowData.get("_rowIndex"));
         }
     }
     

@@ -62,6 +62,7 @@ public class DataConverter {
     /**
      * 自定义转换器
      */
+    @SuppressWarnings("unchecked")
     private static Object applyCustomConverter(Object value, JSONObject converterConfig) {
         String type = converterConfig.getString("type");
         
@@ -219,6 +220,7 @@ public class DataConverter {
     }
     
     // 自定义转换方法
+    @SuppressWarnings("unchecked")
     private static Object convertEnumMapping(Object value, JSONObject mapping) {
         if (mapping == null) {
             return value;

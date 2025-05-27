@@ -1,6 +1,5 @@
 package com.framework.excel.entity.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -20,6 +19,22 @@ public class ImportResult {
     private Integer skippedCount = 0;
     private List<ErrorInfo> errors = new ArrayList<>();
     private List<WarningInfo> warnings = new ArrayList<>();
+    
+    public void setTotalRows(Integer totalRows) {
+        this.totalRows = totalRows;
+    }
+
+    public void setSuccessCount(Integer successCount) {
+        this.successCount = successCount;
+    }
+
+    public void setErrorCount(Integer errorCount) {
+        this.errorCount = errorCount;
+    }
+
+    public void setSkippedCount(Integer skippedCount) {
+        this.skippedCount = skippedCount;
+    }
     
     /**
      * 增加成功计数
@@ -54,19 +69,27 @@ public class ImportResult {
      * 错误信息
      */
     @Data
-    @AllArgsConstructor
     public static class ErrorInfo {
         private Integer row;
         private String message;
+
+        public ErrorInfo(Integer row, String message) {
+            this.row = row;
+            this.message = message;
+        }
     }
     
     /**
      * 警告信息
      */
     @Data
-    @AllArgsConstructor
     public static class WarningInfo {
         private Integer row;
         private String message;
+
+        public WarningInfo(Integer row, String message) {
+            this.row = row;
+            this.message = message;
+        }
     }
 }

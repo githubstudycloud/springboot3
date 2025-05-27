@@ -148,7 +148,7 @@ public class ExcelTemplateGenerator {
         }
         
         String[] optionArray = options.stream()
-                .map(DropdownOption::getLabel)
+                .map(opt -> opt.getLabel())
                 .toArray(String[]::new);
         
         DataValidationHelper helper = sheet.getDataValidationHelper();
@@ -156,8 +156,7 @@ public class ExcelTemplateGenerator {
         CellRangeAddressList range = new CellRangeAddressList(1, 1000, columnIndex, columnIndex);
         DataValidation validation = helper.createValidation(constraint, range);
         validation.setShowErrorBox(true);
-        validation.setErrorBoxTitle("输入错误");
-        validation.setErrorBoxText("请从下拉列表中选择有效值");
+        validation.createErrorBox("输入错误", "请从下拉列表中选择有效值");
         sheet.addValidationData(validation);
     }
 } 

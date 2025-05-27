@@ -72,14 +72,14 @@ public class DropdownResolver {
             
             // 如果允许为空，添加空选项
             if (dropdownConfig.getAllowEmpty() != null && dropdownConfig.getAllowEmpty()) {
-                options.add(new DropdownOption(null, ""));
+                options.add(new DropdownOption("", ""));
             }
             
             for (Map<String, Object> data : dataList) {
                 Object value = data.get(valueField);
                 Object label = data.get(displayField);
                 if (value != null && label != null) {
-                    options.add(new DropdownOption(value, label.toString()));
+                    options.add(new DropdownOption(String.valueOf(value), label.toString()));
                 }
             }
             

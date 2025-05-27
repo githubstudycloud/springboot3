@@ -21,7 +21,9 @@ import java.util.Map;
 /**
  * 抽象Excel服务基类
  * 包含Excel导入导出的核心流程和通用逻辑
- * 具体业务相关的处理由子类实现
+ * 具体业务相关的处理（包括配置获取、数据访问）由子类实现
+ * 
+ * 该抽象类不再直接依赖数据库配置，所有数据访问都通过抽象方法委托给子类
  *
  * @author Framework Team
  * @since 1.0.0
@@ -37,14 +39,13 @@ public abstract class AbstractExcelService implements ExcelService {
     @Autowired
     protected DynamicMapper dynamicMapper; // Changed to protected
 
-    protected ExcelTemplateGenerator templateGenerator; // Changed to protected
-    protected ExcelDataReader dataReader; // Changed to protected
-    protected ExcelDataWriter dataWriter; // Changed to protected
-    protected DropdownResolver dropdownResolver; // Changed to protected
+    protected ExcelTemplateGenerator templateGenerator;
+    protected ExcelDataReader dataReader;
+    protected ExcelDataWriter dataWriter;
+    protected DropdownResolver dropdownResolver;
 
     public AbstractExcelService() {
-        // Consider making these injectable if complex/stateful, or if subclasses need to override.
-        // For now, direct instantiation is kept.
+        // 核心工具类的初始化保持在基类中
         this.dropdownResolver = new DropdownResolver();
         this.templateGenerator = new ExcelTemplateGenerator(dropdownResolver);
         this.dataReader = new ExcelDataReader();
@@ -66,6 +67,7 @@ public abstract class AbstractExcelService implements ExcelService {
     /**
      * 获取业务数据.
      * 子类根据模板配置和业务条件查询并返回实际的业务数据列表.
+     * 可以从数据库、文件、API等任何数据源获取数据.
      *
      * @param config Excel模板配置
      * @param conditions 业务条件
@@ -75,8 +77,8 @@ public abstract class AbstractExcelService implements ExcelService {
 
     /**
      * 获取用于导出的模板配置.
-     * 子类可以根据 templateKey 和 conditions 动态构建或修改模板配置.
-     * 通常, 这会涉及调用 getBaseTemplateConfig 来获取基础配置, 然后再进行定制.
+     * 子类根据 templateKey 和 conditions 提供完整的模板配置.
+     * 配置可以来自数据库、配置文件、硬编码常量等任何来源.
      *
      * @param templateKey 模板唯一标识
      * @param conditions 业务条件
@@ -86,8 +88,8 @@ public abstract class AbstractExcelService implements ExcelService {
     
     /**
      * 获取用于导入的模板配置.
-     * 子类可以根据 templateKey 和 conditions 动态构建或修改模板配置.
-     * 通常, 这会涉及调用 getBaseTemplateConfig 来获取基础配置, 然后再进行定制.
+     * 子类根据 templateKey 和 conditions 提供完整的模板配置.
+     * 配置可以来自数据库、配置文件、硬编码常量等任何来源.
      *
      * @param templateKey 模板唯一标识
      * @param conditions 业务条件
@@ -95,19 +97,20 @@ public abstract class AbstractExcelService implements ExcelService {
      */
     protected abstract ExcelTemplateConfig getImportConfiguration(String templateKey, BusinessConditions conditions);
 
-
     /**
      * 获取用于生成模板的配置.
+     * 子类根据 templateKey 和 conditions 提供完整的模板配置.
+     * 配置可以来自数据库、配置文件、硬编码常量等任何来源.
+     * 
      * @param templateKey 模板唯一标识
      * @param conditions 业务条件
      * @return Excel模板配置
      */
     protected abstract ExcelTemplateConfig getTemplateGenerationConfiguration(String templateKey, BusinessConditions conditions);
 
-
     /**
      * 保存导入的业务数据.
-     * 子类实现具体的业务数据持久化逻辑, 例如存入数据库.
+     * 子类实现具体的业务数据持久化逻辑, 例如存入数据库、文件等.
      * 此方法需要处理事务、生成默认字段值等业务相关的保存操作.
      *
      * @param dataList 从Excel读取并转换后的数据列表
@@ -117,6 +120,15 @@ public abstract class AbstractExcelService implements ExcelService {
      */
     protected abstract ImportResult saveBusinessData(List<Map<String, Object>> dataList, ExcelTemplateConfig config, BusinessConditions conditions);
 
+    /**
+     * 获取动态Mapper用于下拉框数据解析.
+     * 如果业务不需要下拉框功能，可以返回null.
+     * 如果需要下拉框功能，子类需要提供相应的DynamicMapper实现.
+     *
+     * @return DynamicMapper实例，用于查询下拉框数据，可为null
+     */
+    protected abstract DynamicMapper getDynamicMapper();
+
     // --- Core service methods implementing the ExcelService interface ---
 
     @Override
@@ -125,10 +137,11 @@ public abstract class AbstractExcelService implements ExcelService {
         ExcelTemplateConfig config = getTemplateGenerationConfiguration(templateKey, processedConditions);
 
         // 解析下拉框数据 (common logic)
+        DynamicMapper dynamicMapper = getDynamicMapper();
         if (processedConditions != null && processedConditions.getDropdownParams() != null) {
             dropdownResolver.resolveDropdowns(config, processedConditions.getDropdownParams(), dynamicMapper);
         } else {
-            dropdownResolver.resolveDropdowns(config, null, dynamicMapper); // Still pass null if no params
+            dropdownResolver.resolveDropdowns(config, null, dynamicMapper);
         }
         
         return templateGenerator.generateTemplate(config, processedConditions);
@@ -137,7 +150,7 @@ public abstract class AbstractExcelService implements ExcelService {
     @Override
     public ImportResult importData(String templateKey, MultipartFile file, BusinessConditions conditions) {
         BusinessConditions processedConditions = transformAndValidateParameters(templateKey, conditions);
-        ExcelTemplateConfig config = getImportConfiguration(templateKey, processedConditions); // Use specific import config method
+        ExcelTemplateConfig config = getImportConfiguration(templateKey, processedConditions);
         
         // 读取Excel数据 (common logic)
         List<Map<String, Object>> dataList = dataReader.readExcel(file, config, processedConditions);
@@ -149,7 +162,7 @@ public abstract class AbstractExcelService implements ExcelService {
     @Override
     public byte[] exportData(String templateKey, BusinessConditions conditions) {
         BusinessConditions processedConditions = transformAndValidateParameters(templateKey, conditions);
-        ExcelTemplateConfig config = getExportConfiguration(templateKey, processedConditions); // Use specific export config method
+        ExcelTemplateConfig config = getExportConfiguration(templateKey, processedConditions);
         
         // 查询数据 (delegated to subclass)
         List<Map<String, Object>> dataList = fetchBusinessData(config, processedConditions);
@@ -158,71 +171,37 @@ public abstract class AbstractExcelService implements ExcelService {
         return dataWriter.writeExcel(dataList, config, processedConditions);
     }
 
-    // --- Utility methods for subclasses (can be overridden if needed) ---
+    // --- Utility methods for subclasses ---
 
     /**
-     * 获取基础的模板配置信息 (不含字段).
-     * 通常由子类的 getExportConfiguration, getImportConfiguration, getTemplateGenerationConfiguration 方法调用.
-     * @param templateKey 模板唯一标识
-     * @return 基础模板配置
+     * 获取Excel模板生成器，供子类在自定义逻辑中使用
+     * @return ExcelTemplateGenerator实例
      */
-    protected ExcelTemplateConfig getBaseTemplateConfigByKey(String templateKey) {
-        ExcelTemplateConfig config = templateConfigMapper.selectByTemplateKey(templateKey);
-        if (config == null) {
-            throw new RuntimeException("模板配置不存在: " + templateKey);
-        }
-        if (!config.getEnabled()) {
-            throw new RuntimeException("模板已禁用: " + templateKey);
-        }
-        // Fields are NOT loaded here; subclasses will load them as needed via getFieldsByTemplateId
-        return config;
-    }
-    
-    /**
-     * 根据模板ID加载字段配置.
-     * @param templateId 模板ID
-     * @return 字段配置列表
-     */
-    protected List<com.framework.excel.entity.config.ExcelFieldConfig> getFieldsByTemplateId(Long templateId) {
-        return fieldConfigMapper.selectByTemplateId(templateId);
+    protected ExcelTemplateGenerator getTemplateGenerator() {
+        return templateGenerator;
     }
 
     /**
-     * 旧的 getTemplateConfig, 保留以便参考, 新的实现应该使用 getExportConfiguration, getImportConfiguration 等.
-     * 或者将其改造为 getBaseTemplateConfigWithFields.
-     * For now, marked as deprecated and private. Subclasses should use getBaseTemplateConfigByKey and getFieldsByTemplateId.
+     * 获取Excel数据读取器，供子类在自定义逻辑中使用
+     * @return ExcelDataReader实例
      */
-    @Deprecated
-    private ExcelTemplateConfig getFullTemplateConfigLegacy(String templateKey) {
-        ExcelTemplateConfig config = templateConfigMapper.selectByTemplateKey(templateKey);
-        if (config == null) {
-            throw new RuntimeException("模板配置不存在: " + templateKey);
-        }
-        if (!config.getEnabled()) {
-            throw new RuntimeException("模板已禁用: " + templateKey);
-        }
-        config.setFields(fieldConfigMapper.selectByTemplateId(config.getId()));
-        return config;
+    protected ExcelDataReader getDataReader() {
+        return dataReader;
     }
 
     /**
-     * 旧的 queryData 方法, 现在由 fetchBusinessData 抽象方法取代.
-     * This logic should be moved to the concrete subclass implementing fetchBusinessData.
-     * Kept for reference, marked as deprecated.
+     * 获取Excel数据写入器，供子类在自定义逻辑中使用
+     * @return ExcelDataWriter实例
      */
-    @Deprecated
-    protected List<Map<String, Object>> queryDataLegacy(ExcelTemplateConfig config, BusinessConditions conditions) {
-        Map<String, Object> queryConditions = conditions != null ? conditions.getConditions() : null;
-        List<String> visibleFields = conditions != null ? conditions.getVisibleFields() : null;
-        String orderBy = conditions != null ? conditions.getOrderBy() : null;
-        Integer limit = conditions != null ? conditions.getLimit() : null;
-        
-        return dynamicMapper.selectByConditions(
-            config.getTableName(), // This assumes data is always from a single table via dynamicMapper
-            queryConditions,
-            visibleFields,
-            orderBy,
-            limit
-        );
+    protected ExcelDataWriter getDataWriter() {
+        return dataWriter;
+    }
+
+    /**
+     * 获取下拉框解析器，供子类在自定义逻辑中使用
+     * @return DropdownResolver实例
+     */
+    protected DropdownResolver getDropdownResolver() {
+        return dropdownResolver;
     }
 } 

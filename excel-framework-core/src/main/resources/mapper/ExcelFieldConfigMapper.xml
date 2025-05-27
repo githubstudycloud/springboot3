@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.ExcelFieldConfigMapper">
+
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.config.ExcelFieldConfig">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="template_id" property="templateId" jdbcType="BIGINT"/>
+        <result column="field_name" property="fieldName" jdbcType="VARCHAR"/>
+        <result column="column_name" property="columnName" jdbcType="VARCHAR"/>
+        <result column="column_index" property="columnIndex" jdbcType="INTEGER"/>
+        <result column="data_type" property="dataType" jdbcType="VARCHAR"/>
+        <result column="required" property="required" jdbcType="BOOLEAN"/>
+        <result column="visible" property="visible" jdbcType="BOOLEAN"/>
+        <result column="width" property="width" jdbcType="INTEGER"/>
+        <result column="date_format" property="dateFormat" jdbcType="VARCHAR"/>
+        <result column="dropdown_config" property="dropdownConfig" jdbcType="LONGVARCHAR"/>
+        <result column="validation_rules" property="validationRules" jdbcType="LONGVARCHAR"/>
+        <result column="extra_config" property="extraConfig" jdbcType="LONGVARCHAR"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, template_id, field_name, column_name, column_index, data_type, required, 
+        visible, width, date_format, dropdown_config, validation_rules, extra_config, 
+        sort_order, create_time, update_time
+    </sql>
+
+    <select id="selectByTemplateId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM excel_field_config
+        WHERE template_id = #{templateId,jdbcType=BIGINT}
+        ORDER BY sort_order, column_index
+    </select>
+
+    <select id="selectById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM excel_field_config
+        WHERE id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <insert id="insert" parameterType="com.framework.excel.entity.config.ExcelFieldConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO excel_field_config (
+            template_id, field_name, column_name, column_index, data_type, required,
+            visible, width, date_format, dropdown_config, validation_rules, extra_config,
+            sort_order, create_time, update_time
+        ) VALUES (
+            #{templateId,jdbcType=BIGINT}, #{fieldName,jdbcType=VARCHAR}, 
+            #{columnName,jdbcType=VARCHAR}, #{columnIndex,jdbcType=INTEGER}, 
+            #{dataType,jdbcType=VARCHAR}, #{required,jdbcType=BOOLEAN},
+            #{visible,jdbcType=BOOLEAN}, #{width,jdbcType=INTEGER}, 
+            #{dateFormat,jdbcType=VARCHAR}, #{dropdownConfig,jdbcType=LONGVARCHAR}, 
+            #{validationRules,jdbcType=LONGVARCHAR}, #{extraConfig,jdbcType=LONGVARCHAR},
+            #{sortOrder,jdbcType=INTEGER}, NOW(), NOW()
+        )
+    </insert>
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO excel_field_config (
+            template_id, field_name, column_name, column_index, data_type, required,
+            visible, width, date_format, dropdown_config, validation_rules, extra_config,
+            sort_order, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.templateId,jdbcType=BIGINT}, #{item.fieldName,jdbcType=VARCHAR}, 
+                #{item.columnName,jdbcType=VARCHAR}, #{item.columnIndex,jdbcType=INTEGER}, 
+                #{item.dataType,jdbcType=VARCHAR}, #{item.required,jdbcType=BOOLEAN},
+                #{item.visible,jdbcType=BOOLEAN}, #{item.width,jdbcType=INTEGER}, 
+                #{item.dateFormat,jdbcType=VARCHAR}, #{item.dropdownConfig,jdbcType=LONGVARCHAR}, 
+                #{item.validationRules,jdbcType=LONGVARCHAR}, #{item.extraConfig,jdbcType=LONGVARCHAR},
+                #{item.sortOrder,jdbcType=INTEGER}, NOW(), NOW()
+            )
+        </foreach>
+    </insert>
+
+    <update id="updateById" parameterType="com.framework.excel.entity.config.ExcelFieldConfig">
+        UPDATE excel_field_config
+        SET field_name = #{fieldName,jdbcType=VARCHAR},
+            column_name = #{columnName,jdbcType=VARCHAR},
+            column_index = #{columnIndex,jdbcType=INTEGER},
+            data_type = #{dataType,jdbcType=VARCHAR},
+            required = #{required,jdbcType=BOOLEAN},
+            visible = #{visible,jdbcType=BOOLEAN},
+            width = #{width,jdbcType=INTEGER},
+            date_format = #{dateFormat,jdbcType=VARCHAR},
+            dropdown_config = #{dropdownConfig,jdbcType=LONGVARCHAR},
+            validation_rules = #{validationRules,jdbcType=LONGVARCHAR},
+            extra_config = #{extraConfig,jdbcType=LONGVARCHAR},
+            sort_order = #{sortOrder,jdbcType=INTEGER},
+            update_time = NOW()
+        WHERE id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <delete id="deleteByTemplateId" parameterType="java.lang.Long">
+        DELETE FROM excel_field_config
+        WHERE template_id = #{templateId,jdbcType=BIGINT}
+    </delete>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM excel_field_config
+        WHERE id = #{id,jdbcType=BIGINT}
+    </delete>
+
+</mapper> 

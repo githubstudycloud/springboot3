@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.DynamicMapper">
+
+    <!-- 动态插入数据 -->
+    <insert id="insert">
+        INSERT INTO ${tableName}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <foreach collection="data" index="key" item="value" separator=",">
+                ${key}
+            </foreach>
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <foreach collection="data" index="key" item="value" separator=",">
+                #{value}
+            </foreach>
+        </trim>
+    </insert>
+
+    <!-- 批量插入数据 -->
+    <insert id="insertBatch">
+        INSERT INTO ${tableName}
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <foreach collection="list[0]" index="key" item="value" separator=",">
+                ${key}
+            </foreach>
+        </trim>
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            <trim prefix="(" suffix=")" suffixOverrides=",">
+                <foreach collection="item" index="key" item="value" separator=",">
+                    #{value}
+                </foreach>
+            </trim>
+        </foreach>
+    </insert>
+
+    <!-- 动态更新数据 -->
+    <update id="update">
+        UPDATE ${tableName}
+        <set>
+            <foreach collection="data" index="key" item="value" separator=",">
+                ${key} = #{value}
+            </foreach>
+        </set>
+        <where>
+            <foreach collection="conditions" index="key" item="value" separator=" AND ">
+                ${key} = #{value}
+            </foreach>
+        </where>
+    </update>
+
+    <!-- 动态删除数据 -->
+    <delete id="delete">
+        DELETE FROM ${tableName}
+        <where>
+            <foreach collection="conditions" index="key" item="value" separator=" AND ">
+                ${key} = #{value}
+            </foreach>
+        </where>
+    </delete>
+
+    <!-- 动态查询数据 -->
+    <select id="select" resultType="java.util.Map">
+        SELECT * FROM ${tableName}
+        <where>
+            <foreach collection="conditions" index="key" item="value" separator=" AND ">
+                <if test="value != null">
+                    ${key} = #{value}
+                </if>
+            </foreach>
+        </where>
+    </select>
+
+    <!-- 动态查询数据（带字段选择和排序） -->
+    <select id="selectByConditions" resultType="java.util.Map">
+        SELECT
+        <choose>
+            <when test="selectFields != null and selectFields.size() > 0">
+                <foreach collection="selectFields" item="field" separator=",">
+                    ${field}
+                </foreach>
+            </when>
+            <otherwise>
+                *
+            </otherwise>
+        </choose>
+        FROM ${tableName}
+        <where>
+            <if test="conditions != null">
+                <foreach collection="conditions" index="key" item="value" separator=" AND ">
+                    <if test="value != null">
+                        ${key} = #{value}
+                    </if>
+                </foreach>
+            </if>
+        </where>
+        <if test="orderBy != null and orderBy != ''">
+            ORDER BY ${orderBy}
+        </if>
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 统计记录数 -->
+    <select id="countByConditions" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM ${tableName}
+        <where>
+            <if test="conditions != null">
+                <foreach collection="conditions" index="key" item="value" separator=" AND ">
+                    <if test="value != null">
+                        ${key} = #{value}
+                    </if>
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 检查记录是否存在 -->
+    <select id="exists" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0 FROM ${tableName}
+        <where>
+            <foreach collection="conditions" index="key" item="value" separator=" AND ">
+                <if test="value != null">
+                    ${key} = #{value}
+                </if>
+            </foreach>
+        </where>
+    </select>
+
+</mapper> 

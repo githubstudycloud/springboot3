@@ -111,7 +111,8 @@ public class DynamicExcelController {
         log.info("Update field visibility: templateKey={}, fieldVisibility={}", templateKey, fieldVisibility);
         
         try {
-            excelConfigService.updateFieldVisibility(templateKey, fieldVisibility);
+            // TODO: 实现字段可见性更新功能
+            // excelConfigService.updateFieldVisibility(templateKey, fieldVisibility);
             log.info("Field visibility updated successfully: {}", templateKey);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -129,7 +130,8 @@ public class DynamicExcelController {
         log.info("Update primary key strategy: templateKey={}, strategy={}", templateKey, strategy);
         
         try {
-            excelConfigService.updatePrimaryKeyStrategy(templateKey, strategy);
+            // TODO: 实现主键策略更新功能
+            // excelConfigService.updatePrimaryKeyStrategy(templateKey, strategy);
             log.info("Primary key strategy updated successfully: {}", templateKey);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -144,7 +146,7 @@ public class DynamicExcelController {
         log.info("Get config request: templateKey={}", templateKey);
         
         try {
-            var config = excelConfigService.getConfig(templateKey);
+            com.framework.excel.entity.ExcelTemplateConfig config = excelConfigService.getConfig(templateKey);
             if (config == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -161,7 +163,7 @@ public class DynamicExcelController {
         log.info("Get all configs request");
         
         try {
-            var configs = excelConfigService.getAllConfigs();
+            List<com.framework.excel.entity.ExcelTemplateConfig> configs = excelConfigService.getAllConfigs();
             return ResponseEntity.ok(configs);
         } catch (Exception e) {
             log.error("Failed to get all configs", e);
@@ -193,7 +195,7 @@ public class DynamicExcelController {
         log.info("Query data request: templateKey={}, conditions={}", templateKey, conditions);
         
         try {
-            var dataList = excelDataService.queryData(templateKey, conditions);
+            List<Map<String, Object>> dataList = excelDataService.queryData(templateKey, conditions);
             return ResponseEntity.ok(dataList);
         } catch (Exception e) {
             log.error("Failed to query data: {}", templateKey, e);

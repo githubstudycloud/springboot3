@@ -3,6 +3,7 @@ package com.framework.excel.config;
 import lombok.Data;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Excel模板配置
@@ -87,7 +88,7 @@ public class ExcelTemplateConfig {
         return fields.stream()
                 .filter(field -> Boolean.TRUE.equals(field.getVisible()))
                 .sorted((f1, f2) -> Integer.compare(f1.getColumnIndex(), f2.getColumnIndex()))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.FaultClassificationMapper">
+
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.FaultClassification">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="scope_type" property="scopeType" jdbcType="TINYINT"/>
+        <result column="function_tree_id" property="functionTreeId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, scope_type, function_tree_id, create_time, update_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault_classification
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM fault_classification
+        ORDER BY id ASC
+    </select>
+
+    <insert id="insert" parameterType="com.framework.excel.entity.FaultClassification" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fault_classification (
+            name, scope_type, function_tree_id, create_time, update_time
+        ) VALUES (
+            #{name}, #{scopeType}, #{functionTreeId}, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="update" parameterType="com.framework.excel.entity.FaultClassification">
+        UPDATE fault_classification SET
+            name = #{name},
+            scope_type = #{scopeType},
+            function_tree_id = #{functionTreeId},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM fault_classification WHERE id = #{id}
+    </delete>
+
+</mapper>

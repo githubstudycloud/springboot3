@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.DynamicMapper">
+
+    <select id="selectDropdownOptions" resultType="java.util.Map">
+        SELECT 
+            ${valueField} as value,
+            ${displayField} as label
+        FROM ${tableName}
+        <if test="whereClause != null and whereClause != ''">
+            WHERE ${whereClause}
+        </if>
+        ORDER BY ${displayField}
+    </select>
+
+    <select id="selectBySql" resultType="java.util.Map">
+        ${sql}
+    </select>
+
+    <update id="executeSql">
+        ${sql}
+    </update>
+
+</mapper>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.ModelCategoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.ModelCategory">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="parent_name" property="parentName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        mc.id, mc.name, mc.description, mc.parent_id, mc.create_time, mc.update_time
+    </sql>
+
+    <sql id="Join_Column_List">
+        mc.id, mc.name, mc.description, mc.parent_id, mc.create_time, mc.update_time,
+        pmc.name as parent_name
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Join_Column_List"/>
+        FROM model_category mc
+        LEFT JOIN model_category pmc ON mc.parent_id = pmc.id
+        WHERE mc.id = #{id}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Join_Column_List"/>
+        FROM model_category mc
+        LEFT JOIN model_category pmc ON mc.parent_id = pmc.id
+        ORDER BY mc.id ASC
+    </select>
+
+    <insert id="insert" parameterType="com.framework.excel.entity.ModelCategory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO model_category (
+            name, description, parent_id, create_time, update_time
+        ) VALUES (
+            #{name}, #{description}, #{parentId}, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="update" parameterType="com.framework.excel.entity.ModelCategory">
+        UPDATE model_category SET
+            name = #{name},
+            description = #{description},
+            parent_id = #{parentId},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM model_category WHERE id = #{id}
+    </delete>
+
+</mapper>

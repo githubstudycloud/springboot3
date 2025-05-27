@@ -1,0 +1,236 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: excel-framework
+  
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://192.168.226.136:3306/mydb?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+      username: root
+      password: rootpass
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1 FROM DUAL
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+      pool-prepared-statements: true
+      max-pool-prepared-statement-per-connection-size: 20
+      # 监控配置
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+        login-username: admin
+        login-password: admin123
+        allow: 127.0.0.1
+  
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.framework.excel.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  params: count=countSql
+
+# 自定义配置
+excel:
+  framework:
+    # 配置源类型: yaml_file, database, hybrid(默认)
+    config-source: hybrid
+    # 临时文件存储路径
+    temp-path: ${java.io.tmpdir}/excel-framework
+    # 模板存储路径(独立配置文件目录)
+    template-path: classpath:templates
+    # 单次导入最大行数
+    max-import-rows: 10000
+    # 单次导出最大行数
+    max-export-rows: 50000
+    # 线程池配置
+    thread-pool:
+      core-size: 5
+      max-size: 10
+      queue-capacity: 100
+  
+  # 模板配置
+  templates:
+    fault:
+      entity-class: com.framework.excel.entity.Fault
+      table-name: fault
+      sheet-name: 故障数据
+      primary-key-strategy:
+        key-fields: ["code"]
+        update-mode: INSERT_OR_UPDATE
+      fields:
+        - field-name: id
+          column-name: ID
+          column-index: 0
+          data-type: LONG
+          visible: false
+          width: 10
+        - field-name: code
+          column-name: 故障编码
+          column-index: 1
+          data-type: STRING
+          required: true
+          visible: true
+          width: 20
+        - field-name: name
+          column-name: 故障名称
+          column-index: 2
+          data-type: STRING
+          required: true
+          visible: true
+          width: 30
+        - field-name: functionId
+          column-name: 功能ID
+          column-index: 3
+          data-type: LONG
+          visible: false
+          width: 15
+        - field-name: classificationId
+          column-name: 故障分类
+          column-index: 4
+          data-type: LONG
+          visible: true
+          width: 25
+          dropdown-provider:
+            type: RELATED_TABLE
+            table-name: fault_classification
+            value-field: id
+            display-field: name
+            allow-empty: true
+        - field-name: systemElementId
+          column-name: 系统元素ID
+          column-index: 5
+          data-type: LONG
+          visible: false
+          width: 15
+        - field-name: createTime
+          column-name: 创建时间
+          column-index: 6
+          data-type: DATETIME
+          visible: false
+          width: 20
+          date-format: yyyy-MM-dd HH:mm:ss
+        - field-name: updateTime
+          column-name: 更新时间
+          column-index: 7
+          data-type: DATETIME
+          visible: false
+          width: 20
+          date-format: yyyy-MM-dd HH:mm:ss
+    
+    model:
+      entity-class: com.framework.excel.entity.Model
+      table-name: model
+      sheet-name: 模型数据
+      primary-key-strategy:
+        key-fields: ["code"]
+        update-mode: INSERT_OR_UPDATE
+      fields:
+        - field-name: id
+          column-name: ID
+          column-index: 0
+          data-type: LONG
+          visible: false
+          width: 10
+        - field-name: code
+          column-name: 模型编码
+          column-index: 1
+          data-type: STRING
+          required: true
+          visible: true
+          width: 20
+        - field-name: name
+          column-name: 模型名称
+          column-index: 2
+          data-type: STRING
+          required: true
+          visible: true
+          width: 30
+        - field-name: categoryId
+          column-name: 模型分类
+          column-index: 3
+          data-type: LONG
+          visible: true
+          width: 25
+          dropdown-provider:
+            type: RELATED_TABLE
+            table-name: model_category
+            value-field: id
+            display-field: name
+            allow-empty: true
+        - field-name: description
+          column-name: 描述
+          column-index: 4
+          data-type: STRING
+          visible: true
+          width: 40
+        - field-name: version
+          column-name: 版本
+          column-index: 5
+          data-type: STRING
+          visible: true
+          width: 15
+        - field-name: status
+          column-name: 状态
+          column-index: 6
+          data-type: INTEGER
+          visible: true
+          width: 10
+        - field-name: createTime
+          column-name: 创建时间
+          column-index: 7
+          data-type: DATETIME
+          visible: false
+          width: 20
+          date-format: yyyy-MM-dd HH:mm:ss
+        - field-name: updateTime
+          column-name: 更新时间
+          column-index: 8
+          data-type: DATETIME
+          visible: false
+          width: 20
+          date-format: yyyy-MM-dd HH:mm:ss
+
+logging:
+  level:
+    com.framework.excel: debug
+    com.alibaba.druid: info
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'

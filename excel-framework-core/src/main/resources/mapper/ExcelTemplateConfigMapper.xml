@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.ExcelTemplateConfigMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.ExcelTemplateConfig">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="template_key" property="templateKey" jdbcType="VARCHAR"/>
+        <result column="template_name" property="templateName" jdbcType="VARCHAR"/>
+        <result column="entity_class" property="entityClass" jdbcType="VARCHAR"/>
+        <result column="table_name" property="tableName" jdbcType="VARCHAR"/>
+        <result column="sheet_name" property="sheetName" jdbcType="VARCHAR"/>
+        <result column="primary_key_fields" property="primaryKeyFields" jdbcType="VARCHAR" 
+                typeHandler="com.framework.excel.util.JsonListTypeHandler"/>
+        <result column="update_mode" property="updateMode" jdbcType="VARCHAR" 
+                typeHandler="com.framework.excel.util.UpdateModeTypeHandler"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 包含字段的结果映射 -->
+    <resultMap id="ResultMapWithFields" type="com.framework.excel.entity.ExcelTemplateConfig" extends="BaseResultMap">
+        <collection property="fields" ofType="com.framework.excel.entity.ExcelFieldConfig">
+            <id column="field_id" property="id" jdbcType="BIGINT"/>
+            <result column="field_template_id" property="templateId" jdbcType="BIGINT"/>
+            <result column="field_name" property="fieldName" jdbcType="VARCHAR"/>
+            <result column="column_name" property="columnName" jdbcType="VARCHAR"/>
+            <result column="column_index" property="columnIndex" jdbcType="INTEGER"/>
+            <result column="data_type" property="dataType" jdbcType="VARCHAR" 
+                    typeHandler="com.framework.excel.util.DataTypeTypeHandler"/>
+            <result column="required" property="required" jdbcType="BIT"/>
+            <result column="visible" property="visible" jdbcType="BIT"/>
+            <result column="width" property="width" jdbcType="INTEGER"/>
+            <result column="date_format" property="dateFormat" jdbcType="VARCHAR"/>
+            <result column="dropdown_config" property="dropdownConfig" jdbcType="VARCHAR" 
+                    typeHandler="com.framework.excel.util.JsonMapTypeHandler"/>
+            <result column="validation_rules" property="validationRules" jdbcType="VARCHAR" 
+                    typeHandler="com.framework.excel.util.JsonMapTypeHandler"/>
+            <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+            <result column="field_description" property="description" jdbcType="VARCHAR"/>
+            <result column="field_status" property="status" jdbcType="TINYINT"/>
+            <result column="field_create_time" property="createTime" jdbcType="TIMESTAMP"/>
+            <result column="field_update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        </collection>
+    </resultMap>
+
+    <!-- 基础SQL片段 -->
+    <sql id="Base_Column_List">
+        id, template_key, template_name, entity_class, table_name, sheet_name,
+        primary_key_fields, update_mode, description, status, create_time, update_time
+    </sql>
+
+    <!-- 字段SQL片段 -->
+    <sql id="Field_Column_List">
+        f.id as field_id, f.template_id as field_template_id, f.field_name, f.column_name,
+        f.column_index, f.data_type, f.required, f.visible, f.width, f.date_format,
+        f.dropdown_config, f.validation_rules, f.sort_order, 
+        f.description as field_description, f.status as field_status,
+        f.create_time as field_create_time, f.update_time as field_update_time
+    </sql>
+
+    <!-- 根据模板Key查询配置(包含字段) -->
+    <select id="findByTemplateKey" resultMap="ResultMapWithFields">
+        SELECT 
+            t.<include refid="Base_Column_List"/>,
+            <include refid="Field_Column_List"/>
+        FROM excel_template_config t
+        LEFT JOIN excel_field_config f ON t.id = f.template_id AND f.status = 1
+        WHERE t.template_key = #{templateKey} AND t.status = 1
+        ORDER BY f.sort_order, f.column_index
+    </select>
+
+    <!-- 查询所有配置(包含字段) -->
+    <select id="findAllWithFields" resultMap="ResultMapWithFields">
+        SELECT 
+            t.<include refid="Base_Column_List"/>,
+            <include refid="Field_Column_List"/>
+        FROM excel_template_config t
+        LEFT JOIN excel_field_config f ON t.id = f.template_id AND f.status = 1
+        WHERE t.status = 1
+        ORDER BY t.template_key, f.sort_order, f.column_index
+    </select>
+
+    <!-- 查询所有配置(不包含字段) -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_template_config
+        WHERE status = 1
+        ORDER BY template_key
+    </select>
+
+    <!-- 根据ID查询配置(包含字段) -->
+    <select id="findById" resultMap="ResultMapWithFields">
+        SELECT 
+            t.<include refid="Base_Column_List"/>,
+            <include refid="Field_Column_List"/>
+        FROM excel_template_config t
+        LEFT JOIN excel_field_config f ON t.id = f.template_id AND f.status = 1
+        WHERE t.id = #{id}
+        ORDER BY f.sort_order, f.column_index
+    </select>
+
+    <!-- 根据状态查询配置 -->
+    <select id="findByStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM excel_template_config
+        WHERE status = #{status}
+        ORDER BY template_key
+    </select>
+
+    <!-- 根据模板Key统计数量 -->
+    <select id="countByTemplateKey" resultType="int">
+        SELECT COUNT(1)
+        FROM excel_template_config
+        WHERE template_key = #{templateKey}
+    </select>
+
+    <!-- 插入配置 -->
+    <insert id="insert" parameterType="com.framework.excel.entity.ExcelTemplateConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO excel_template_config (
+            template_key, template_name, entity_class, table_name, sheet_name,
+            primary_key_fields, update_mode, description, status, create_time, update_time
+        ) VALUES (
+            #{templateKey}, #{templateName}, #{entityClass}, #{tableName}, #{sheetName},
+            #{primaryKeyFields, typeHandler=com.framework.excel.util.JsonListTypeHandler},
+            #{updateMode, typeHandler=com.framework.excel.util.UpdateModeTypeHandler},
+            #{description}, #{status}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新配置 -->
+    <update id="update" parameterType="com.framework.excel.entity.ExcelTemplateConfig">
+        UPDATE excel_template_config
+        SET template_name = #{templateName},
+            entity_class = #{entityClass},
+            table_name = #{tableName},
+            sheet_name = #{sheetName},
+            primary_key_fields = #{primaryKeyFields, typeHandler=com.framework.excel.util.JsonListTypeHandler},
+            update_mode = #{updateMode, typeHandler=com.framework.excel.util.UpdateModeTypeHandler},
+            description = #{description},
+            status = #{status},
+            update_time = #{updateTime}
+        WHERE template_key = #{templateKey}
+    </update>
+
+    <!-- 根据模板Key删除配置 -->
+    <delete id="deleteByTemplateKey">
+        DELETE FROM excel_template_config
+        WHERE template_key = #{templateKey}
+    </delete>
+
+    <!-- 根据ID删除配置 -->
+    <delete id="deleteById">
+        DELETE FROM excel_template_config
+        WHERE id = #{id}
+    </delete>
+
+</mapper> 

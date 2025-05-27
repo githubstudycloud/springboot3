@@ -1,0 +1,84 @@
+# 故障表Excel导入导出配置
+entity-class: com.framework.excel.entity.Fault
+table-name: fault
+sheet-name: 故障数据
+description: 故障信息导入导出模板
+
+# 主键策略配置
+primary-key-strategy:
+  key-fields: ["code"]  # 支持动态切换为 ["id"], ["name"] 等
+  update-mode: INSERT_OR_UPDATE
+
+# 字段配置
+fields:
+  - field-name: id
+    column-name: ID
+    column-index: 0
+    data-type: LONG
+    required: false
+    visible: false  # 导出时隐藏
+    width: 10
+    
+  - field-name: code
+    column-name: 故障编码
+    column-index: 1
+    data-type: STRING
+    required: true
+    visible: true
+    width: 20
+    
+  - field-name: name
+    column-name: 故障名称
+    column-index: 2
+    data-type: STRING
+    required: true
+    visible: true
+    width: 30
+    
+  - field-name: functionId
+    column-name: 功能ID
+    column-index: 3
+    data-type: LONG
+    required: false
+    visible: false  # 导出时隐藏
+    width: 15
+    
+  - field-name: classificationId
+    column-name: 故障分类
+    column-index: 4
+    data-type: LONG
+    required: false
+    visible: true
+    width: 25
+    dropdown-provider:
+      type: RELATED_TABLE
+      table-name: fault_classification
+      value-field: id
+      display-field: name
+      allow-empty: true
+      
+  - field-name: systemElementId
+    column-name: 系统元素ID
+    column-index: 5
+    data-type: LONG
+    required: false
+    visible: false  # 导出时隐藏
+    width: 15
+    
+  - field-name: createTime
+    column-name: 创建时间
+    column-index: 6
+    data-type: DATETIME
+    required: false
+    visible: false  # 导出时隐藏
+    width: 20
+    date-format: yyyy-MM-dd HH:mm:ss
+    
+  - field-name: updateTime
+    column-name: 更新时间
+    column-index: 7
+    data-type: DATETIME
+    required: false
+    visible: false  # 导出时隐藏
+    width: 20
+    date-format: yyyy-MM-dd HH:mm:ss 

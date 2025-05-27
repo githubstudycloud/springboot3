@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.framework.excel.mapper.FaultMapper">
+
+    <resultMap id="BaseResultMap" type="com.framework.excel.entity.Fault">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="code" property="code" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="function_id" property="functionId" jdbcType="BIGINT"/>
+        <result column="classification_id" property="classificationId" jdbcType="BIGINT"/>
+        <result column="system_element_id" property="systemElementId" jdbcType="BIGINT"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="classification_name" property="classificationName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        f.id, f.code, f.name, f.function_id, f.classification_id, f.system_element_id, 
+        f.create_time, f.update_time
+    </sql>
+
+    <sql id="Join_Column_List">
+        f.id, f.code, f.name, f.function_id, f.classification_id, f.system_element_id, 
+        f.create_time, f.update_time, fc.name as classification_name
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Join_Column_List"/>
+        FROM fault f
+        LEFT JOIN fault_classification fc ON f.classification_id = fc.id
+        WHERE f.id = #{id}
+    </select>
+
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="Join_Column_List"/>
+        FROM fault f
+        LEFT JOIN fault_classification fc ON f.classification_id = fc.id
+        WHERE f.code = #{code}
+    </select>
+
+    <select id="selectByName" resultMap="BaseResultMap">
+        SELECT <include refid="Join_Column_List"/>
+        FROM fault f
+        LEFT JOIN fault_classification fc ON f.classification_id = fc.id
+        WHERE f.name = #{name}
+    </select>
+
+    <select id="selectByConditions" resultMap="BaseResultMap">
+        SELECT <include refid="Join_Column_List"/>
+        FROM fault f
+        LEFT JOIN fault_classification fc ON f.classification_id = fc.id
+        <where>
+            <if test="conditions.id != null">
+                AND f.id = #{conditions.id}
+            </if>
+            <if test="conditions.code != null and conditions.code != ''">
+                AND f.code = #{conditions.code}
+            </if>
+            <if test="conditions.name != null and conditions.name != ''">
+                AND f.name LIKE CONCAT('%', #{conditions.name}, '%')
+            </if>
+            <if test="conditions.functionId != null">
+                AND f.function_id = #{conditions.functionId}
+            </if>
+            <if test="conditions.classificationId != null">
+                AND f.classification_id = #{conditions.classificationId}
+            </if>
+            <if test="conditions.systemElementId != null">
+                AND f.system_element_id = #{conditions.systemElementId}
+            </if>
+        </where>
+        ORDER BY f.id DESC
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Join_Column_List"/>
+        FROM fault f
+        LEFT JOIN fault_classification fc ON f.classification_id = fc.id
+        ORDER BY f.id DESC
+    </select>
+
+    <insert id="insert" parameterType="com.framework.excel.entity.Fault" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fault (
+            code, name, function_id, classification_id, system_element_id, create_time, update_time
+        ) VALUES (
+            #{code}, #{name}, #{functionId}, #{classificationId}, #{systemElementId}, 
+            NOW(), NOW()
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO fault (
+            code, name, function_id, classification_id, system_element_id, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.code}, #{item.name}, #{item.functionId}, #{item.classificationId}, 
+             #{item.systemElementId}, NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.framework.excel.entity.Fault">
+        UPDATE fault SET
+            code = #{code},
+            name = #{name},
+            function_id = #{functionId},
+            classification_id = #{classificationId},
+            system_element_id = #{systemElementId},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCode" parameterType="com.framework.excel.entity.Fault">
+        UPDATE fault SET
+            name = #{name},
+            function_id = #{functionId},
+            classification_id = #{classificationId},
+            system_element_id = #{systemElementId},
+            update_time = NOW()
+        WHERE code = #{code}
+    </update>
+
+    <update id="updateByName" parameterType="com.framework.excel.entity.Fault">
+        UPDATE fault SET
+            code = #{code},
+            function_id = #{functionId},
+            classification_id = #{classificationId},
+            system_element_id = #{systemElementId},
+            update_time = NOW()
+        WHERE name = #{name}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM fault WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByCode">
+        DELETE FROM fault WHERE code = #{code}
+    </delete>
+
+    <select id="countByConditions" resultType="int">
+        SELECT COUNT(1) FROM fault f
+        <where>
+            <if test="conditions.id != null">
+                AND f.id = #{conditions.id}
+            </if>
+            <if test="conditions.code != null and conditions.code != ''">
+                AND f.code = #{conditions.code}
+            </if>
+            <if test="conditions.name != null and conditions.name != ''">
+                AND f.name LIKE CONCAT('%', #{conditions.name}, '%')
+            </if>
+            <if test="conditions.functionId != null">
+                AND f.function_id = #{conditions.functionId}
+            </if>
+            <if test="conditions.classificationId != null">
+                AND f.classification_id = #{conditions.classificationId}
+            </if>
+            <if test="conditions.systemElementId != null">
+                AND f.system_element_id = #{conditions.systemElementId}
+            </if>
+        </where>
+    </select>
+
+</mapper>

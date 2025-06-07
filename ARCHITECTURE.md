@@ -1,339 +1,435 @@
-# 🏗️ 企业级数据平台微服务架构设计
+# 🏗️ 企业级数据平台微服务架构设计 v2.0
 
 ## 📋 架构概述
 
-基于Spring Cloud + Nacos + 数据采集处理的企业级微服务架构，支持多系统数据采集、实时处理、智能计算和可视化展示。
+基于Spring Cloud + Nacos的高可用企业级数据平台，采用领域驱动设计，支持多系统数据采集、实时流处理、智能计算和可视化展示，具备完整的监控、告警、审计、流控和分布式事务能力。
 
-## 🎯 业务场景分析
+## 🎯 核心业务流程
 
-### 核心业务流程
+### 数据处理链路
 ```mermaid
 graph TB
-    A[4个外部系统] --> B[数据采集服务]
-    B --> C[数据处理服务]
-    C --> D[数据计算服务]
-    D --> E[数据展示服务]
+    A[外部系统] --> B[platform-collect 数据采集]
+    B --> C[platform-fluxcore 流处理核心]
+    C --> D[platform-buss-dashboard 业务看板]
     
-    F[配置管理] --> B
-    F --> C
-    F --> D
+    E[platform-scheduler-register 任务注册] --> F[platform-scheduler 任务执行]
+    F --> G[platform-scheduler-query 任务查询]
     
-    G[GitLab配置] --> F
-    H[Spring Config] --> F
-    I[Nacos注册中心] --> J[所有服务]
-```
-
-### 数据处理模式
-- **全量采集**: 完整数据同步
-- **增量采集**: 基于时间戳/版本号的增量更新
-- **版本控制**: 支持小版本选择性采集
-- **独立计算**: 单系统数据独立处理
-- **组合计算**: 多系统数据联合分析
-- **部分更新**: 支持局部数据重新计算
-
-## 🏗️ 3级微服务架构设计
-
-### 第1级：平台级 (platform-*)
-```
-platform-parent (父POM)
-├── platform-common (公共模块)
-├── platform-security (安全模块)  
-├── platform-gateway (网关模块)
-├── platform-infrastructure (基础设施)
-├── platform-business (业务模块)
-├── platform-starters (启动器)
-└── platform-ops (运维监控)
-```
-
-### 第2级：功能域级 (各类公共模块)
-```
-platform-common/
-├── platform-common-core (核心工具)
-├── platform-common-web (Web公共)
-├── platform-common-database (数据库公共)
-├── platform-common-redis (Redis公共)
-├── platform-common-mq (消息队列公共)
-└── platform-common-log (日志公共)
-
-platform-business/
-├── platform-business-collect (采集域)
-├── platform-business-process (处理域)
-├── platform-business-compute (计算域)
-├── platform-business-display (展示域)
-└── platform-business-config (配置域)
-```
-
-### 第3级：具体业务模块
-```
-platform-business-collect/
-├── collect-system-a (系统A采集)
-├── collect-system-b (系统B采集)
-├── collect-system-c (系统C采集)
-├── collect-system-d (系统D采集)
-└── collect-gateway (采集网关)
-
-platform-business-process/
-├── process-clean (数据清洗)
-├── process-transform (数据转换)
-├── process-validate (数据校验)
-└── process-store (数据存储)
-
-platform-business-compute/
-├── compute-single (单独计算)
-├── compute-combine (组合计算)
-├── compute-realtime (实时计算)
-└── compute-batch (批量计算)
-
-platform-business-display/
-├── display-dashboard (看板展示)
-├── display-report (报表服务)
-├── display-api (展示API)
-└── display-export (数据导出)
-```
-
-## 🚀 服务部署策略建议
-
-### 方案A：一服务一应用 (推荐)
-```yaml
-# 每个三级模块独立部署
-collect-system-a: 独立Pod/容器
-collect-system-b: 独立Pod/容器
-process-clean: 独立Pod/容器
-compute-single: 独立Pod/容器
-```
-
-**优势**:
-- ✅ 独立扩缩容
-- ✅ 故障隔离
-- ✅ 技术栈灵活
-- ✅ 部署灵活
-
-**适用场景**: 数据量大、并发高、需要独立扩展
-
-### 方案B：聚合部署
-```yaml
-# 按业务域聚合
-collect-services: [system-a, system-b, system-c, system-d]
-process-services: [clean, transform, validate, store]
-compute-services: [single, combine, realtime, batch]  
-display-services: [dashboard, report, api, export]
-```
-
-**优势**:
-- ✅ 资源节约
-- ✅ 部署简单
-- ✅ 内部调用高效
-
-**适用场景**: 数据量适中、资源有限、业务耦合度高
-
-## 🛠️ 技术架构栈
-
-### 核心框架
-- **Spring Boot 3.2.x** + **JDK 21**
-- **Spring Cloud 2023.x** (Gateway, Config, LoadBalancer)
-- **Spring Cloud Alibaba** (Nacos)
-
-### 注册与配置
-- **Nacos 2.x**: 服务注册发现 + 配置管理
-- **Spring Cloud Config**: 配置服务
-- **GitLab**: 配置仓库
-
-### 数据存储
-- **MySQL 8.0**: 主业务数据
-- **MongoDB 7.x**: 文档数据、日志
-- **Redis 7.x**: 缓存、会话
-- **InfluxDB**: 时序数据(可选)
-
-### 消息队列
-- **RabbitMQ**: 业务消息
-- **Kafka**: 大数据流处理
-- **RocketMQ**: 事务消息(可选)
-
-### 监控运维
-- **Prometheus + Grafana**: 监控告警
-- **ELK Stack**: 日志收集分析
-- **SkyWalking**: 链路追踪
-- **Spring Boot Admin**: 应用监控
-
-## 📦 Docker & K8s 部署
-
-### 容器化策略
-```dockerfile
-# 基础镜像：每个服务独立镜像
-FROM openjdk:21-jdk-alpine
-COPY target/*.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app.jar"]
-```
-
-### K8s 部署清单
-```yaml
-# 每个微服务的部署配置
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: collect-system-a
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: collect-system-a
-  template:
-    metadata:
-      labels:
-        app: collect-system-a
-    spec:
-      containers:
-      - name: collect-system-a
-        image: platform/collect-system-a:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: SPRING_PROFILES_ACTIVE
-          value: "k8s"
-        - name: NACOS_SERVER_ADDR
-          value: "nacos:8848"
-```
-
-## 🔧 配置管理策略
-
-### 配置层级设计
-```
-GitLab配置仓库/
-├── application.yml (全局配置)
-├── application-dev.yml (开发环境)
-├── application-test.yml (测试环境) 
-├── application-prod.yml (生产环境)
-├── gateway.yml (网关配置)
-├── collect-system-a.yml (系统A采集配置)
-├── collect-system-b.yml (系统B采集配置)
-├── process-clean.yml (数据清洗配置)
-└── compute-single.yml (单独计算配置)
-```
-
-### 动态配置热更新
-```yaml
-# Nacos配置示例
-spring:
-  cloud:
-    nacos:
-      config:
-        server-addr: ${nacos.server.addr}
-        file-extension: yml
-        group: ${spring.profiles.active}
-        refresh-enabled: true
-```
-
-## 🔄 数据流转架构
-
-### 采集层数据流
-```mermaid
-sequenceDiagram
-    participant S as 外部系统
-    participant C as 采集服务
-    participant MQ as 消息队列
-    participant P as 处理服务
+    H[platform-gateway 统一网关] --> I[所有服务]
     
-    S->>C: 推送/拉取数据
-    C->>C: 数据预处理
-    C->>MQ: 发送到队列
-    MQ->>P: 消费数据
-    P->>P: 数据处理
+    J[platform-monitor-dashboard 监控] --> K[platform-alert 告警]
+    L[platform-audit 审计] --> M[platform-auth 权限中心]
+    
+    N[platform-flow-control 流控] --> O[platform-transaction 分布式事务]
 ```
 
-### 计算层数据流
+### 服务治理架构
 ```mermaid
 graph LR
-    A[原始数据] --> B[数据清洗]
-    B --> C[数据转换]
-    C --> D{计算类型}
-    D -->|单独| E[单系统计算]
-    D -->|组合| F[多系统计算]
-    E --> G[结果存储]
-    F --> G
-    G --> H[看板展示]
+    A[platform-registry 注册中心] --> B[服务发现]
+    C[platform-config 配置中心] --> D[动态配置]
+    E[platform-gateway 网关] --> F[路由转发]
+    G[platform-auth 认证] --> H[权限控制]
+    I[platform-flow-control 流控] --> J[限流熔断]
 ```
 
-## 🎮 启动器设计
+## 🏗️ 新架构模块设计
 
-### 通用启动器
+### 🔧 基础设施层
+```
+platform-common/          # 公共工具库
+├── core/                 # 核心工具类
+├── web/                  # Web公共组件
+├── database/             # 数据库公共组件
+├── redis/                # Redis公共组件
+├── mq/                   # 消息队列公共组件
+└── api/                  # API公共定义
+
+platform-registry/        # 服务注册中心
+├── nacos-server/         # Nacos服务端
+├── discovery-client/     # 服务发现客户端
+└── health-check/         # 健康检查
+
+platform-config/          # 配置管理中心
+├── config-server/        # 配置服务端
+├── config-client/        # 配置客户端
+├── gitlab-sync/          # GitLab配置同步
+└── dynamic-refresh/      # 动态刷新
+
+platform-gateway/         # 统一网关
+├── route-config/         # 路由配置
+├── filter-chain/         # 过滤器链
+├── gray-deploy/          # 灰度发布
+├── rate-limit/           # 限流控制
+└── rollback/             # 回滚机制
+```
+
+### 🚀 核心业务层
+```
+platform-collect/         # 数据采集服务
+├── collector-api/        # 采集API
+├── data-source/          # 数据源适配器
+├── schedule-task/        # 定时采集任务
+├── real-time/            # 实时采集
+├── batch-process/        # 批量处理
+└── version-control/      # 版本控制
+
+platform-fluxcore/        # 数据流处理核心
+├── stream-engine/        # 流处理引擎
+├── data-clean/           # 数据清洗
+├── data-transform/       # 数据转换
+├── data-validate/        # 数据校验
+├── compute-single/       # 单独计算
+├── compute-combine/      # 组合计算
+└── data-storage/         # 数据存储
+
+platform-buss-dashboard/  # 业务看板
+├── dashboard-api/        # 看板API
+├── chart-render/         # 图表渲染
+├── data-export/          # 数据导出
+├── report-generate/      # 报表生成
+└── real-time-display/    # 实时展示
+```
+
+### ⏰ 调度系统层
+```
+platform-scheduler-register/  # 任务注册中心
+├── task-registry/            # 任务注册表
+├── cron-parser/             # Cron表达式解析
+├── dependency-manage/        # 依赖管理
+└── permission-control/       # 权限控制
+
+platform-scheduler/           # 任务执行引擎
+├── task-executor/           # 任务执行器
+├── cluster-coordinate/      # 集群协调
+├── failover-handle/         # 故障转移
+├── resource-monitor/        # 资源监控
+└── memory-cpu-guard/        # 内存CPU保护
+
+platform-scheduler-query/     # 任务查询服务
+├── execution-history/       # 执行历史
+├── task-status/            # 任务状态
+├── performance-stats/       # 性能统计
+└── log-trace/              # 日志追踪
+```
+
+### 📊 监控告警层
+```
+platform-monitor-dashboard/   # 监控看板
+├── metrics-collect/         # 指标采集
+├── performance-monitor/     # 性能监控
+├── business-monitor/        # 业务监控
+├── infra-monitor/          # 基础设施监控
+└── custom-dashboard/        # 自定义看板
+
+platform-alert/             # 告警系统
+├── rule-engine/            # 规则引擎
+├── alert-channel/          # 告警渠道
+├── escalation/             # 告警升级
+├── silence-manage/         # 静默管理
+└── notification/           # 通知服务
+
+platform-audit/             # 审计日志
+├── operation-log/          # 操作日志
+├── access-log/             # 访问日志
+├── security-audit/         # 安全审计
+├── compliance-check/       # 合规检查
+└── log-analysis/           # 日志分析
+```
+
+### 🔐 企业级功能层
+```
+platform-auth/              # 权限认证中心
+├── user-manage/            # 用户管理
+├── role-permission/        # 角色权限
+├── oauth2-server/          # OAuth2服务
+├── sso-integration/        # SSO集成
+├── api-security/           # API安全
+└── multi-tenant/           # 多租户
+
+platform-transaction/       # 分布式事务管理
+├── saga-pattern/           # Saga模式
+├── tcc-pattern/            # TCC模式
+├── xa-transaction/         # XA事务
+├── message-transaction/    # 消息事务
+└── compensation/           # 补偿机制
+
+platform-flow-control/      # 流量控制
+├── rate-limiter/           # 限流器
+├── circuit-breaker/        # 熔断器
+├── bulkhead-isolation/     # 舱壁隔离
+├── adaptive-control/       # 自适应控制
+└── external-flow/          # 外部流控
+```
+
+### 🛠️ 运维工具层
+```
+platform-devops/            # DevOps工具
+├── ci-pipeline/            # CI流水线
+├── cd-deployment/          # CD部署
+├── docker-build/           # Docker构建
+├── k8s-deploy/             # K8s部署
+├── environment-manage/     # 环境管理
+└── version-control/        # 版本控制
+```
+
+## 🔄 系统交互设计
+
+### 数据流转模式
+```mermaid
+sequenceDiagram
+    participant C as platform-collect
+    participant F as platform-fluxcore
+    participant S as platform-scheduler
+    participant D as platform-buss-dashboard
+    participant A as platform-alert
+    
+    C->>F: 推送原始数据
+    F->>F: 数据清洗转换
+    S->>F: 触发定时计算
+    F->>D: 推送计算结果
+    D->>A: 异常数据告警
+    A->>F: 反馈告警信息
+```
+
+### 服务通信机制
+- **同步调用**: OpenFeign + Ribbon负载均衡
+- **异步通信**: RabbitMQ业务消息 + Kafka大数据流
+- **配置管理**: Nacos Config + GitLab配置仓库
+- **服务发现**: Nacos Discovery + 健康检查
+- **分布式事务**: Seata + 本地消息表
+- **缓存机制**: Redis集群 + 本地缓存
+
+## 🚀 自保护机制设计
+
+### 内存和CPU监控
 ```java
-@SpringBootApplication
-@EnableEurekaClient
-@EnableConfigurationProperties
-public class PlatformApplication {
-    public static void main(String[] args) {
-        // 通用启动逻辑
-        new SpringApplicationBuilder(PlatformApplication.class)
-            .banner(new PlatformBanner())
-            .run(args);
+@Component
+public class ResourceMonitor {
+    
+    @Scheduled(fixedRate = 5000)
+    public void monitorResources() {
+        // CPU使用率监控
+        double cpuUsage = getCpuUsage();
+        if (cpuUsage > 80) {
+            triggerCpuAlert();
+            enableFlowControl();
+        }
+        
+        // 内存使用率监控
+        double memoryUsage = getMemoryUsage();
+        if (memoryUsage > 85) {
+            triggerMemoryAlert();
+            enableGarbageCollection();
+        }
+    }
+    
+    private void enableFlowControl() {
+        // 启动流控保护
+        flowControlService.enableProtection();
     }
 }
 ```
 
-### 组件自动配置
+### 外部流控策略
+```yaml
+# 流控配置示例
+platform:
+  flow-control:
+    enabled: true
+    rules:
+      - resource: "collect-api"
+        count: 1000
+        grade: "QPS"
+      - resource: "dashboard-query"
+        count: 500
+        grade: "THREAD"
+    circuit-breaker:
+      failure-ratio: 0.5
+      slow-call-ratio: 0.8
+      minimum-calls: 10
+```
+
+## 📦 部署架构升级
+
+### Docker Compose增强版
+```yaml
+version: '3.8'
+
+services:
+  # ===== 基础设施 =====
+  platform-registry:
+    build: ./platform-registry
+    ports: ["8848:8848"]
+    
+  platform-config:
+    build: ./platform-config
+    ports: ["8888:8888"]
+    
+  platform-gateway:
+    build: ./platform-gateway
+    ports: ["8080:8080"]
+    
+  # ===== 核心业务 =====
+  platform-collect:
+    build: ./platform-collect
+    ports: ["8081:8080"]
+    
+  platform-fluxcore:
+    build: ./platform-fluxcore
+    ports: ["8082:8080"]
+    
+  # ===== 调度系统 =====
+  platform-scheduler-register:
+    build: ./platform-scheduler-register
+    ports: ["8083:8080"]
+    
+  platform-scheduler:
+    build: ./platform-scheduler
+    ports: ["8084:8080"]
+    
+  # ===== 企业级功能 =====
+  platform-auth:
+    build: ./platform-auth
+    ports: ["8085:8080"]
+    
+  platform-flow-control:
+    build: ./platform-flow-control
+    ports: ["8086:8080"]
+```
+
+### K8s生产部署
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-collect
+  namespace: platform
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: platform-collect
+  template:
+    spec:
+      containers:
+      - name: platform-collect
+        image: platform/collect:latest
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "k8s"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+```
+
+## 🔧 CI/CD流水线
+
+### GitLab CI配置
+```yaml
+stages:
+  - build
+  - test
+  - security-scan
+  - docker-build
+  - deploy-dev
+  - deploy-test
+  - deploy-prod
+
+build:
+  stage: build
+  script:
+    - mvn clean compile
+    
+test:
+  stage: test
+  script:
+    - mvn test
+    - mvn sonar:sonar
+    
+docker-build:
+  stage: docker-build
+  script:
+    - docker build -t platform/${MODULE_NAME}:${CI_COMMIT_SHA} .
+    - docker push platform/${MODULE_NAME}:${CI_COMMIT_SHA}
+    
+deploy-prod:
+  stage: deploy-prod
+  script:
+    - kubectl set image deployment/${MODULE_NAME} ${MODULE_NAME}=platform/${MODULE_NAME}:${CI_COMMIT_SHA}
+    - kubectl rollout status deployment/${MODULE_NAME}
+  only:
+    - master
+```
+
+## 📚 API文档和开发指南
+
+### Swagger配置
 ```java
 @Configuration
-@ConditionalOnProperty(name = "platform.redis.enabled", havingValue = "true")
-public class RedisAutoConfiguration {
-    // Redis配置
-}
-
-@Configuration  
-@ConditionalOnProperty(name = "platform.mq.type", havingValue = "rabbitmq")
-public class RabbitMQAutoConfiguration {
-    // RabbitMQ配置
+@EnableOpenApi
+public class OpenApiConfig {
+    
+    @Bean
+    public OpenAPI platformOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("Platform API")
+                        .description("企业级数据平台API文档")
+                        .version("v2.0"))
+                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
+                .components(new Components()
+                        .addSecuritySchemes("Bearer Authentication", 
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")));
+    }
 }
 ```
 
-## 📊 监控告警体系
+## 🎯 快速开始指南
 
-### 业务监控指标
-- **采集指标**: 采集成功率、数据量、延迟
-- **处理指标**: 处理速度、错误率、积压量
-- **计算指标**: 计算耗时、资源使用、准确率
-- **展示指标**: 访问量、响应时间、并发数
-
-### 告警规则
-```yaml
-# Prometheus告警规则
-groups:
-- name: platform-alerts
-  rules:
-  - alert: CollectServiceDown
-    expr: up{job="collect-service"} == 0
-    for: 1m
-    annotations:
-      summary: "采集服务不可用"
-      
-  - alert: ProcessQueueHigh
-    expr: rabbitmq_queue_messages > 1000
-    for: 5m
-    annotations:
-      summary: "处理队列积压过多"
-```
-
-## 🚀 部署建议
-
-### 开发环境
+### 开发环境启动
 ```bash
-# 启动基础设施
-docker-compose up -d mysql redis rabbitmq nacos
+# 1. 启动基础设施
+docker-compose up -d mysql redis nacos
 
-# 启动网关
-cd platform-gateway && mvn spring-boot:run
+# 2. 启动核心服务
+cd platform-registry && mvn spring-boot:run &
+cd platform-config && mvn spring-boot:run &
+cd platform-gateway && mvn spring-boot:run &
 
-# 启动业务服务
-cd platform-business-collect && mvn spring-boot:run
-cd platform-business-process && mvn spring-boot:run
+# 3. 启动业务服务
+cd platform-collect && mvn spring-boot:run &
+cd platform-fluxcore && mvn spring-boot:run &
 ```
 
-### 生产环境
+### 生产环境部署
 ```bash
 # K8s部署
 kubectl apply -f k8s/infrastructure/
 kubectl apply -f k8s/services/
 kubectl apply -f k8s/monitoring/
+
+# 验证部署
+kubectl get pods -n platform
+kubectl get services -n platform
 ```
 
-这个架构支持您提到的所有需求：多系统采集、版本控制、数据处理、智能计算和看板展示，同时具备企业级的可扩展性和可维护性。 
+这个重新设计的架构完全满足您的细化需求，每个模块职责明确，支持企业级的监控、告警、流控、分布式事务等功能，并且具备完整的自保护机制。 

@@ -44,22 +44,39 @@
     </properties>
     
     <modules>
-        <!-- 核心公共模块 -->
+        <!-- ===== 基础公共模块 ===== -->
         <module>platform-common</module>
-        <module>platform-security</module>
+        
+        <!-- ===== 基础设施模块 ===== -->
+        <module>platform-registry</module>
+        <module>platform-config</module>
         <module>platform-gateway</module>
         
-        <!-- 基础设施模块 -->
-        <module>platform-infrastructure</module>
+        <!-- ===== 核心业务模块 ===== -->
+        <module>platform-collect</module>
+        <module>platform-fluxcore</module>
+        <module>platform-buss-dashboard</module>
         
-        <!-- 业务模块 -->
-        <module>platform-business</module>
+        <!-- ===== 调度系统模块 ===== -->
+        <module>platform-scheduler</module>
+        <module>platform-scheduler-register</module>
+        <module>platform-scheduler-query</module>
         
-        <!-- 启动器模块 -->
+        <!-- ===== 监控告警模块 ===== -->
+        <module>platform-monitor-dashboard</module>
+        <module>platform-alert</module>
+        <module>platform-audit</module>
+        
+        <!-- ===== 企业级功能模块 ===== -->
+        <module>platform-auth</module>
+        <module>platform-transaction</module>
+        <module>platform-flow-control</module>
+        
+        <!-- ===== 启动器模块 ===== -->
         <module>platform-starters</module>
         
-        <!-- 运维监控 -->
-        <module>platform-ops</module>
+        <!-- ===== 运维工具模块 ===== -->
+        <module>platform-devops</module>
     </modules>
     
     <dependencyManagement>

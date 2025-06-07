@@ -1,0 +1,225 @@
+groups:
+  - name: platform-config-server-alerts
+    rules:
+      # SLA 告警规则
+      - alert: ConfigServerHighResponseTime
+        expr: histogram_quantile(0.95, rate(config_response_time_seconds_bucket[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: performance
+        annotations:
+          summary: "配置服务响应时间过高"
+          description: "配置服务95%分位响应时间超过5秒，当前值: {{ $value }}秒"
+
+      - alert: ConfigServerHighErrorRate
+        expr: rate(config_errors_total[5m]) / rate(config_requests_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          service: platform-config-server
+          category: reliability
+        annotations:
+          summary: "配置服务错误率过高"
+          description: "配置服务错误率超过5%，当前错误率: {{ $value | humanizePercentage }}"
+
+      # 资源告警规则
+      - alert: ConfigServerHighMemoryUsage
+        expr: (jvm_memory_used_bytes / jvm_memory_max_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: resource
+        annotations:
+          summary: "配置服务内存使用率过高"
+          description: "配置服务内存使用率超过85%，当前使用率: {{ $value | humanizePercentage }}"
+
+      - alert: ConfigCacheLowHitRate
+        expr: config_cache_hit_rate < 0.6
+        for: 10m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: performance
+        annotations:
+          summary: "配置缓存命中率过低"
+          description: "配置缓存命中率低于60%，当前命中率: {{ $value | humanizePercentage }}"
+
+      # 业务告警规则
+      - alert: GitlabConnectionDown
+        expr: config_gitlab_available == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: platform-config-server
+          category: connectivity
+        annotations:
+          summary: "GitLab连接异常"
+          description: "无法连接到GitLab配置仓库，配置更新可能受影响"
+
+      - alert: HighVersionRollbackRate
+        expr: increase(config_version_rollback_total[1h]) > 5
+        for: 0m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: business
+        annotations:
+          summary: "版本回滚频率异常"
+          description: "1小时内版本回滚次数超过5次，当前回滚次数: {{ $value }}"
+
+      - alert: ConfigServerDown
+        expr: up{job="platform-config-server"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: platform-config-server
+          category: availability
+        annotations:
+          summary: "配置服务不可用"
+          description: "配置服务实例不可用，服务可能已停止"
+
+      # 审计告警规则
+      - alert: HighAuditFailureRate
+        expr: rate(config_audit_failure_total[5m]) / rate(config_audit_operation_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: audit
+        annotations:
+          summary: "审计失败率过高"
+          description: "配置操作审计失败率超过10%，当前失败率: {{ $value | humanizePercentage }}"
+
+      - alert: SuspiciousConfigAccess
+        expr: increase(config_requests_total{application="*"}[5m]) > 1000
+        for: 0m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: security
+        annotations:
+          summary: "可疑的配置访问模式"
+          description: "5分钟内单个应用配置访问次数超过1000次，应用: {{ $labels.application }}"
+
+      # 版本控制告警规则
+      - alert: TooManyVersionsCreated
+        expr: increase(config_version_create_total[1h]) > 50
+        for: 0m
+        labels:
+          severity: info
+          service: platform-config-server
+          category: business
+        annotations:
+          summary: "版本创建频率过高"
+          description: "1小时内创建版本数超过50个，可能存在异常配置更新"
+
+      - alert: NoActiveUsers
+        expr: config_users_active == 0
+        for: 30m
+        labels:
+          severity: info
+          service: platform-config-server
+          category: business
+        annotations:
+          summary: "无活跃用户"
+          description: "30分钟内无活跃用户，配置服务可能未被正常使用"
+
+  - name: platform-config-server-performance
+    rules:
+      # 性能监控规则
+      - alert: ConfigLoadLatencyHigh
+        expr: histogram_quantile(0.99, rate(config_load_duration_seconds_bucket[5m])) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: performance
+        annotations:
+          summary: "配置加载延迟过高"
+          description: "配置加载99%分位延迟超过10秒，当前值: {{ $value }}秒"
+
+      - alert: HighConcurrentRequests
+        expr: rate(config_request_concurrent_total[1m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: performance
+        annotations:
+          summary: "并发请求数过高"
+          description: "每分钟并发请求数超过100，当前值: {{ $value }}"
+
+      - alert: ConfigSyncError
+        expr: increase(config_git_sync_errors_total[10m]) > 3
+        for: 0m
+        labels:
+          severity: critical
+          service: platform-config-server
+          category: sync
+        annotations:
+          summary: "配置同步错误"
+          description: "10分钟内Git同步错误超过3次，配置可能不是最新版本"
+
+  - name: platform-config-server-business
+    rules:
+      # 业务监控规则  
+      - alert: ConfigHotspotDetected
+        expr: increase(config_hotspot_*[1h]) > 10000
+        for: 0m
+        labels:
+          severity: info
+          service: platform-config-server
+          category: hotspot
+        annotations:
+          summary: "配置热点检测"
+          description: "检测到配置热点，1小时内访问次数超过10000次"
+
+      - alert: LowConfigUtilization
+        expr: config_applications_total < 5 and config_versions_total < 10
+        for: 1h
+        labels:
+          severity: info
+          service: platform-config-server
+          category: utilization
+        annotations:
+          summary: "配置服务利用率低"
+          description: "配置服务利用率较低，应用数: {{ $labels.config_applications_total }}，版本数: {{ $labels.config_versions_total }}"
+
+      - alert: VersionCleanupNeeded
+        expr: config_versions_total > 1000
+        for: 0m
+        labels:
+          severity: info
+          service: platform-config-server
+          category: maintenance
+        annotations:
+          summary: "需要清理历史版本"
+          description: "版本总数超过1000个，建议执行历史版本清理"
+
+  - name: platform-config-server-security
+    rules:
+      # 安全监控规则
+      - alert: UnauthorizedAccessAttempt
+        expr: increase(http_requests_total{status=~"401|403"}[5m]) > 10
+        for: 0m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: security
+        annotations:
+          summary: "检测到未授权访问尝试"
+          description: "5分钟内检测到{{ $value }}次未授权访问尝试"
+
+      - alert: AbnormalOperationPattern
+        expr: increase(config_audit_operation_total{operation="DELETE"}[1h]) > 10
+        for: 0m
+        labels:
+          severity: warning
+          service: platform-config-server
+          category: security
+        annotations:
+          summary: "异常操作模式"
+          description: "1小时内删除操作超过10次，可能存在恶意操作" 

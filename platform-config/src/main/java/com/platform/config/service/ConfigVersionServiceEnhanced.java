@@ -21,16 +21,16 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 配置版本管理服务
- * 专门负责配置的版本控制功能
+ * 配置版本管理服务增强版
+ * 集成了完整的监控指标和业务统计功能
  *
  * @author Platform Team
  * @since 2.0.0
  */
-@Service
+@Service("configVersionServiceEnhanced")
 @RequiredArgsConstructor
 @Slf4j
-public class ConfigVersionService {
+public class ConfigVersionServiceEnhanced {
 
     private final ConfigVersionRepository versionRepository;
     private final ConfigBusinessMetrics businessMetrics;
@@ -290,78 +290,40 @@ public class ConfigVersionService {
      *
      * @param application 应用名称
      * @param profile 环境配置
-     * @param keepCount 保留的版本数量
+     * @param keepCount 保留版本数量
      * @return 清理的版本数量
      */
     @Transactional(rollbackFor = Exception.class)
     public int cleanupVersionHistory(String application, String profile, int keepCount) {
-        List<ConfigVersion> versions = versionRepository
-                .findByApplicationAndProfileOrderByCreateTimeDesc(application, profile);
+        Timer.Sample sample = businessMetrics.startVersionOperationTimer("CLEANUP");
         
-        if (versions.size() <= keepCount) {
-            return 0;
-        }
+        try {
+            List<ConfigVersion> allVersions = versionRepository
+                    .findByApplicationAndProfileOrderByCreateTimeDesc(application, profile);
 
-        // 保留最近的版本和当前激活版本
-        List<ConfigVersion> toDelete = versions.stream()
-                .skip(keepCount)
-                .filter(v -> !v.getActive())
-                .toList();
+            if (allVersions.size() <= keepCount) {
+                businessMetrics.stopVersionOperationTimer(sample, "CLEANUP", application, "NO_ACTION");
+                return 0;
+            }
 
-        versionRepository.deleteAll(toDelete);
-        
-        log.info("已清理历史版本，应用: {}, 环境: {}, 清理数量: {}", application, profile, toDelete.size());
-        return toDelete.size();
-    }
+            // 保留最新的版本和当前激活的版本
+            List<ConfigVersion> versionsToDelete = allVersions.stream()
+                    .skip(keepCount)
+                    .filter(version -> !version.getActive())
+                    .toList();
 
-    /**
-     * 验证输入参数
-     */
-    private void validateInput(String application, String profile, String content, String operator) {
-        if (!StringUtils.hasText(application)) {
-            throw new ConfigValidationException("应用名称不能为空");
-        }
-        if (!StringUtils.hasText(profile)) {
-            throw new ConfigValidationException("环境配置不能为空");
-        }
-        if (!StringUtils.hasText(content)) {
-            throw new ConfigValidationException("配置内容不能为空");
-        }
-        if (!StringUtils.hasText(operator)) {
-            throw new ConfigValidationException("操作人员不能为空");
-        }
-    }
+            versionRepository.deleteAll(versionsToDelete);
+            
+            businessMetrics.stopVersionOperationTimer(sample, "CLEANUP", application, "SUCCESS");
+            log.info("清理历史版本完成，应用: {}, 环境: {}, 清理数量: {}", 
+                    application, profile, versionsToDelete.size());
 
-    /**
-     * 生成版本号
-     */
-    private String generateVersion(String application, String profile) {
-        String timestamp = DateUtil.format(LocalDateTime.now(), "yyyyMMddHHmmss");
-        long count = versionRepository.countByApplicationAndProfile(application, profile);
-        return String.format("v%s_%d", timestamp, count + 1);
-    }
-
-    /**
-     * 生成差异报告
-     */
-    private String generateDiffReport(ConfigVersion from, ConfigVersion to) {
-        StringBuilder diff = new StringBuilder();
-        diff.append("版本比较报告\n");
-        diff.append("源版本: ").append(from.getVersion()).append(" (").append(from.getCreateTime()).append(")\n");
-        diff.append("目标版本: ").append(to.getVersion()).append(" (").append(to.getCreateTime()).append(")\n");
-        diff.append("操作人: ").append(from.getOperator()).append(" -> ").append(to.getOperator()).append("\n");
-        diff.append("\n内容差异:\n");
-        
-        // 简单的内容比较，实际可以使用更复杂的diff算法
-        if (from.getContent().equals(to.getContent())) {
-            diff.append("配置内容无变化");
-        } else {
-            diff.append("配置内容已变更");
-            diff.append("\n源内容长度: ").append(from.getContent().length());
-            diff.append("\n目标内容长度: ").append(to.getContent().length());
+            return versionsToDelete.size();
+            
+        } catch (Exception e) {
+            businessMetrics.stopVersionOperationTimer(sample, "CLEANUP", application, "FAILURE");
+            throw e;
         }
-        
-        return diff.toString();
     }
 
     /**
@@ -383,5 +345,68 @@ public class ConfigVersionService {
      */
     public long getTotalVersionsCount() {
         return versionRepository.count();
+    }
+
+    /**
+     * 验证输入参数
+     *
+     * @param application 应用名称
+     * @param profile 环境配置
+     * @param content 配置内容
+     * @param operator 操作人员
+     */
+    private void validateInput(String application, String profile, String content, String operator) {
+        if (!StringUtils.hasText(application)) {
+            throw new ConfigValidationException("应用名称不能为空");
+        }
+        if (!StringUtils.hasText(profile)) {
+            throw new ConfigValidationException("环境配置不能为空");
+        }
+        if (!StringUtils.hasText(content)) {
+            throw new ConfigValidationException("配置内容不能为空");
+        }
+        if (!StringUtils.hasText(operator)) {
+            throw new ConfigValidationException("操作人员不能为空");
+        }
+    }
+
+    /**
+     * 生成版本号
+     *
+     * @param application 应用名称
+     * @param profile 环境配置
+     * @return 版本号
+     */
+    private String generateVersion(String application, String profile) {
+        String timestamp = DateUtil.format(LocalDateTime.now(), "yyyyMMddHHmmss");
+        return String.format("v%s_%s_%s", application, profile, timestamp);
+    }
+
+    /**
+     * 生成差异报告
+     *
+     * @param from 源版本
+     * @param to 目标版本
+     * @return 差异报告
+     */
+    private String generateDiffReport(ConfigVersion from, ConfigVersion to) {
+        StringBuilder diff = new StringBuilder();
+        diff.append("版本比较报告\n");
+        diff.append("=============\n");
+        diff.append("源版本: ").append(from.getVersion()).append("\n");
+        diff.append("目标版本: ").append(to.getVersion()).append("\n");
+        diff.append("创建时间差: ").append(from.getCreateTime()).append(" -> ").append(to.getCreateTime()).append("\n");
+        diff.append("操作人员: ").append(from.getOperator()).append(" -> ").append(to.getOperator()).append("\n");
+        
+        // 简单的内容比较
+        if (from.getContent().equals(to.getContent())) {
+            diff.append("配置内容: 无变化\n");
+        } else {
+            diff.append("配置内容: 已变更\n");
+            diff.append("内容长度: ").append(from.getContent().length())
+                .append(" -> ").append(to.getContent().length()).append("\n");
+        }
+        
+        return diff.toString();
     }
 } 

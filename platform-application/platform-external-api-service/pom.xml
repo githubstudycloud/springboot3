@@ -11,8 +11,8 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     
-    <artifactId>platform-external-api-app</artifactId>
-    <name>Platform External API Management Application</name>
+    <artifactId>platform-external-api-service</artifactId>
+    <name>Platform External API Management Service</name>
     <description>外部HTTP接口统一管理服务，支持限流、熔断、监控、日志</description>
     
     <dependencies>

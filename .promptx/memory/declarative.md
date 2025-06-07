@@ -13,3 +13,16 @@
 8. 提供开发工具支持：支持IDEA、VSCode等多种编辑器，包含Adminer数据库管理、Redis Commander等管理工具
 9. 自动化部署：包含健康检查、备份、滚动更新等企业级部署特性 --tags springboot vue 全栈架构 项目模板 最佳实践 ##最佳实践 #工具使用 #评分:8 #有效期:长期
 
+
+
+- 2025/06/07 19:33 企业级微服务架构设计经验：
+1. 3级项目结构：platform-parent > 功能域(common/business) > 具体模块
+2. 技术栈选择：Spring Boot 3.2.x + Nacos + Spring Cloud 2023.x + JDK 21
+3. 数据采集处理架构：采集服务 -> 消息队列 -> 处理服务 -> 计算服务 -> 展示服务
+4. 多环境部署：Docker Compose本地开发 + K8s生产部署
+5. 组件可控开启：通过@ConditionalOnProperty注解实现组件按需启用
+6. 监控体系：Prometheus + Grafana + ELK + SkyWalking + Spring Boot Admin
+7. 配置管理：GitLab配置仓库 + Spring Cloud Config + Nacos配置中心
+8. 服务部署策略：推荐一服务一容器，支持按业务域聚合部署
+9. 通用启动器设计：统一启动逻辑、自定义Banner、组件自动配置
+10. 数据流转：支持全量、增量、版本控制采集，单独和组合计算 --tags 微服务架构 数据平台 企业级 Spring Cloud Nacos K8s Docker ##其他 #评分:8 #有效期:长期

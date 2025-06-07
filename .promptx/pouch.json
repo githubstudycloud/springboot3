@@ -30,7 +30,33 @@
         "--tags",
         "springboot vue 全栈架构 项目模板 最佳实践"
       ]
+    },
+    {
+      "from": "memory_saved",
+      "command": "learn",
+      "timestamp": "2025-06-07T11:28:10.478Z",
+      "args": [
+        "knowledge://microservices-architecture"
+      ]
+    },
+    {
+      "from": "learned_knowledge",
+      "command": "action",
+      "timestamp": "2025-06-07T11:28:14.762Z",
+      "args": [
+        "product-manager"
+      ]
+    },
+    {
+      "from": "role_activated_with_memory",
+      "command": "remember",
+      "timestamp": "2025-06-07T11:33:51.682Z",
+      "args": [
+        "企业级微服务架构设计经验：\n1. 3级项目结构：platform-parent > 功能域(common/business) > 具体模块\n2. 技术栈选择：Spring Boot 3.2.x + Nacos + Spring Cloud 2023.x + JDK 21\n3. 数据采集处理架构：采集服务 -> 消息队列 -> 处理服务 -> 计算服务 -> 展示服务\n4. 多环境部署：Docker Compose本地开发 + K8s生产部署\n5. 组件可控开启：通过@ConditionalOnProperty注解实现组件按需启用\n6. 监控体系：Prometheus + Grafana + ELK + SkyWalking + Spring Boot Admin\n7. 配置管理：GitLab配置仓库 + Spring Cloud Config + Nacos配置中心\n8. 服务部署策略：推荐一服务一容器，支持按业务域聚合部署\n9. 通用启动器设计：统一启动逻辑、自定义Banner、组件自动配置\n10. 数据流转：支持全量、增量、版本控制采集，单独和组合计算",
+        "--tags",
+        "微服务架构 数据平台 企业级 Spring Cloud Nacos K8s Docker"
+      ]
     }
   ],
-  "lastUpdated": "2025-06-07T11:16:50.997Z"
+  "lastUpdated": "2025-06-07T11:33:51.686Z"
 }

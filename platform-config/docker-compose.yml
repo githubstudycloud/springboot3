@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  config-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: platform/config-server:latest
+    container_name: platform-config-server
+    ports:
+      - "8888:8888"
+    environment:
+      # 基础配置
+      - JAVA_OPTS=-Xms512m -Xmx1g -Dspring.profiles.active=docker
+      
+      # GitLab配置
+      - CONFIG_GIT_URI=https://gitlab.example.com/config/platform-config.git
+      - CONFIG_GIT_USERNAME=
+      - CONFIG_GIT_PASSWORD=
+      - CONFIG_GIT_BRANCH=main
+      
+      # 安全配置
+      - CONFIG_USERNAME=config-admin
+      - CONFIG_PASSWORD=config-admin-2024
+      - CONFIG_ENCRYPT_KEY=platform-config-secret-key-2024
+      
+      # Nacos配置
+      - NACOS_SERVER_ADDR=nacos:8848
+      - NACOS_NAMESPACE=
+      - NACOS_GROUP=DEFAULT_GROUP
+      
+      # 其他配置
+      - CONFIG_GITLAB_ENABLED=true
+      - CONFIG_BACKUP_PATH=/app/config-backup
+      
+    volumes:
+      # 配置文件挂载
+      - ./config-repository:/app/config:ro
+      - config-backup:/app/config-backup
+      - config-logs:/app/logs
+      
+    networks:
+      - platform-network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/config/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      
+    restart: unless-stopped
+    
+    depends_on:
+      - nacos
+
+  # Nacos服务注册中心
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: platform-nacos
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos_config
+      - MYSQL_SERVICE_USER=nacos
+      - MYSQL_SERVICE_PASSWORD=nacos123
+      - MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
+    volumes:
+      - nacos-data:/home/nacos/data
+      - nacos-logs:/home/nacos/logs
+    networks:
+      - platform-network
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: platform-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_DATABASE=nacos_config
+      - MYSQL_USER=nacos
+      - MYSQL_PASSWORD=nacos123
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./scripts/mysql-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - platform-network
+    restart: unless-stopped
+
+volumes:
+  config-backup:
+    driver: local
+  config-logs:
+    driver: local
+  nacos-data:
+    driver: local
+  nacos-logs:
+    driver: local
+  mysql-data:
+    driver: local
+
+networks:
+  platform-network:
+    driver: bridge
+    name: platform-network 

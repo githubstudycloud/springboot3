@@ -1,0 +1,109 @@
+server:
+  port: 8888
+  servlet:
+    context-path: /config
+
+spring:
+  application:
+    name: platform-config-server
+  
+  profiles:
+    active: composite
+    
+  cloud:
+    # Nacos配置
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        
+    # Config Server配置
+    config:
+      server:
+        # 复合配置源，支持多种配置源
+        composite:
+          - type: git
+            uri: ${CONFIG_GIT_URI:https://gitlab.example.com/config/platform-config.git}
+            username: ${CONFIG_GIT_USERNAME:}
+            password: ${CONFIG_GIT_PASSWORD:}
+            default-label: ${CONFIG_GIT_BRANCH:main}
+            search-paths: 
+              - '{application}/{profile}'
+              - '{application}/common'
+              - 'common/{profile}'
+              - 'common/common'
+            timeout: 30
+            clone-on-start: true
+            force-pull: true
+            
+          - type: native
+            search-locations: 
+              - 'file:///app/config/pub'
+              - 'file:///app/config/dev'  
+              - 'file:///app/config/test'
+              - 'file:///app/config/common'
+            fail-on-error: false
+            
+        # 加密配置
+        encrypt:
+          enabled: true
+          key: ${CONFIG_ENCRYPT_KEY:platform-config-secret-key-2024}
+          
+        # 健康检查
+        health:
+          repositories:
+            platform-api:
+              label: main
+              name: platform-api
+              profiles: dev,test,pub
+
+# Security配置
+  security:
+    user:
+      name: ${CONFIG_USERNAME:config-admin}
+      password: ${CONFIG_PASSWORD:config-admin-2024}
+      roles: ADMIN
+
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+    configprops:
+      enabled: true
+    env:
+      enabled: true
+
+# 日志配置
+logging:
+  level:
+    com.platform.config: DEBUG
+    org.springframework.cloud.config: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n'
+  file:
+    path: /app/logs
+    name: /app/logs/config-server.log
+
+# 平台自定义配置
+platform:
+  config:
+    gitlab:
+      enabled: ${CONFIG_GITLAB_ENABLED:true}
+      fallback-to-native: true
+    local-backup-path: ${CONFIG_BACKUP_PATH:/app/config-backup}
+    auto-refresh-interval: 300000  # 5分钟自动刷新
+    
+# 文档配置
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html 

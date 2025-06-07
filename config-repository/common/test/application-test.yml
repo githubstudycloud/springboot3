@@ -1,0 +1,93 @@
+# 测试环境公共配置
+
+spring:
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://${DB_HOST:test-mysql}:${DB_PORT:3306}/${DB_NAME:platform_test}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+    username: ${DB_USERNAME:platform_user}
+    password: ${DB_PASSWORD:platform_test_2024}
+    hikari:
+      maximum-pool-size: 15
+      
+  # JPA配置
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+      
+  # Redis配置
+  redis:
+    host: ${REDIS_HOST:test-redis}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:redis_test_2024}
+    database: 1
+    
+  # RabbitMQ配置
+  rabbitmq:
+    host: ${RABBITMQ_HOST:test-rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:platform}
+    password: ${RABBITMQ_PASSWORD:rabbitmq_test_2024}
+    virtual-host: /test
+    
+# Nacos配置
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:test-nacos:8848}
+        namespace: ${NACOS_NAMESPACE:test}
+        group: ${NACOS_GROUP:TEST_GROUP}
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:test-nacos:8848}
+        namespace: ${NACOS_NAMESPACE:test}
+        group: ${NACOS_GROUP:TEST_GROUP}
+        
+# 日志配置
+logging:
+  level:
+    com.platform: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.springframework.web: INFO
+  file:
+    path: /app/logs/test
+    
+# 平台测试环境配置
+platform:
+  env: test
+  debug: false
+  
+  # 数据库配置
+  database:
+    show-sql: false
+    format-sql: false
+    
+  # 缓存配置
+  cache:
+    type: redis
+    ttl: 7200  # 2小时
+    
+  # 文件存储配置
+  file:
+    upload-path: /app/uploads/test
+    max-size: 50MB
+    allowed-types: jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,txt
+    
+  # 消息队列配置
+  mq:
+    type: rabbitmq
+    auto-ack: false
+    retry:
+      max-attempts: 5
+      initial-interval: 2000
+      
+  # 外部服务配置
+  external:
+    timeout: 60000
+    retry: 5
+    
+  # 测试专用配置
+  test:
+    mock-enabled: true
+    data-reset-enabled: true
+    performance-test: true 

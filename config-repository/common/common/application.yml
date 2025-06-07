@@ -1,0 +1,83 @@
+# 全局公共配置
+# 适用于所有应用和所有环境
+
+spring:
+  # 数据源公共配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      auto-commit: true
+      idle-timeout: 30000
+      pool-name: DatebookHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+      
+  # JPA公共配置
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        
+  # Redis公共配置
+  redis:
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+        
+  # Jackson配置
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      write-dates-as-timestamps: false
+      
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      
+# 日志配置
+logging:
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n'
+  level:
+    com.platform: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    
+# 平台公共配置
+platform:
+  common:
+    timezone: Asia/Shanghai
+    charset: UTF-8
+    version: 1.0.0
+    
+  # 安全配置
+  security:
+    jwt:
+      secret: ${JWT_SECRET:platform-jwt-secret-key-2024}
+      expiration: 86400  # 24小时
+      refresh-expiration: 604800  # 7天
+      
+  # 限流配置
+  rate-limit:
+    default-capacity: 100
+    default-tokens: 10
+    default-seconds: 1 

@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-config-server
+  namespace: platform
+  labels:
+    app: config-server
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+        version: v1
+    spec:
+      containers:
+      - name: config-server
+        image: platform/config-server:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8888
+          name: http
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms512m -Xmx1g -Dspring.profiles.active=k8s"
+        - name: CONFIG_GIT_URI
+          valueFrom:
+            secretKeyRef:
+              name: config-server-secret
+              key: git-uri
+        - name: CONFIG_GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: config-server-secret
+              key: git-username
+        - name: CONFIG_GIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: config-server-secret
+              key: git-password
+        - name: CONFIG_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: config-server-secret
+              key: config-username
+        - name: CONFIG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: config-server-secret
+              key: config-password
+        - name: CONFIG_ENCRYPT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: config-server-secret
+              key: encrypt-key
+        - name: NACOS_SERVER_ADDR
+          value: "nacos-cluster:8848"
+        - name: NACOS_NAMESPACE
+          value: "platform"
+        - name: NACOS_GROUP
+          value: "CONFIG_GROUP"
+        - name: CONFIG_GITLAB_ENABLED
+          value: "true"
+        - name: CONFIG_BACKUP_PATH
+          value: "/app/config-backup"
+        volumeMounts:
+        - name: config-repository
+          mountPath: /app/config
+          readOnly: true
+        - name: config-backup
+          mountPath: /app/config-backup
+        - name: config-logs
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /config/actuator/health
+            port: 8888
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /config/actuator/health
+            port: 8888
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: config-repository
+        configMap:
+          name: config-repository
+      - name: config-backup
+        persistentVolumeClaim:
+          claimName: config-backup-pvc
+      - name: config-logs
+        persistentVolumeClaim:
+          claimName: config-logs-pvc
+      restartPolicy: Always
+      
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server-service
+  namespace: platform
+  labels:
+    app: config-server
+spec:
+  selector:
+    app: config-server
+  ports:
+  - name: http
+    port: 8888
+    targetPort: 8888
+    protocol: TCP
+  type: ClusterIP
+  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server-lb
+  namespace: platform
+  labels:
+    app: config-server
+spec:
+  selector:
+    app: config-server
+  ports:
+  - name: http
+    port: 8888
+    targetPort: 8888
+    protocol: TCP
+    nodePort: 30888
+  type: NodePort 

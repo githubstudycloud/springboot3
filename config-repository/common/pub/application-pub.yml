@@ -1,0 +1,110 @@
+# 生产环境公共配置
+
+spring:
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://${DB_HOST:prod-mysql-cluster}:${DB_PORT:3306}/${DB_NAME:platform_prod}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+    username: ${DB_USERNAME:platform_prod}
+    password: ${DB_PASSWORD:ENC(platform_prod_encrypted_password)}
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      
+  # JPA配置
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+      
+  # Redis配置
+  redis:
+    cluster:
+      nodes: ${REDIS_CLUSTER_NODES:prod-redis-1:6379,prod-redis-2:6379,prod-redis-3:6379}
+      max-redirects: 3
+    password: ${REDIS_PASSWORD:ENC(redis_prod_encrypted_password)}
+    database: 0
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 20
+        
+  # RabbitMQ配置
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:prod-rabbitmq-1:5672,prod-rabbitmq-2:5672,prod-rabbitmq-3:5672}
+    username: ${RABBITMQ_USERNAME:platform_prod}
+    password: ${RABBITMQ_PASSWORD:ENC(rabbitmq_prod_encrypted_password)}
+    virtual-host: /prod
+    connection-timeout: 30000
+    
+# Nacos配置
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:prod-nacos-1:8848,prod-nacos-2:8848,prod-nacos-3:8848}
+        namespace: ${NACOS_NAMESPACE:prod}
+        group: ${NACOS_GROUP:PROD_GROUP}
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:prod-nacos-1:8848,prod-nacos-2:8848,prod-nacos-3:8848}
+        namespace: ${NACOS_NAMESPACE:prod}
+        group: ${NACOS_GROUP:PROD_GROUP}
+        
+# 日志配置
+logging:
+  level:
+    com.platform: WARN
+    org.springframework: ERROR
+    org.hibernate: ERROR
+    org.springframework.web: WARN
+  file:
+    path: /app/logs/prod
+    max-size: 100MB
+    max-history: 30
+    
+# 平台生产环境配置
+platform:
+  env: prod
+  debug: false
+  
+  # 数据库配置
+  database:
+    show-sql: false
+    format-sql: false
+    read-only-routing: true
+    
+  # 缓存配置
+  cache:
+    type: redis-cluster
+    ttl: 86400  # 24小时
+    
+  # 文件存储配置
+  file:
+    upload-path: /app/uploads/prod
+    max-size: 100MB
+    allowed-types: jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx,txt
+    cdn-enabled: true
+    
+  # 消息队列配置
+  mq:
+    type: rabbitmq-cluster
+    auto-ack: false
+    retry:
+      max-attempts: 10
+      initial-interval: 5000
+      
+  # 外部服务配置
+  external:
+    timeout: 30000
+    retry: 3
+    circuit-breaker: true
+    
+  # 安全配置
+  security:
+    encryption-enabled: true
+    audit-enabled: true
+    rate-limit-enabled: true
+    
+  # 监控配置
+  monitoring:
+    metrics-enabled: true
+    tracing-enabled: true
+    alerting-enabled: true 

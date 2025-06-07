@@ -1,0 +1,487 @@
+# 🚀 Beta环境 - Docker Swarm 集群配置
+# 集群部署，组件多实例，高可用配置，适合压力测试和预发布验证
+
+version: '3.8'
+
+services:
+  # MySQL主从集群
+  mysql-master:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: beta_root_pass_2024
+      MYSQL_REPLICATION_USER: repl_user
+      MYSQL_REPLICATION_PASSWORD: beta_repl_pass_2024
+      MYSQL_DATABASE: platform_beta
+      MYSQL_USER: platform_user
+      MYSQL_PASSWORD: beta_user_pass_2024
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_master_data:/var/lib/mysql
+      - ./config/mysql/master.cnf:/etc/mysql/mysql.conf.d/master.cnf:ro
+      - ../../database/schema/init:/docker-entrypoint-initdb.d:ro
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.mysql-master == true
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  mysql-slave:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: beta_root_pass_2024
+      MYSQL_REPLICATION_USER: repl_user
+      MYSQL_REPLICATION_PASSWORD: beta_repl_pass_2024
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_slave_data:/var/lib/mysql
+      - ./config/mysql/slave.cnf:/etc/mysql/mysql.conf.d/slave.cnf:ro
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.labels.mysql-slave == true
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - mysql-master
+
+  # Redis集群
+  redis-master:
+    image: redis:7-alpine
+    command: redis-server --requirepass beta_redis_pass_2024 --appendonly yes
+    volumes:
+      - redis_master_data:/data
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.redis-master == true
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  redis-slave:
+    image: redis:7-alpine
+    command: redis-server --requirepass beta_redis_pass_2024 --appendonly yes --replicaof redis-master 6379 --masterauth beta_redis_pass_2024
+    volumes:
+      - redis_slave_data:/data
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.labels.redis-slave == true
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - redis-master
+
+  # Redis Sentinel集群
+  redis-sentinel:
+    image: redis:7-alpine
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./config/redis/sentinel.conf:/usr/local/etc/redis/sentinel.conf:ro
+    ports:
+      - "26379:26379"
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - redis-master
+      - redis-slave
+
+  # MongoDB副本集
+  mongodb-primary:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_admin
+      MONGO_INITDB_ROOT_PASSWORD: beta_mongo_pass_2024
+      MONGO_REPLICA_SET_NAME: rs0
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_primary_data:/data/db
+      - ./config/mongodb/mongod.conf:/etc/mongod.conf:ro
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.mongodb-primary == true
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  mongodb-secondary:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo_admin
+      MONGO_INITDB_ROOT_PASSWORD: beta_mongo_pass_2024
+      MONGO_REPLICA_SET_NAME: rs0
+    command: mongod --replSet rs0 --bind_ip_all
+    volumes:
+      - mongodb_secondary_data:/data/db
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.labels.mongodb-secondary == true
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - mongodb-primary
+
+  # Nacos集群
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    environment:
+      MODE: cluster
+      NACOS_SERVERS: nacos:8848
+      MYSQL_SERVICE_HOST: mysql-master
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_USER: platform_user
+      MYSQL_SERVICE_PASSWORD: beta_user_pass_2024
+      NACOS_AUTH_ENABLE: true
+      NACOS_AUTH_TOKEN: beta_nacos_token_2024
+      NACOS_AUTH_IDENTITY_KEY: beta_nacos_identity
+      NACOS_AUTH_IDENTITY_VALUE: beta_nacos_value
+      JVM_XMS: 1g
+      JVM_XMX: 1g
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - nacos_data:/home/nacos/data
+      - nacos_logs:/home/nacos/logs
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - mysql-master
+
+  # RabbitMQ集群
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbit_admin
+      RABBITMQ_DEFAULT_PASS: beta_rabbit_pass_2024
+      RABBITMQ_DEFAULT_VHOST: platform_beta
+      RABBITMQ_ERLANG_COOKIE: beta_rabbit_cookie_2024
+      RABBITMQ_CLUSTER_FORMATION_PEER_DISCOVERY_BACKEND: dns
+      RABBITMQ_CLUSTER_FORMATION_DNS_PEER_QUERY_TYPE: srv
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  # Kafka集群
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SERVERS: zookeeper:2888:3888
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - zookeeper
+
+  # RocketMQ集群
+  rocketmq-nameserver:
+    image: apache/rocketmq:5.1.4
+    environment:
+      JAVA_OPT: "-Duser.home=/home/rocketmq -Xms512m -Xmx512m"
+    command: ["sh", "mqnamesrv"]
+    ports:
+      - "9876:9876"
+    volumes:
+      - rocketmq_nameserver_logs:/home/rocketmq/logs
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.1.4
+    environment:
+      NAMESRV_ADDR: "rocketmq-nameserver:9876"
+      JAVA_OPT: "-Duser.home=/home/rocketmq -Xms512m -Xmx512m"
+    command: ["sh", "mqbroker", "-c", "/home/rocketmq/rocketmq-5.1.4/conf/broker.conf"]
+    ports:
+      - "10911:10911"
+      - "10912:10912"
+    volumes:
+      - rocketmq_broker_logs:/home/rocketmq/logs
+      - rocketmq_broker_data:/home/rocketmq/store
+      - ./config/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.1.4/conf/broker.conf:ro
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - rocketmq-nameserver
+
+  # Nginx负载均衡集群
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/nginx.beta.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - platform-api
+      - platform-web
+
+  # 平台API服务集群
+  platform-api:
+    build:
+      context: ../..
+      dockerfile: platform-application/platform-external-api-service/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: beta
+      MYSQL_URL: jdbc:mysql://mysql-master:3306/platform_beta
+      MYSQL_USERNAME: platform_user
+      MYSQL_PASSWORD: beta_user_pass_2024
+      REDIS_HOST: redis-master
+      REDIS_PASSWORD: beta_redis_pass_2024
+    ports:
+      - "8080:8080"
+    volumes:
+      - platform_api_logs:/app/logs
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - mysql-master
+      - redis-master
+
+  # 前端Web服务集群
+  platform-web:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: beta
+      API_BASE_URL: http://platform-api:8080
+    volumes:
+      - platform_web_logs:/var/log/nginx
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - platform-api
+
+  # 监控和可视化（集群版本）
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.beta.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: beta_grafana_pass_2024
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_DATABASE_TYPE: mysql
+      GF_DATABASE_HOST: mysql-master:3306
+      GF_DATABASE_NAME: grafana
+      GF_DATABASE_USER: platform_user
+      GF_DATABASE_PASSWORD: beta_user_pass_2024
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - platform-beta
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    depends_on:
+      - mysql-master
+      - prometheus
+
+# 网络配置
+networks:
+  platform-beta:
+    driver: overlay
+    attachable: true
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+# 数据卷配置
+volumes:
+  mysql_master_data:
+  mysql_slave_data:
+  redis_master_data:
+  redis_slave_data:
+  mongodb_primary_data:
+  mongodb_secondary_data:
+  nacos_data:
+  nacos_logs:
+  rabbitmq_data:
+  zookeeper_data:
+  zookeeper_logs:
+  kafka_data:
+  rocketmq_nameserver_logs:
+  rocketmq_broker_logs:
+  rocketmq_broker_data:
+  prometheus_data:
+  grafana_data:
+  nginx_logs:
+  platform_api_logs:
+  platform_web_logs: 

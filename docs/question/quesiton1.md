@@ -61,5 +61,13 @@ CI\cd容器化
 ```text
 准备基础的docker单机环境，提供docker-compose和docker单独安装2种，作为测试环境，这个所有组件只装单机
 再准备基础的docker单机环境2，提供docker-compose和docker单独安装2种，作为beta环境，这个组件尽量装集群
-mysql和nginx可以组集群吗？不能就算了
+mysql和nginx可以组集群吗？不能就算了，给出配置和安装以及连接说明文档，并放置好目录以及更新文档
+```
+
+
+### qustion9:
+```text
+搭建springbootconfig配置服务，连接gitlab，然后如果gitlab不可用，模拟gitlab访问连接本地特定目录，后续给以把目录提交到gitlab或者离线测试处理
+配置文件分pub，dev，test后缀用于编写不同环境配置文件，并且分别放3个不同目录，用于后续项目增加，然后每个都要有个common用来管理一些公共配置，
+最好能分布式部署，支持docker单机，docker集群，k8s集群，
 ```

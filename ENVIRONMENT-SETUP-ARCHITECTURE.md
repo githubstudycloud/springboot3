@@ -166,14 +166,95 @@ volumes:
 
 ## 🛠️ 快速启动命令
 
+### 🧪 Testing环境（单机部署）
+
+**方式一：Docker Compose（推荐）**
 ```bash
-# 测试环境快速启动
-docker-compose -f docker-compose.testing.yml up -d
+# 进入测试环境目录
+cd environments/testing
 
-# Beta环境快速启动
-./scripts/setup-beta-cluster.sh
+# 启动所有服务
+docker-compose up -d
 
-# 生产环境部署
+# 查看服务状态
+docker-compose ps
+
+# 停止服务
+docker-compose down
+```
+
+**方式二：单独Docker安装**
+```bash
+# 进入脚本目录
+cd environments/testing/scripts
+
+# 运行安装脚本
+chmod +x setup-docker-individual.sh
+./setup-docker-individual.sh
+
+# 清理环境
+./setup-docker-individual.sh --cleanup
+```
+
+**测试环境服务访问**：
+- **MySQL**: `localhost:3306` (用户: platform_user, 密码: testing_user_pass_2024)
+- **Redis**: `localhost:6379` (密码: testing_redis_pass_2024) 
+- **MongoDB**: `localhost:27017` (用户: mongo_admin, 密码: testing_mongo_pass_2024)
+- **Nacos**: `http://localhost:8848/nacos` (用户: nacos, 密码: nacos)
+- **RabbitMQ**: `http://localhost:15672` (用户: rabbit_admin, 密码: testing_rabbit_pass_2024)
+- **Kafka**: `localhost:9092`
+- **RocketMQ**: `localhost:9876` (NameServer)
+- **Prometheus**: `http://localhost:9090`
+- **Grafana**: `http://localhost:3000` (用户: admin, 密码: testing_grafana_pass_2024)
+
+### 🚀 Beta环境（集群部署）
+
+**方式一：Docker Swarm集群（推荐）**
+```bash
+# 进入Beta环境目录
+cd environments/beta
+
+# 初始化Swarm集群并部署
+chmod +x scripts/setup-docker-cluster.sh
+./scripts/setup-docker-cluster.sh
+
+# 部署服务栈
+docker stack deploy -c docker-compose.yml platform-beta
+
+# 查看集群状态
+docker node ls
+docker service ls
+```
+
+**方式二：单机模拟集群**
+```bash
+# 单机环境下运行集群配置
+cd environments/beta
+docker-compose up -d
+```
+
+**Beta环境服务访问**：
+- **MySQL Master**: `localhost:3306` (用户: platform_user, 密码: beta_user_pass_2024)
+- **MySQL Slave**: `localhost:3307` (只读复制)
+- **Redis Master**: `redis-master:6379` (密码: beta_redis_pass_2024)
+- **Platform API**: `http://localhost:8080` (集群模式，3个实例)
+- **Nginx LB**: `http://localhost` (负载均衡器)
+
+**集群管理命令**：
+```bash
+# 扩展API服务
+docker service scale platform-beta_platform-api=5
+
+# 查看服务日志
+docker service logs -f platform-beta_mysql-master
+
+# 清理集群
+docker stack rm platform-beta
+```
+
+### 🏭 生产环境部署（预留）
+```bash
+# Kubernetes生产环境部署
 kubectl apply -f k8s/production/
 ```
 

@@ -66,7 +66,39 @@
         "--tags",
         "微服务架构V2 企业级功能 自保护机制 DevOps 监控告警 配置管理"
       ]
+    },
+    {
+      "from": "memory_saved",
+      "command": "action",
+      "timestamp": "2025-06-07T12:53:29.405Z",
+      "args": [
+        "solution-architect"
+      ]
+    },
+    {
+      "from": "role_activated_with_memory",
+      "command": "hello",
+      "timestamp": "2025-06-07T12:53:33.384Z",
+      "args": []
+    },
+    {
+      "from": "role_discovery",
+      "command": "action",
+      "timestamp": "2025-06-07T12:53:37.526Z",
+      "args": [
+        "product-manager"
+      ]
+    },
+    {
+      "from": "role_activated_with_memory",
+      "command": "remember",
+      "timestamp": "2025-06-07T12:57:48.481Z",
+      "args": [
+        "DDD六边形架构企业级设计经验总结：\n1. 架构分层：领域层(domain)、应用层(application)、适配器层(adapter)、启动器套件(starter-suite)\n2. RocketMQ多厂商支持：阿里云、华为云、腾讯云、自建，通过@ConditionalOnProperty实现插件化\n3. 外部HTTP接口统一管理：专门的platform-external-api-app服务，集成限流、熔断、监控、日志\n4. 消息队列隔离架构：接收器(纯接收)和处理器(业务处理)分离，支持RabbitMQ、Kafka、RocketMQ\n5. MyBatis增强：XML映射+MyBatis-Plus，仓储模式实现，领域对象与DO转换\n6. 编码规范自动化：Excel规则集转换，实时检查、编译时检查，切面检查，质量门禁\n7. 设计模式应用：工厂模式(外部组件)、策略模式(采集策略)、适配器模式(外部系统)、观察者模式(领域事件)\n8. 插件化设计：外部组件可插拔，启动器管理，条件化装配\n9. DDD核心：聚合根、值对象、领域服务、仓储接口、应用服务、领域事件\n10. 企业级特性：监控、日志、安全、性能、通知、报告、质量控制",
+        "--tags",
+        "DDD六边形架构 RocketMQ多厂商 外部API管理 消息队列隔离 编码规范自动化 设计模式 插件化设计"
+      ]
     }
   ],
-  "lastUpdated": "2025-06-07T12:35:51.169Z"
+  "lastUpdated": "2025-06-07T12:57:48.486Z"
 }

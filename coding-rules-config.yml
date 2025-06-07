@@ -1,0 +1,227 @@
+# 🏛️ 平台编码规范配置
+platform:
+  coding-rules:
+    enabled: true
+    excel-config:
+      path: "classpath:coding-rules/coding-rules.xlsx"
+      sheet-name: "编码规范"
+      refresh-interval: 300000  # 5分钟刷新一次
+    
+    # 规则分类
+    categories:
+      naming:
+        enabled: true
+        severity: ERROR
+        rules:
+          - rule-id: "N001"
+            name: "类名规范"
+            pattern: "^[A-Z][a-zA-Z0-9]*$"
+            message: "类名必须使用大驼峰命名法"
+          - rule-id: "N002"
+            name: "方法名规范"
+            pattern: "^[a-z][a-zA-Z0-9]*$"
+            message: "方法名必须使用小驼峰命名法"
+          - rule-id: "N003"
+            name: "常量命名规范"
+            pattern: "^[A-Z][A-Z0-9_]*$"
+            message: "常量必须使用大写字母和下划线"
+      
+      architecture:
+        enabled: true
+        severity: WARN
+        rules:
+          - rule-id: "A001"
+            name: "DDD领域模型规范"
+            description: "聚合根必须继承AggregateRoot"
+            target-annotation: "@Entity"
+            required-superclass: "AggregateRoot"
+          - rule-id: "A002"
+            name: "仓储接口规范"
+            description: "仓储接口必须以Repository结尾"
+            target-pattern: ".*Repository$"
+            package-pattern: ".*\\.domain\\..*"
+          - rule-id: "A003"
+            name: "应用服务规范"
+            description: "应用服务必须使用@ApplicationService注解"
+            target-annotation: "@Service"
+            required-annotation: "@ApplicationService"
+      
+      security:
+        enabled: true
+        severity: ERROR
+        rules:
+          - rule-id: "S001"
+            name: "敏感信息处理"
+            description: "不允许在日志中输出密码等敏感信息"
+            forbidden-patterns:
+              - "password"
+              - "secret"
+              - "token"
+            log-methods:
+              - "log.info"
+              - "log.debug"
+              - "log.error"
+          - rule-id: "S002"
+            name: "SQL注入防护"
+            description: "必须使用参数化查询"
+            target-methods:
+              - "createNativeQuery"
+              - "createQuery"
+            required-pattern: "\\?\\d+|:\\w+"
+      
+      performance:
+        enabled: true
+        severity: WARN
+        rules:
+          - rule-id: "P001"
+            name: "循环性能规范"
+            description: "避免在循环中执行数据库操作"
+            target-patterns:
+              - "for\\s*\\("
+              - "while\\s*\\("
+            forbidden-calls:
+              - "repository.save"
+              - "repository.find"
+              - "jdbcTemplate.query"
+          - rule-id: "P002"
+            name: "集合初始化规范"
+            description: "集合初始化时应指定容量"
+            target-classes:
+              - "ArrayList"
+              - "HashMap"
+              - "HashSet"
+            required-constructor-params: 1
+      
+      logging:
+        enabled: true
+        severity: INFO
+        rules:
+          - rule-id: "L001"
+            name: "日志级别规范"
+            description: "业务逻辑使用info，调试信息使用debug"
+            target-methods:
+              - "log.info"
+              - "log.debug"
+              - "log.warn"
+              - "log.error"
+          - rule-id: "L002"
+            name: "结构化日志规范"
+            description: "关键业务操作必须记录结构化日志"
+            target-annotations:
+              - "@UseCase"
+              - "@DomainService"
+            required-log-fields:
+              - "operation"
+              - "userId"
+              - "timestamp"
+    
+    # 检查配置
+    check-config:
+      # 实时检查
+      real-time:
+        enabled: true
+        target-packages:
+          - "com.platform.domain"
+          - "com.platform.application"
+          - "com.platform.adapter"
+      
+      # 编译时检查
+      compile-time:
+        enabled: true
+        fail-on-error: true
+        report-format: "HTML"
+        output-path: "target/coding-rules-report.html"
+      
+      # 排除规则
+      exclusions:
+        classes:
+          - ".*Test$"
+          - ".*TestCase$"
+          - ".*Configuration$"
+        packages:
+          - "com.platform.test"
+          - "com.platform.config"
+        files:
+          - "Application.java"
+    
+    # 自动修复
+    auto-fix:
+      enabled: false  # 生产环境关闭
+      backup: true
+      rules:
+        - "N001"  # 类名规范
+        - "N002"  # 方法名规范
+        - "L001"  # 日志级别规范
+    
+    # 报告配置
+    reporting:
+      enabled: true
+      formats:
+        - "HTML"
+        - "JSON"
+        - "XML"
+      output-directory: "target/reports/coding-rules"
+      include-source-code: true
+      
+      # 质量门禁
+      quality-gate:
+        enabled: true
+        max-errors: 0
+        max-warnings: 10
+        max-info: 50
+
+# 集成外部工具
+integrations:
+  sonarqube:
+    enabled: true
+    server-url: "http://localhost:9000"
+    project-key: "platform-project"
+    
+  checkstyle:
+    enabled: true
+    config-file: "checkstyle.xml"
+    
+  pmd:
+    enabled: true
+    ruleset: "pmd-ruleset.xml"
+    
+  spotbugs:
+    enabled: true
+    effort: "max"
+    threshold: "low"
+
+# 通知配置
+notifications:
+  enabled: true
+  channels:
+    email:
+      enabled: true
+      recipients:
+        - "dev-team@company.com"
+      smtp:
+        host: "smtp.company.com"
+        port: 587
+    
+    webhook:
+      enabled: true
+      url: "http://notification-service/api/coding-rules"
+      
+    slack:
+      enabled: false
+      channel: "#dev-alerts"
+      webhook-url: "https://hooks.slack.com/services/..."
+
+# 性能配置
+performance:
+  cache:
+    enabled: true
+    ttl: 3600  # 1小时
+    max-size: 1000
+  
+  async:
+    enabled: true
+    thread-pool-size: 4
+  
+  batch-processing:
+    enabled: true
+    batch-size: 100 

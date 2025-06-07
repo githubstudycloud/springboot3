@@ -2,6 +2,11 @@
 
 ## 🏗️ 架构设计文档
 
+### 项目状态
+- [**📊 当前状态总结**](./CURRENT-STATUS.md) - 第四阶段完成状态详细报告
+- [**📋 项目改进计划**](./PROJECT-IMPROVEMENT-PLAN.md) - 详细的改进方案和下一步计划
+- [**🚀 第五阶段执行计划**](./NEXT-PHASE-PLAN.md) - 详细的下阶段开发计划和里程碑
+
 ### 核心架构
 - [**🎯 DDD六边形架构设计**](./ARCHITECTURE-DDD-HEXAGON.md) - 核心架构设计，领域驱动+六边形架构
 - [**📋 编码规范配置**](./coding-rules-config.yml) - 自动化编码规范和质量检查

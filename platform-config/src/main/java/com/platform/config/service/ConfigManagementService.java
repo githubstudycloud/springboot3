@@ -1,26 +1,20 @@
 package com.platform.config.service;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.StrUtil;
+import com.platform.config.exception.ConfigValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * 配置管理服务
+ * 配置管理服务 - 重构版本
+ * 作为配置管理的门面服务，协调各个专门的服务
  * 
  * @author Platform Team
  * @since 1.0.0
@@ -30,48 +24,44 @@ import java.util.Map;
 @Slf4j
 public class ConfigManagementService {
     
-    private final ContextRefresher contextRefresher;
-    
-    @Value("${spring.cloud.config.server.git.uri:}")
-    private String gitUri;
-    
-    @Value("${spring.cloud.config.server.native.search-locations:}")
-    private String nativeSearchLocations;
-    
-    @Value("${platform.config.local-backup-path:/app/config-backup}")
-    private String localBackupPath;
-    
-    @Value("${platform.config.gitlab.enabled:true}")
-    private boolean gitlabEnabled;
+    private final ConfigRefreshService refreshService;
+    private final ConfigSyncService syncService;
+    private final ConfigBackupService backupService;
     
     private volatile String currentConfigSource = "gitlab";
     
     /**
-     * 刷新配置
+     * 刷新配置 - 委托给RefreshService
      */
-    public void refreshConfig(String application) {
-        log.info("开始刷新配置，应用: {}", application);
-        contextRefresher.refresh();
-        log.info("配置刷新完成，应用: {}", application);
+    public Set<String> refreshConfig(String application) {
+        return refreshConfig(application, "system");
+    }
+    
+    /**
+     * 刷新配置 - 带操作人员信息
+     */
+    public Set<String> refreshConfig(String application, String operator) {
+        validateApplication(application);
+        return refreshService.refreshConfig(application, operator);
     }
     
     /**
      * 切换配置源
      */
-    public void switchConfigSource(String source) {
-        if (!"gitlab".equals(source) && !"native".equals(source)) {
-            throw new IllegalArgumentException("不支持的配置源: " + source);
+    public void switchConfigSource(String source, String operator) {
+        validateConfigSource(source);
+        
+        if ("gitlab".equals(source) && !syncService.isGitlabAvailable()) {
+            throw new ConfigValidationException("配置源切换失败", 
+                Arrays.asList("GitLab不可用，无法切换到GitLab配置源"));
         }
         
-        if ("gitlab".equals(source) && !isGitlabAvailable()) {
-            throw new RuntimeException("GitLab不可用，无法切换到GitLab配置源");
-        }
-        
+        String oldSource = currentConfigSource;
         currentConfigSource = source;
-        log.info("配置源已切换到: {}", source);
+        log.info("配置源已切换: {} -> {}, 操作人: {}", oldSource, source, operator);
         
-        // 刷新配置
-        contextRefresher.refresh();
+        // 切换后自动刷新配置
+        refreshService.refreshAllConfigs(operator);
     }
     
     /**
@@ -80,123 +70,78 @@ public class ConfigManagementService {
     public Map<String, Object> getConfigStatus() {
         Map<String, Object> status = new HashMap<>();
         status.put("currentSource", currentConfigSource);
-        status.put("gitlabEnabled", gitlabEnabled);
-        status.put("gitlabAvailable", isGitlabAvailable());
-        status.put("gitUri", gitUri);
-        status.put("nativeSearchLocations", nativeSearchLocations);
+        status.put("gitlabAvailable", syncService.isGitlabAvailable());
         status.put("timestamp", DateUtil.now());
+        status.put("version", "2.0.0");
         
         return status;
     }
     
     /**
-     * 同步配置到GitLab
+     * 同步配置到GitLab - 委托给SyncService
      */
-    public void syncConfigToGitlab() throws GitAPIException, IOException {
-        if (!gitlabEnabled || StrUtil.isBlank(gitUri)) {
-            throw new RuntimeException("GitLab未启用或未配置Git URI");
+    public String syncConfigToGitlab(String operator) {
+        return syncService.syncConfigToGitlab(operator);
+    }
+    
+    /**
+     * 从GitLab拉取配置 - 委托给SyncService
+     */
+    public String pullConfigFromGitlab(String operator) {
+        return syncService.pullConfigFromGitlab(operator);
+    }
+    
+    /**
+     * 备份配置 - 委托给BackupService
+     */
+    public String backupConfig(String operator) {
+        return backupService.backupConfig(operator);
+    }
+    
+    /**
+     * 恢复配置 - 委托给BackupService
+     */
+    public void restoreConfig(String backupPath, String operator) {
+        backupService.restoreConfig(backupPath, operator);
+    }
+    
+    /**
+     * 获取备份列表 - 委托给BackupService
+     */
+    public List<String> listBackups() {
+        return backupService.listBackups();
+    }
+    
+    /**
+     * 验证应用名称
+     */
+    private void validateApplication(String application) {
+        if (application == null || application.trim().isEmpty()) {
+            throw new ConfigValidationException("应用名称验证失败", 
+                Arrays.asList("应用名称不能为空"));
         }
         
-        // 检查本地配置目录
-        Path localConfigPath = Paths.get(nativeSearchLocations);
-        if (!Files.exists(localConfigPath)) {
-            throw new RuntimeException("本地配置目录不存在: " + localConfigPath);
-        }
-        
-        // 克隆或更新Git仓库
-        Path tempGitPath = Paths.get(System.getProperty("java.io.tmpdir"), "config-sync");
-        if (Files.exists(tempGitPath)) {
-            FileUtil.del(tempGitPath.toFile());
-        }
-        
-        try (Git git = Git.cloneRepository()
-                .setURI(gitUri)
-                .setDirectory(tempGitPath.toFile())
-                .call()) {
-            
-            // 复制本地配置到Git目录
-            FileUtil.copyContent(localConfigPath.toFile(), tempGitPath.toFile(), true);
-            
-            // 提交更改
-            git.add().addFilepattern(".").call();
-            git.commit()
-                .setMessage("Config sync from local at " + DateUtil.now())
-                .call();
-            
-            // 推送到远程
-            git.push().call();
-            
-            log.info("配置已成功同步到GitLab");
-        } finally {
-            // 清理临时目录
-            FileUtil.del(tempGitPath.toFile());
+        // 可以添加更多验证规则
+        if (!application.matches("^[a-zA-Z0-9-_]+$")) {
+            throw new ConfigValidationException("应用名称验证失败", 
+                Arrays.asList("应用名称只能包含字母、数字、连字符和下划线"));
         }
     }
     
     /**
-     * 备份配置
+     * 验证配置源
      */
-    public String backupConfig() throws IOException {
-        String timestamp = DateUtil.format(DateUtil.date(), "yyyyMMdd_HHmmss");
-        String backupDir = localBackupPath + "/backup_" + timestamp;
-        
-        // 创建备份目录
-        Path backupPath = Paths.get(backupDir);
-        Files.createDirectories(backupPath);
-        
-        // 备份本地配置
-        if (StrUtil.isNotBlank(nativeSearchLocations)) {
-            Path localConfigPath = Paths.get(nativeSearchLocations);
-            if (Files.exists(localConfigPath)) {
-                FileUtil.copyContent(localConfigPath.toFile(), 
-                    new File(backupDir, "native"), true);
-            }
-        }
-        
-        // 如果GitLab可用，也备份Git配置
-        if (isGitlabAvailable()) {
-            try {
-                backupGitlabConfig(backupDir);
-            } catch (Exception e) {
-                log.warn("备份GitLab配置失败: {}", e.getMessage());
-            }
-        }
-        
-        log.info("配置备份完成: {}", backupDir);
-        return backupDir;
-    }
-    
-    /**
-     * 检查GitLab是否可用
-     */
-    private boolean isGitlabAvailable() {
-        if (!gitlabEnabled || StrUtil.isBlank(gitUri)) {
-            return false;
-        }
-        
-        try {
-            // 尝试连接GitLab
-            Git.lsRemoteRepository()
-                .setRemote(gitUri)
-                .call();
-            return true;
-        } catch (Exception e) {
-            log.debug("GitLab不可用: {}", e.getMessage());
-            return false;
+    private void validateConfigSource(String source) {
+        if (!"gitlab".equals(source) && !"native".equals(source)) {
+            throw new ConfigValidationException("配置源验证失败", 
+                Arrays.asList("不支持的配置源: " + source + "，支持的配置源: gitlab, native"));
         }
     }
     
     /**
-     * 备份GitLab配置
+     * 获取当前配置源
      */
-    private void backupGitlabConfig(String backupDir) throws GitAPIException {
-        Path gitBackupPath = Paths.get(backupDir, "gitlab");
-        
-        try (Git git = Git.cloneRepository()
-                .setURI(gitUri)
-                .setDirectory(gitBackupPath.toFile())
-                .call()) {
-            log.info("GitLab配置备份完成: {}", gitBackupPath);
-        }
+    public String getCurrentConfigSource() {
+        return currentConfigSource;
     }
 } 

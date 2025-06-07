@@ -2,6 +2,7 @@ package com.platform.config.service;
 
 import cn.hutool.core.date.DateUtil;
 import com.platform.config.exception.ConfigValidationException;
+import com.platform.config.metrics.ConfigMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,7 @@ import java.util.Set;
  * 作为配置管理的门面服务，协调各个专门的服务
  * 
  * @author Platform Team
- * @since 1.0.0
+ * @since 2.0.0
  */
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,8 @@ public class ConfigManagementService {
     private final ConfigRefreshService refreshService;
     private final ConfigSyncService syncService;
     private final ConfigBackupService backupService;
+    private final ConfigCacheService cacheService;
+    private final ConfigMetrics configMetrics;
     
     private volatile String currentConfigSource = "gitlab";
     
@@ -42,7 +45,16 @@ public class ConfigManagementService {
      */
     public Set<String> refreshConfig(String application, String operator) {
         validateApplication(application);
-        return refreshService.refreshConfig(application, operator);
+        
+        // 记录监控指标
+        configMetrics.recordConfigRequest(application, "all");
+        
+        Set<String> refreshedKeys = refreshService.refreshConfig(application, operator);
+        
+        log.info("配置刷新完成: application={}, operator={}, refreshedKeys={}", 
+                application, operator, refreshedKeys.size());
+        
+        return refreshedKeys;
     }
     
     /**
@@ -58,6 +70,10 @@ public class ConfigManagementService {
         
         String oldSource = currentConfigSource;
         currentConfigSource = source;
+        
+        // 更新监控指标
+        configMetrics.updateConfigSourceType(source);
+        
         log.info("配置源已切换: {} -> {}, 操作人: {}", oldSource, source, operator);
         
         // 切换后自动刷新配置
@@ -73,6 +89,12 @@ public class ConfigManagementService {
         status.put("gitlabAvailable", syncService.isGitlabAvailable());
         status.put("timestamp", DateUtil.now());
         status.put("version", "2.0.0");
+        
+        // 添加缓存信息
+        status.put("cache", cacheService.getCacheInfo());
+        
+        // 添加监控摘要
+        status.put("metrics", configMetrics.getMetricsSummary());
         
         return status;
     }
@@ -103,6 +125,10 @@ public class ConfigManagementService {
      */
     public void restoreConfig(String backupPath, String operator) {
         backupService.restoreConfig(backupPath, operator);
+        
+        // 恢复后清理缓存
+        cacheService.evictAllConfigs();
+        log.info("配置恢复后已清理所有缓存");
     }
     
     /**
@@ -110,6 +136,38 @@ public class ConfigManagementService {
      */
     public List<String> listBackups() {
         return backupService.listBackups();
+    }
+    
+    /**
+     * 获取缓存信息
+     */
+    public Map<String, Object> getCacheInfo() {
+        return cacheService.getCacheInfo();
+    }
+    
+    /**
+     * 清理缓存
+     */
+    public void clearCache(String operator) {
+        cacheService.evictAllConfigs();
+        log.info("缓存已手动清理，操作人: {}", operator);
+    }
+    
+    /**
+     * 清理指定配置的缓存
+     */
+    public void clearCache(String application, String profile, String operator) {
+        String cacheKey = String.format("%s:%s", application, profile);
+        cacheService.evictConfig(cacheKey);
+        log.info("配置缓存已清理: {}, 操作人: {}", cacheKey, operator);
+    }
+    
+    /**
+     * 预热缓存
+     */
+    public void warmUpCache(Map<String, Object> configs, String operator) {
+        cacheService.warmUpCache(configs);
+        log.info("缓存预热完成，配置数量: {}, 操作人: {}", configs.size(), operator);
     }
     
     /**

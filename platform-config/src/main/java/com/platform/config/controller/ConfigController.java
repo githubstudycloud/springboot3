@@ -138,6 +138,64 @@ public class ConfigController {
         ));
     }
     
+    // ============= 缓存管理相关API =============
+    
+    @Operation(summary = "获取缓存信息", description = "获取配置缓存的详细信息和统计")
+    @GetMapping("/cache/info")
+    public ResponseEntity<Map<String, Object>> getCacheInfo() {
+        Map<String, Object> cacheInfo = configManagementService.getCacheInfo();
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "获取缓存信息成功",
+            "cache", cacheInfo
+        ));
+    }
+    
+    @Operation(summary = "清理所有缓存", description = "清理配置服务的所有缓存")
+    @PostMapping("/cache/clear")
+    public ResponseEntity<Map<String, Object>> clearCache(
+            @Parameter(description = "操作人员") @RequestParam(defaultValue = "system") String operator) {
+        
+        configManagementService.clearCache(operator);
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "缓存清理成功",
+            "operator", operator
+        ));
+    }
+    
+    @Operation(summary = "清理指定配置缓存", description = "清理指定应用和环境的配置缓存")
+    @PostMapping("/cache/clear/{application}")
+    public ResponseEntity<Map<String, Object>> clearSpecificCache(
+            @Parameter(description = "应用名称") @PathVariable String application,
+            @Parameter(description = "环境名称") @RequestParam(defaultValue = "all") String profile,
+            @Parameter(description = "操作人员") @RequestParam(defaultValue = "system") String operator) {
+        
+        configManagementService.clearCache(application, profile, operator);
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "指定配置缓存清理成功",
+            "application", application,
+            "profile", profile,
+            "operator", operator
+        ));
+    }
+    
+    @Operation(summary = "预热缓存", description = "使用指定配置预热缓存")
+    @PostMapping("/cache/warmup")
+    public ResponseEntity<Map<String, Object>> warmUpCache(
+            @Parameter(description = "预热配置") @RequestBody Map<String, Object> configs,
+            @Parameter(description = "操作人员") @RequestParam(defaultValue = "system") String operator) {
+        
+        configManagementService.warmUpCache(configs, operator);
+        
+        return ResponseEntity.ok(Map.of(
+            "message", "缓存预热成功",
+            "configCount", configs.size(),
+            "operator", operator
+        ));
+    }
+    
     @Operation(summary = "健康检查", description = "检查配置服务健康状态")
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> healthCheck() {

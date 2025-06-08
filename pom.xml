@@ -20,63 +20,53 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         
         <!-- Spring Boot 版本 -->
-        <spring-boot.version>3.2.1</spring-boot.version>
-        <spring-cloud.version>2023.0.0</spring-cloud.version>
-        <spring-cloud-alibaba.version>2022.0.0.0</spring-cloud-alibaba.version>
+        <spring-boot.version>3.2.5</spring-boot.version>
+        <spring-cloud.version>2023.0.1</spring-cloud.version>
+        <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
         
         <!-- 数据库相关 -->
-        <mysql.version>8.0.33</mysql.version>
+        <mysql.version>8.0.35</mysql.version>
         <mongodb.version>4.11.1</mongodb.version>
-        <redis.version>3.2.1</redis.version>
+        <redis.version>3.2.4</redis.version>
+        
+        <!-- JGit版本 -->
+        <jgit.version>6.9.0.202403050737-r</jgit.version>
         
         <!-- 消息队列 -->
-        <rabbitmq.version>3.1.1</rabbitmq.version>
+        <rabbitmq.version>3.1.2</rabbitmq.version>
         <kafka.version>3.6.1</kafka.version>
         
         <!-- 工具类 -->
-        <hutool.version>5.8.24</hutool.version>
-        <fastjson2.version>2.0.44</fastjson2.version>
+        <hutool.version>5.8.25</hutool.version>
+        <fastjson2.version>2.0.48</fastjson2.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         
+        <!-- API文档 -->
+        <springdoc.version>2.5.0</springdoc.version>
+        
+        <!-- 监控相关 -->
+        <micrometer.version>1.12.5</micrometer.version>
+        
         <!-- 测试 -->
-        <junit.version>5.10.1</junit.version>
-        <testcontainers.version>1.19.3</testcontainers.version>
+        <junit.version>5.10.2</junit.version>
+        <testcontainers.version>1.19.7</testcontainers.version>
+        <jacoco.version>0.8.11</jacoco.version>
     </properties>
     
     <modules>
-        <!-- ===== 基础公共模块 ===== -->
-        <module>platform-common</module>
-        
-        <!-- ===== 基础设施模块 ===== -->
-        <module>platform-registry</module>
+        <!-- ===== 已完成模块 ===== -->
         <module>platform-config</module>
-        <module>platform-gateway</module>
         
-        <!-- ===== 核心业务模块 ===== -->
-        <module>platform-collect</module>
-        <module>platform-fluxcore</module>
-        <module>platform-buss-dashboard</module>
+        <!-- ===== DDD六边形架构模块 ===== -->
+        <!-- <module>platform-domain</module> -->
+        <!-- <module>platform-application</module> -->
+        <!-- <module>platform-adapter</module> -->
         
-        <!-- ===== 调度系统模块 ===== -->
-        <module>platform-scheduler</module>
-        <module>platform-scheduler-register</module>
-        <module>platform-scheduler-query</module>
+        <!-- ===== 启动器套件 ===== -->
+        <!-- <module>platform-starter-suite</module> -->
         
-        <!-- ===== 监控告警模块 ===== -->
-        <module>platform-monitor-dashboard</module>
-        <module>platform-alert</module>
-        <module>platform-audit</module>
-        
-        <!-- ===== 企业级功能模块 ===== -->
-        <module>platform-auth</module>
-        <module>platform-transaction</module>
-        <module>platform-flow-control</module>
-        
-        <!-- ===== 启动器模块 ===== -->
-        <module>platform-starters</module>
-        
-        <!-- ===== 运维工具模块 ===== -->
-        <module>platform-devops</module>
+        <!-- ===== 规划中模块 ===== -->
+        <!-- 后续会逐步添加其他模块 -->
     </modules>
     
     <dependencyManagement>
@@ -160,6 +150,33 @@
                 <version>${mapstruct.version}</version>
             </dependency>
             
+            <!-- JGit -->
+            <dependency>
+                <groupId>org.eclipse.jgit</groupId>
+                <artifactId>org.eclipse.jgit</artifactId>
+                <version>${jgit.version}</version>
+            </dependency>
+            
+            <!-- API文档 -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+            
+            <!-- 监控相关 -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            
             <!-- 本项目模块 -->
             <dependency>
                 <groupId>com.platform</groupId>
@@ -223,6 +240,60 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
+            </plugin>
+            
+            <!-- JaCoCo测试覆盖率插件 -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- Maven Surefire插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                </configuration>
             </plugin>
             
             <plugin>

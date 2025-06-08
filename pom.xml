@@ -56,6 +56,7 @@
     <modules>
         <!-- ===== 已完成模块 ===== -->
         <module>platform-config</module>
+        <module>platform-gateway</module>
         
         <!-- ===== DDD六边形架构模块 ===== -->
         <!-- <module>platform-domain</module> -->

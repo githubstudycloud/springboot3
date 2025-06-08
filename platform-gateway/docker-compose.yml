@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  platform-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: platform-gateway:1.0.0
+    container_name: platform-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_SERVER_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=redispass
+      - JWT_SECRET=platform-gateway-secret-key-2024
+      - JWT_EXPIRATION=86400
+    depends_on:
+      - redis
+      - nacos
+    networks:
+      - platform-network
+    volumes:
+      - gateway-logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: platform-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redispass
+    volumes:
+      - redis-data:/data
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: platform-nacos
+    restart: unless-stopped
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_DB_NAME=nacos_config
+      - MYSQL_SERVICE_USER=nacos
+      - MYSQL_SERVICE_PASSWORD=nacos123
+    depends_on:
+      - mysql
+    volumes:
+      - nacos-logs:/home/nacos/logs
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  mysql:
+    image: mysql:8.0
+    container_name: platform-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_DATABASE=nacos_config
+      - MYSQL_USER=nacos
+      - MYSQL_PASSWORD=nacos123
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./scripts/mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql
+    networks:
+      - platform-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  platform-network:
+    driver: bridge
+    name: platform-network
+
+volumes:
+  gateway-logs:
+    name: platform-gateway-logs
+  redis-data:
+    name: platform-redis-data
+  nacos-logs:
+    name: platform-nacos-logs
+  mysql-data:
+    name: platform-mysql-data 

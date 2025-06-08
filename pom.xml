@@ -59,7 +59,7 @@
         <module>platform-gateway</module>
         
         <!-- ===== DDD六边形架构模块 ===== -->
-        <!-- <module>platform-domain</module> -->
+        <module>platform-domain/user-management</module>
         <!-- <module>platform-application</module> -->
         <!-- <module>platform-adapter</module> -->
         

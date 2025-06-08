@@ -1,0 +1,103 @@
+spring:
+  application:
+    name: platform-user-management-domain
+  
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/platform_user?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:platform_user}
+    password: ${DB_PASSWORD:platform123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+  
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.SnakeCasePhysicalNamingStrategy
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  
+  # Redis配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 1
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+
+# 用户管理配置
+platform:
+  user:
+    # 密码策略
+    password:
+      min-length: 6
+      max-length: 128
+      require-uppercase: false
+      require-lowercase: false
+      require-digit: false
+      require-special-char: false
+    
+    # 用户名策略
+    username:
+      min-length: 3
+      max-length: 50
+      allowed-pattern: "^[a-zA-Z0-9_-]+$"
+    
+    # 会话配置
+    session:
+      timeout: 7200  # 2小时
+      max-concurrent: 1  # 最大并发会话数
+    
+    # 清理策略
+    cleanup:
+      inactive-days: 90  # 90天未登录视为不活跃
+      deleted-retention-days: 30  # 已删除用户保留30天
+
+# 日志配置
+logging:
+  level:
+    com.platform.domain.user: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/user-management.log
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true 

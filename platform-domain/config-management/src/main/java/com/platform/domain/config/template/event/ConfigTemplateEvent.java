@@ -1,10 +1,8 @@
 package com.platform.domain.config.template.event;
 
+import com.platform.domain.config.shared.AbstractDomainEvent;
 import com.platform.domain.config.template.valueobject.TemplateId;
 import com.platform.domain.config.template.valueobject.TemplateType;
-
-import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * 配置模板领域事件
@@ -13,21 +11,23 @@ import java.util.Objects;
  * @author Platform Team
  * @since 1.0.0
  */
-public abstract class ConfigTemplateEvent {
+public abstract class ConfigTemplateEvent extends AbstractDomainEvent {
     
-    private final TemplateId templateId;
     private final String templateName;
-    private final String eventType;
-    private final String operator;
-    private final LocalDateTime occurredAt;
     
-    protected ConfigTemplateEvent(TemplateId templateId, String templateName, 
-                                String eventType, String operator) {
-        this.templateId = templateId;
+    protected ConfigTemplateEvent(String eventType, TemplateId templateId, 
+                                String templateName, String operator) {
+        super(eventType, templateId.getValue(), "ConfigTemplate", operator);
         this.templateName = templateName;
-        this.eventType = eventType;
-        this.operator = operator;
-        this.occurredAt = LocalDateTime.now();
+    }
+    
+    public String getTemplateName() {
+        return templateName;
+    }
+    
+    @Override
+    public boolean isImportant() {
+        return getEventType().contains("PUBLISHED") || getEventType().contains("DELETED");
     }
     
     // 模板创建事件
@@ -78,39 +78,6 @@ public abstract class ConfigTemplateEvent {
         return new ConfigTemplateVersionCreatedEvent(templateId, templateName, version, operator);
     }
     
-    // Getters
-    public TemplateId getTemplateId() { return templateId; }
-    public String getTemplateName() { return templateName; }
-    public String getEventType() { return eventType; }
-    public String getOperator() { return operator; }
-    public LocalDateTime getOccurredAt() { return occurredAt; }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ConfigTemplateEvent that = (ConfigTemplateEvent) o;
-        return Objects.equals(templateId, that.templateId) &&
-               Objects.equals(eventType, that.eventType) &&
-               Objects.equals(occurredAt, that.occurredAt);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(templateId, eventType, occurredAt);
-    }
-    
-    @Override
-    public String toString() {
-        return "ConfigTemplateEvent{" +
-                "templateId=" + templateId +
-                ", templateName='" + templateName + '\'' +
-                ", eventType='" + eventType + '\'' +
-                ", operator='" + operator + '\'' +
-                ", occurredAt=" + occurredAt +
-                '}';
-    }
-    
     // 具体事件类型
     
     public static class ConfigTemplateCreatedEvent extends ConfigTemplateEvent {
@@ -118,7 +85,7 @@ public abstract class ConfigTemplateEvent {
         
         public ConfigTemplateCreatedEvent(TemplateId templateId, String templateName, 
                                         TemplateType type, String operator) {
-            super(templateId, templateName, "TEMPLATE_CREATED", operator);
+            super("TEMPLATE_CREATED", templateId, templateName, operator);
             this.type = type;
         }
         
@@ -127,7 +94,7 @@ public abstract class ConfigTemplateEvent {
     
     public static class ConfigTemplateContentUpdatedEvent extends ConfigTemplateEvent {
         public ConfigTemplateContentUpdatedEvent(TemplateId templateId, String templateName, String operator) {
-            super(templateId, templateName, "TEMPLATE_CONTENT_UPDATED", operator);
+            super("TEMPLATE_CONTENT_UPDATED", templateId, templateName, operator);
         }
     }
     
@@ -135,7 +102,7 @@ public abstract class ConfigTemplateEvent {
         private final String variableName;
         
         public ConfigTemplateVariableAddedEvent(TemplateId templateId, String templateName, String variableName) {
-            super(templateId, templateName, "TEMPLATE_VARIABLE_ADDED", "SYSTEM");
+            super("TEMPLATE_VARIABLE_ADDED", templateId, templateName, "SYSTEM");
             this.variableName = variableName;
         }
         
@@ -146,7 +113,7 @@ public abstract class ConfigTemplateEvent {
         private final String variableName;
         
         public ConfigTemplateVariableRemovedEvent(TemplateId templateId, String templateName, String variableName) {
-            super(templateId, templateName, "TEMPLATE_VARIABLE_REMOVED", "SYSTEM");
+            super("TEMPLATE_VARIABLE_REMOVED", templateId, templateName, "SYSTEM");
             this.variableName = variableName;
         }
         
@@ -155,19 +122,24 @@ public abstract class ConfigTemplateEvent {
     
     public static class ConfigTemplatePublishedEvent extends ConfigTemplateEvent {
         public ConfigTemplatePublishedEvent(TemplateId templateId, String templateName, String operator) {
-            super(templateId, templateName, "TEMPLATE_PUBLISHED", operator);
+            super("TEMPLATE_PUBLISHED", templateId, templateName, operator);
+        }
+        
+        @Override
+        public boolean isImportant() {
+            return true;
         }
     }
     
     public static class ConfigTemplateDeactivatedEvent extends ConfigTemplateEvent {
         public ConfigTemplateDeactivatedEvent(TemplateId templateId, String templateName, String operator) {
-            super(templateId, templateName, "TEMPLATE_DEACTIVATED", operator);
+            super("TEMPLATE_DEACTIVATED", templateId, templateName, operator);
         }
     }
     
     public static class ConfigTemplateReactivatedEvent extends ConfigTemplateEvent {
         public ConfigTemplateReactivatedEvent(TemplateId templateId, String templateName, String operator) {
-            super(templateId, templateName, "TEMPLATE_REACTIVATED", operator);
+            super("TEMPLATE_REACTIVATED", templateId, templateName, operator);
         }
     }
     
@@ -176,7 +148,7 @@ public abstract class ConfigTemplateEvent {
         
         public ConfigTemplateVersionCreatedEvent(TemplateId templateId, String templateName, 
                                                 String version, String operator) {
-            super(templateId, templateName, "TEMPLATE_VERSION_CREATED", operator);
+            super("TEMPLATE_VERSION_CREATED", templateId, templateName, operator);
             this.version = version;
         }
         

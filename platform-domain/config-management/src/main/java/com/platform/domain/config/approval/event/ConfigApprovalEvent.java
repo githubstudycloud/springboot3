@@ -1,11 +1,9 @@
 package com.platform.domain.config.approval.event;
 
+import com.platform.domain.config.shared.AbstractDomainEvent;
 import com.platform.domain.config.approval.valueobject.ApprovalId;
 import com.platform.domain.config.approval.valueobject.ApprovalType;
 import com.platform.domain.config.approval.valueobject.Priority;
-
-import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * 配置审批领域事件
@@ -14,21 +12,31 @@ import java.util.Objects;
  * @author Platform Team
  * @since 1.0.0
  */
-public abstract class ConfigApprovalEvent {
+public abstract class ConfigApprovalEvent extends AbstractDomainEvent {
     
-    private final ApprovalId approvalId;
     private final String title;
-    private final String eventType;
-    private final String operator;
-    private final LocalDateTime occurredAt;
     
-    protected ConfigApprovalEvent(ApprovalId approvalId, String title, 
-                                String eventType, String operator) {
-        this.approvalId = approvalId;
+    protected ConfigApprovalEvent(String eventType, ApprovalId approvalId, 
+                                String title, String operator) {
+        super(eventType, approvalId.getValue(), "ConfigApproval", operator);
         this.title = title;
-        this.eventType = eventType;
-        this.operator = operator;
-        this.occurredAt = LocalDateTime.now();
+    }
+    
+    public String getTitle() {
+        return title;
+    }
+    
+    @Override
+    public boolean isImportant() {
+        return getEventType().contains("APPROVED") || 
+               getEventType().contains("REJECTED") || 
+               getEventType().contains("EXECUTED");
+    }
+    
+    @Override
+    public boolean isAsyncProcessing() {
+        // 审批事件通常需要立即处理通知
+        return !getEventType().contains("TIMEOUT");
     }
     
     // 审批创建事件
@@ -79,39 +87,6 @@ public abstract class ConfigApprovalEvent {
         return new ConfigApprovalTimeoutEvent(approvalId, title, currentApprover);
     }
     
-    // Getters
-    public ApprovalId getApprovalId() { return approvalId; }
-    public String getTitle() { return title; }
-    public String getEventType() { return eventType; }
-    public String getOperator() { return operator; }
-    public LocalDateTime getOccurredAt() { return occurredAt; }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ConfigApprovalEvent that = (ConfigApprovalEvent) o;
-        return Objects.equals(approvalId, that.approvalId) &&
-               Objects.equals(eventType, that.eventType) &&
-               Objects.equals(occurredAt, that.occurredAt);
-    }
-    
-    @Override
-    public int hashCode() {
-        return Objects.hash(approvalId, eventType, occurredAt);
-    }
-    
-    @Override
-    public String toString() {
-        return "ConfigApprovalEvent{" +
-                "approvalId=" + approvalId +
-                ", title='" + title + '\'' +
-                ", eventType='" + eventType + '\'' +
-                ", operator='" + operator + '\'' +
-                ", occurredAt=" + occurredAt +
-                '}';
-    }
-    
     // 具体事件类型
     
     public static class ConfigApprovalCreatedEvent extends ConfigApprovalEvent {
@@ -120,7 +95,7 @@ public abstract class ConfigApprovalEvent {
         
         public ConfigApprovalCreatedEvent(ApprovalId approvalId, String title, 
                                         ApprovalType type, Priority priority, String applicant) {
-            super(approvalId, title, "APPROVAL_CREATED", applicant);
+            super("APPROVAL_CREATED", approvalId, title, applicant);
             this.type = type;
             this.priority = priority;
         }
@@ -131,13 +106,18 @@ public abstract class ConfigApprovalEvent {
     
     public static class ConfigApprovalSubmittedEvent extends ConfigApprovalEvent {
         public ConfigApprovalSubmittedEvent(ApprovalId approvalId, String title, String approver) {
-            super(approvalId, title, "APPROVAL_SUBMITTED", approver);
+            super("APPROVAL_SUBMITTED", approvalId, title, approver);
         }
     }
     
     public static class ConfigApprovalApprovedEvent extends ConfigApprovalEvent {
         public ConfigApprovalApprovedEvent(ApprovalId approvalId, String title, String approver) {
-            super(approvalId, title, "APPROVAL_APPROVED", approver);
+            super("APPROVAL_APPROVED", approvalId, title, approver);
+        }
+        
+        @Override
+        public boolean isImportant() {
+            return true;
         }
     }
     
@@ -145,16 +125,26 @@ public abstract class ConfigApprovalEvent {
         private final String reason;
         
         public ConfigApprovalRejectedEvent(ApprovalId approvalId, String title, String approver, String reason) {
-            super(approvalId, title, "APPROVAL_REJECTED", approver);
+            super("APPROVAL_REJECTED", approvalId, title, approver);
             this.reason = reason;
         }
         
         public String getReason() { return reason; }
+        
+        @Override
+        public boolean isImportant() {
+            return true;
+        }
     }
     
     public static class ConfigApprovalExecutedEvent extends ConfigApprovalEvent {
         public ConfigApprovalExecutedEvent(ApprovalId approvalId, String title, String executor) {
-            super(approvalId, title, "APPROVAL_EXECUTED", executor);
+            super("APPROVAL_EXECUTED", approvalId, title, executor);
+        }
+        
+        @Override
+        public boolean isImportant() {
+            return true;
         }
     }
     
@@ -163,22 +153,37 @@ public abstract class ConfigApprovalEvent {
         
         public ConfigApprovalExecutionFailedEvent(ApprovalId approvalId, String title, 
                                                 String executor, String errorMessage) {
-            super(approvalId, title, "APPROVAL_EXECUTION_FAILED", executor);
+            super("APPROVAL_EXECUTION_FAILED", approvalId, title, executor);
             this.errorMessage = errorMessage;
         }
         
         public String getErrorMessage() { return errorMessage; }
+        
+        @Override
+        public boolean isImportant() {
+            return true;
+        }
     }
     
     public static class ConfigApprovalCancelledEvent extends ConfigApprovalEvent {
         public ConfigApprovalCancelledEvent(ApprovalId approvalId, String title, String operator) {
-            super(approvalId, title, "APPROVAL_CANCELLED", operator);
+            super("APPROVAL_CANCELLED", approvalId, title, operator);
         }
     }
     
     public static class ConfigApprovalTimeoutEvent extends ConfigApprovalEvent {
         public ConfigApprovalTimeoutEvent(ApprovalId approvalId, String title, String currentApprover) {
-            super(approvalId, title, "APPROVAL_TIMEOUT", currentApprover);
+            super("APPROVAL_TIMEOUT", approvalId, title, currentApprover);
+        }
+        
+        @Override
+        public boolean isAsyncProcessing() {
+            return false; // 超时事件需要立即处理
+        }
+        
+        @Override
+        public boolean isImportant() {
+            return true;
         }
     }
 } 

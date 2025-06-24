@@ -1,0 +1,99 @@
+# Obsidian
+.obsidian/workspace
+.obsidian/workspace.json
+.obsidian/workspaces.json
+.obsidian/cache
+.obsidian/plugins/*/data.json
+.trash/
+
+# 安全和隐私
+09-Security/Passwords/*
+!09-Security/Passwords/password-management-guide.md
+!09-Security/Passwords/example-*.md
+09-Security/Sensitive/
+09-Security/Licenses/*
+!09-Security/Licenses/README.md
+
+# 个人隐私信息
+06-Personal/Finance/statements/
+06-Personal/Finance/tax/
+06-Personal/Health/medical-records/
+06-Personal/Health/prescriptions/
+
+# 临时文件
+00-Inbox/*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# 备份文件
+*.backup
+*.bak
+*.old
+
+# 日志文件
+*.log
+logs/
+
+# IDE配置
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 私人笔记（根据需要添加）
+# 01-Daily/**/private-*.md
+# 02-Projects/Active/ClientName/
+
+# 大文件
+*.mp4
+*.mov
+*.avi
+*.zip
+*.rar
+*.tar.gz
+
+# 编译输出
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+obj/
+out/
+build/
+dist/
+
+# 环境配置
+.env
+.env.local
+.env.*.local
+config/secrets.yml
+config/database.yml
+
+# 依赖目录
+node_modules/
+vendor/
+bower_components/
+
+# 测试覆盖率
+coverage/
+*.cover
+.coverage
+htmlcov/
+
+# 其他
+*.pdf
+!10-Templates/**/*.pdf
+!07-Resources/**/*.pdf

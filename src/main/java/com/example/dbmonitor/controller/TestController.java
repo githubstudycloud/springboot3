@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -34,25 +35,6 @@ public class TestController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // 验证参数
-            if (request.getReceiver() == null || request.getReceiver().trim().isEmpty()) {
-                response.put("success", false);
-                response.put("message", "receiver 参数不能为空");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            if (request.getAuth() == null || request.getAuth().trim().isEmpty()) {
-                response.put("success", false);
-                response.put("message", "auth 参数不能为空");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            if (request.getContent() == null || request.getContent().trim().isEmpty()) {
-                response.put("success", false);
-                response.put("message", "content 参数不能为空");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
             log.info("收到测试报警请求 - receiver: {}, auth: {}, content: {}", 
                     request.getReceiver(), request.getAuth(), request.getContent());
             
@@ -64,10 +46,14 @@ public class TestController {
             response.put("timestamp", LocalDateTime.now());
             response.put("serverNote", "这是内部测试接口，实际生产中请替换为您的报警接口地址");
             
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             response.put("success", false);
-            response.put("message", "接收失败: " + e.getMessage());
-            log.error("测试报警接收失败", e);
+            response.put("message", "参数错误: " + e.getMessage());
+            log.error("测试报警接收失败：参数错误", e);
+        } catch (NullPointerException e) {
+            response.put("success", false);
+            response.put("message", "接收失败(空指针): " + e.getMessage());
+            log.error("测试报警接收失败：空指针异常", e);
         }
         
         return ResponseEntity.ok(response);
@@ -95,10 +81,14 @@ public class TestController {
             response.put("auth_status", auth != null ? "token已验证" : "未提供token");
             response.put("content_length", content != null ? content.length() : 0);
             
-        } catch (Exception e) {
-            log.error("处理报警请求时出错", e);
+        } catch (ClassCastException e) {
+            log.error("处理报警请求时出错：类型转换异常", e);
             response.put("received", false);
-            response.put("error", e.getMessage());
+            response.put("error", "数据格式错误: " + e.getMessage());
+        } catch (NullPointerException e) {
+            log.error("处理报警请求时出错：空指针异常", e);
+            response.put("received", false);
+            response.put("error", "缺少必要参数: " + e.getMessage());
         }
         
         return ResponseEntity.ok(response);
@@ -127,10 +117,14 @@ public class TestController {
             response.put("success", true);
             response.put("message", "数据库断开警告测试完成");
             
-        } catch (Exception e) {
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
             response.put("success", false);
-            response.put("message", "测试失败: " + e.getMessage());
-            log.error("数据库断开测试失败", e);
+            response.put("message", "测试失败(发送异常): " + e.getMessage());
+            log.error("数据库断开测试失败：发送异常", e);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", "测试失败(参数错误): " + e.getMessage());
+            log.error("数据库断开测试失败：参数错误", e);
         }
         
         return ResponseEntity.ok(response);
@@ -159,10 +153,14 @@ public class TestController {
             response.put("success", true);
             response.put("message", "数据库重连警告测试完成");
             
-        } catch (Exception e) {
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
             response.put("success", false);
-            response.put("message", "测试失败: " + e.getMessage());
-            log.error("数据库重连测试失败", e);
+            response.put("message", "测试失败(发送异常): " + e.getMessage());
+            log.error("数据库重连测试失败：发送异常", e);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", "测试失败(参数错误): " + e.getMessage());
+            log.error("数据库重连测试失败：参数错误", e);
         }
         
         return ResponseEntity.ok(response);
@@ -205,10 +203,14 @@ public class TestController {
             response.put("message", String.format("%s 级别警告测试完成", level));
             response.put("severity", level);
             
-        } catch (Exception e) {
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
             response.put("success", false);
-            response.put("message", "测试失败: " + e.getMessage());
-            log.error("严重程度测试失败", e);
+            response.put("message", "测试失败(发送异常): " + e.getMessage());
+            log.error("严重程度测试失败：发送异常", e);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", "测试失败(参数错误): " + e.getMessage());
+            log.error("严重程度测试失败：参数错误", e);
         }
         
         return ResponseEntity.ok(response);
@@ -258,34 +260,17 @@ public class TestController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            log.info("手动触发定时健康报告...");
-            
-            // 在新线程中执行，避免阻塞HTTP请求
-            new Thread(() -> {
-                try {
-                    scheduledReportService.scheduledHealthReport();
-                } catch (Exception e) {
-                    log.error("手动执行定时报告失败", e);
-                }
-            }).start();
+            // 手动触发定时报告
+            scheduledReportService.scheduledHealthReport();
             
             response.put("success", true);
-            response.put("message", "定时健康报告已触发，请查看日志和警告接收端点");
+            response.put("message", "定时健康报告已手动触发");
             response.put("timestamp", LocalDateTime.now());
-            response.put("note", "报告将在后台异步执行，包含以下检查：");
-            response.put("checks", java.util.List.of(
-                "1. Java程序状态检查 (INFO级别)",
-                "2. MySQL连接状态检查 (INFO/CRITICAL级别)",
-                "3. 长时间运行SQL分析 (INFO/WARNING/CRITICAL级别)",
-                "4. 系统资源状态检查 (INFO/WARNING/CRITICAL级别)",
-                "5. 磁盘空间状态检查 (INFO/WARNING/CRITICAL级别)",
-                "6. 综合健康状态总结 (INFO级别)"
-            ));
             
-        } catch (Exception e) {
+        } catch (IllegalStateException e) {
             response.put("success", false);
-            response.put("message", "触发定时报告失败: " + e.getMessage());
-            log.error("手动触发定时报告失败", e);
+            response.put("message", "服务状态异常: " + e.getMessage());
+            log.error("手动触发定时报告失败：服务状态异常", e);
         }
         
         return ResponseEntity.ok(response);
@@ -338,7 +323,7 @@ public class TestController {
     }
     
     /**
-     * 手动测试不同级别的报警
+     * 测试不同级别报警
      */
     @PostMapping("/test-alert/{level}")
     public ResponseEntity<Map<String, Object>> testAlertLevel(@PathVariable String level,
@@ -346,40 +331,45 @@ public class TestController {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // 验证级别
-            if (!java.util.Set.of("info", "warn", "error").contains(level.toLowerCase())) {
+            // 验证级别参数
+            if (!List.of("info", "warn", "error").contains(level.toLowerCase())) {
                 response.put("success", false);
-                response.put("message", "不支持的报警级别: " + level + "，支持的级别: info, warn, error");
+                response.put("message", "无效的报警级别，支持的级别: info, warn, error");
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // 发送测试报警
-            alertService.testAlert(level.toLowerCase(), message);
+            // 使用AlertService的测试方法
+            alertService.testAlert(level, message);
             
             response.put("success", true);
-            response.put("message", String.format("成功发送 %s 级别测试报警", level));
-            response.put("level", level.toLowerCase());
-            response.put("content", message);
+            response.put("message", String.format("%s 级别报警测试发送成功", level.toUpperCase()));
+            response.put("level", level);
+            response.put("testMessage", message);
             response.put("timestamp", LocalDateTime.now());
             
-        } catch (Exception e) {
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
             response.put("success", false);
-            response.put("message", "发送失败: " + e.getMessage());
-            log.error("手动测试报警失败", e);
+            response.put("message", "报警发送失败: " + e.getMessage());
+            response.put("errorCode", e.getEndpoint() != null ? e.getEndpoint() : "UNKNOWN");
+            log.error("测试报警失败：发送异常", e);
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", "参数错误: " + e.getMessage());
+            log.error("测试报警失败：参数错误", e);
         }
         
         return ResponseEntity.ok(response);
     }
     
     /**
-     * 重置账号每日使用次数 (仅用于测试)
+     * 重置每日使用次数（仅用于测试）
      */
     @PostMapping("/reset-daily-usage")
     public ResponseEntity<Map<String, Object>> resetDailyUsage() {
         Map<String, Object> response = new HashMap<>();
         
         try {
-            // 注意：这是一个测试方法，生产环境中应该移除或加强权限控制
+            // 重置所有账号的每日使用次数
             var accounts = monitorProperties.getAlert().getAccounts();
             accounts.getInfo().setUsedToday(0);
             accounts.getWarn().setUsedToday(0);
@@ -388,14 +378,15 @@ public class TestController {
             response.put("success", true);
             response.put("message", "所有账号的每日使用次数已重置为0");
             response.put("timestamp", LocalDateTime.now());
-            response.put("warning", "这是测试功能，生产环境请谨慎使用");
             
-            log.info("手动重置了所有账号的每日使用次数");
-            
-        } catch (Exception e) {
+        } catch (NullPointerException e) {
             response.put("success", false);
-            response.put("message", "重置失败: " + e.getMessage());
-            log.error("重置每日使用次数失败", e);
+            response.put("message", "配置错误，无法访问账号设置: " + e.getMessage());
+            log.error("重置每日使用次数失败：配置错误", e);
+        } catch (UnsupportedOperationException e) {
+            response.put("success", false);
+            response.put("message", "操作不支持: " + e.getMessage());
+            log.error("重置每日使用次数失败：操作不支持", e);
         }
         
         return ResponseEntity.ok(response);

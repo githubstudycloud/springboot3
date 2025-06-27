@@ -168,9 +168,12 @@ public class MonitorController {
             status.put("overallHealthy", dbHealthy && systemHealthy);
             status.put("timestamp", System.currentTimeMillis());
             
-        } catch (Exception e) {
+        } catch (SecurityException e) {
             status.put("overallHealthy", false);
-            status.put("error", "综合状态检查失败: " + e.getMessage());
+            status.put("error", "系统权限异常: " + e.getMessage());
+        } catch (IllegalStateException e) {
+            status.put("overallHealthy", false);
+            status.put("error", "服务状态异常: " + e.getMessage());
         }
         
         return ResponseEntity.ok(status);

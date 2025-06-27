@@ -131,9 +131,12 @@ public class DatabaseMonitorService {
         if (!result.isHealthy()) {
             try {
                 alertService.sendAlert(result);
-            } catch (Exception e) {
+            } catch (com.example.dbmonitor.exception.AlertSendException e) {
                 log.error("Failed to send alert for datasource: {}", name, e);
                 // 报警失败不影响监控结果
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid alert parameters for datasource: {}", name, e);
+                // 参数错误不影响监控结果
             }
         }
 

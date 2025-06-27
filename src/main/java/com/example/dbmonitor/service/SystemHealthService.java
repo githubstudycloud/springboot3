@@ -1,5 +1,6 @@
 package com.example.dbmonitor.service;
 
+import com.example.dbmonitor.entity.AlertMessage;
 import com.example.dbmonitor.entity.MonitorResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,26 +36,22 @@ public class SystemHealthService {
         List<String> issues = new ArrayList<>();
         
         try {
-            // 检查JVM状态
-            Map<String, Object> jvmInfo = checkJvmHealth(issues);
-            healthInfo.put("jvm", jvmInfo);
+            // 检查JVM健康
+            healthInfo.put("jvm", checkJvmHealth(issues));
             
             // 检查系统资源
-            Map<String, Object> systemInfo = checkSystemResources(issues);
-            healthInfo.put("system", systemInfo);
+            healthInfo.put("system", checkSystemResources(issues));
             
             // 检查磁盘空间
-            Map<String, Object> diskInfo = checkDiskSpace(issues);
-            healthInfo.put("disk", diskInfo);
+            healthInfo.put("disk", checkDiskSpace(issues));
             
             // 检查网络连通性
-            Map<String, Object> networkInfo = checkNetworkConnectivity(issues);
-            healthInfo.put("network", networkInfo);
+            healthInfo.put("network", checkNetworkConnectivity(issues));
             
-            // 检查应用运行时间
-            Map<String, Object> uptimeInfo = checkUptime();
-            healthInfo.put("uptime", uptimeInfo);
+            // 检查运行时间
+            healthInfo.put("uptime", checkUptime());
             
+            // 设置总体健康状态
             healthInfo.put("healthy", issues.isEmpty());
             healthInfo.put("issues", issues);
             healthInfo.put("timestamp", LocalDateTime.now());
@@ -64,9 +61,14 @@ public class SystemHealthService {
                 sendSystemHealthAlert(issues);
             }
             
-        } catch (Exception e) {
-            log.error("检查系统健康状况时发生错误", e);
-            issues.add("系统健康检查失败: " + e.getMessage());
+        } catch (SecurityException e) {
+            log.error("检查系统健康状况时发生安全权限错误", e);
+            issues.add("系统健康检查失败(权限不足): " + e.getMessage());
+            healthInfo.put("healthy", false);
+            healthInfo.put("issues", issues);
+        } catch (OutOfMemoryError e) {
+            log.error("检查系统健康状况时发生内存不足错误", e);
+            issues.add("系统健康检查失败(内存不足): " + e.getMessage());
             healthInfo.put("healthy", false);
             healthInfo.put("issues", issues);
         }
@@ -112,9 +114,12 @@ public class SystemHealthService {
                 issues.add(String.format("线程数过多: %d", threadCount));
             }
             
-        } catch (Exception e) {
-            log.error("检查JVM健康状况时发生错误", e);
-            issues.add("JVM状态检查失败: " + e.getMessage());
+        } catch (SecurityException e) {
+            log.error("检查JVM健康状况时发生安全权限错误", e);
+            issues.add("JVM状态检查失败(权限不足): " + e.getMessage());
+        } catch (UnsupportedOperationException e) {
+            log.error("检查JVM健康状况时发现不支持的操作", e);
+            issues.add("JVM状态检查失败(操作不支持): " + e.getMessage());
         }
         
         return jvmInfo;
@@ -169,9 +174,12 @@ public class SystemHealthService {
                 }
             }
             
-        } catch (Exception e) {
-            log.error("检查系统资源时发生错误", e);
-            issues.add("系统资源检查失败: " + e.getMessage());
+        } catch (SecurityException e) {
+            log.error("检查系统资源时发生安全权限错误", e);
+            issues.add("系统资源检查失败(权限不足): " + e.getMessage());
+        } catch (UnsupportedOperationException e) {
+            log.error("检查系统资源时发现不支持的操作", e);
+            issues.add("系统资源检查失败(操作不支持): " + e.getMessage());
         }
         
         return systemInfo;
@@ -221,8 +229,11 @@ public class SystemHealthService {
             diskInfo.put("diskSpaces", diskSpaces);
             
         } catch (IOException e) {
-            log.error("检查磁盘空间时发生错误", e);
-            issues.add("磁盘空间检查失败: " + e.getMessage());
+            log.error("检查磁盘空间时发生IO错误", e);
+            issues.add("磁盘空间检查失败(IO错误): " + e.getMessage());
+        } catch (SecurityException e) {
+            log.error("检查磁盘空间时发生安全权限错误", e);
+            issues.add("磁盘空间检查失败(权限不足): " + e.getMessage());
         }
         
         return diskInfo;
@@ -261,14 +272,18 @@ public class SystemHealthService {
                     
                     if (!reachable) {
                         issues.add(String.format("无法连接到 %s", host));
-                    } else if (responseTime > 3000) {
-                        issues.add(String.format("连接 %s 响应时间过长: %dms", host, responseTime));
+                    } else if (responseTime > 2000) {
+                        issues.add(String.format("连接 %s 响应缓慢: %dms", host, responseTime));
                     }
                     
-                } catch (Exception e) {
+                } catch (UnknownHostException e) {
                     test.put("reachable", false);
-                    test.put("error", e.getMessage());
-                    issues.add(String.format("测试连接 %s 时发生错误: %s", host, e.getMessage()));
+                    test.put("error", "主机名解析失败: " + e.getMessage());
+                    issues.add(String.format("无法解析主机名: %s", host));
+                } catch (IOException e) {
+                    test.put("reachable", false);
+                    test.put("error", "网络IO错误: " + e.getMessage());
+                    issues.add(String.format("网络连接错误: %s", host));
                 }
                 
                 connectivityTests.add(test);
@@ -277,8 +292,11 @@ public class SystemHealthService {
             networkInfo.put("connectivityTests", connectivityTests);
             
         } catch (UnknownHostException e) {
-            log.error("检查网络连通性时发生错误", e);
-            issues.add("网络连通性检查失败: " + e.getMessage());
+            log.error("检查网络连通性时发生主机名解析错误", e);
+            issues.add("网络连通性检查失败(主机名解析): " + e.getMessage());
+        } catch (SecurityException e) {
+            log.error("检查网络连通性时发生安全权限错误", e);
+            issues.add("网络连通性检查失败(权限不足): " + e.getMessage());
         }
         
         return networkInfo;

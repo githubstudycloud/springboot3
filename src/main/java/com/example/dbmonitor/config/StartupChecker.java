@@ -50,8 +50,10 @@ public class StartupChecker {
             // 4. 检查超时设置
             checkTimeoutSettings(template);
             
-        } catch (Exception e) {
+        } catch (org.springframework.dao.DataAccessException e) {
             log.error("  ✗ Failed to check {}: {}", name, e.getMessage());
+        } catch (IllegalArgumentException e) {
+            log.error("  ✗ Failed to check {} (参数错误): {}", name, e.getMessage());
         }
     }
     
@@ -60,7 +62,7 @@ public class StartupChecker {
             // 测试PROCESS权限
             template.queryForList("SHOW PROCESSLIST");
             log.info("  ✓ PROCESS privilege: OK");
-        } catch (Exception e) {
+        } catch (org.springframework.dao.DataAccessException e) {
             log.warn("  ✗ PROCESS privilege: Missing (GRANT PROCESS ON *.* TO user)");
         }
         
@@ -71,7 +73,7 @@ public class StartupChecker {
                 Integer.class
             );
             log.info("  ✓ information_schema access: OK");
-        } catch (Exception e) {
+        } catch (org.springframework.dao.DataAccessException e) {
             log.warn("  ✗ information_schema access: Limited");
         }
     }
@@ -92,8 +94,12 @@ public class StartupChecker {
                 log.warn("  ⚠ wait_timeout is too low ({}s), recommend at least 300s", waitTimeout);
             }
             
-        } catch (Exception e) {
+        } catch (org.springframework.dao.DataAccessException e) {
             log.warn("  ⚠ Could not check timeout settings: {}", e.getMessage());
+        } catch (ClassCastException e) {
+            log.warn("  ⚠ Unexpected data type in timeout settings: {}", e.getMessage());
+        } catch (NullPointerException e) {
+            log.warn("  ⚠ Null value in timeout settings: {}", e.getMessage());
         }
     }
 }

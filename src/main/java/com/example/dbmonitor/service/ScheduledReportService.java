@@ -75,10 +75,15 @@ public class ScheduledReportService {
 
             log.info("定时健康报告执行完成");
 
-        } catch (Exception e) {
-            log.error("执行定时健康报告时发生错误", e);
-
-            // 发送报告失败警告
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("执行定时健康报告时被中断", e);
+            sendReportFailureAlert(e);
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
+            log.error("执行定时健康报告时发生报警发送错误", e);
+            sendReportFailureAlert(e);
+        } catch (SecurityException e) {
+            log.error("执行定时健康报告时发生安全权限错误", e);
             sendReportFailureAlert(e);
         }
     }
@@ -96,10 +101,11 @@ public class ScheduledReportService {
             reportLockWaitAnalysis();
             log.info("锁等待半小时报备执行完成");
 
-        } catch (Exception e) {
-            log.error("执行锁等待半小时报备时发生错误", e);
-
-            // 发送报告失败警告
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
+            log.error("执行锁等待半小时报备时发生报警发送错误", e);
+            sendReportFailureAlert(e);
+        } catch (org.springframework.dao.DataAccessException e) {
+            log.error("执行锁等待半小时报备时发生数据访问错误", e);
             sendReportFailureAlert(e);
         }
     }
@@ -125,8 +131,10 @@ public class ScheduledReportService {
 
             log.debug("Java应用状态报告已发送");
 
-        } catch (Exception e) {
-            log.error("报告Java程序状态时发生错误", e);
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
+            log.error("报告Java程序状态时发生报警发送错误", e);
+        } catch (SecurityException e) {
+            log.error("报告Java程序状态时发生安全权限错误", e);
         }
     }
 
@@ -150,7 +158,7 @@ public class ScheduledReportService {
                     connectionResults.put(dataSourceName, "连接正常");
                     log.debug("数据源 {} 连接正常", dataSourceName);
 
-                } catch (Exception e) {
+                } catch (org.springframework.dao.DataAccessException e) {
                     connectionResults.put(dataSourceName, "连接异常: " + e.getMessage());
                     allHealthy = false;
                     log.warn("数据源 {} 连接异常: {}", dataSourceName, e.getMessage());
@@ -174,8 +182,10 @@ public class ScheduledReportService {
                 sendCriticalLevelAlert(message);
             }
 
-        } catch (Exception e) {
-            log.error("报告MySQL连接状态时发生错误", e);
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
+            log.error("报告MySQL连接状态时发生报警发送错误", e);
+        } catch (IllegalStateException e) {
+            log.error("报告MySQL连接状态时发生状态异常", e);
         }
     }
 
@@ -201,8 +211,8 @@ public class ScheduledReportService {
                         hasLongRunningSql = true;
                     }
 
-                } catch (Exception e) {
-                    log.warn("分析数据源 {} 的长时间运行SQL时发生错误: {}", dataSourceName, e.getMessage());
+                } catch (org.springframework.dao.DataAccessException e) {
+                    log.warn("分析数据源 {} 的长时间运行SQL时发生数据访问错误: {}", dataSourceName, e.getMessage());
                 }
             }
 
@@ -243,8 +253,10 @@ public class ScheduledReportService {
                 case "critical" -> sendCriticalLevelAlert(message);
             }
 
-        } catch (Exception e) {
-            log.error("分析长时间运行SQL时发生错误", e);
+        } catch (com.example.dbmonitor.exception.AlertSendException e) {
+            log.error("分析长时间运行SQL时发生报警发送错误", e);
+        } catch (IllegalStateException e) {
+            log.error("分析长时间运行SQL时发生状态异常", e);
         }
     }
 

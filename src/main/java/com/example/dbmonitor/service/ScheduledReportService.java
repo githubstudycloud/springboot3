@@ -405,7 +405,7 @@ public class ScheduledReportService {
     }
 
     /**
-     * 分析长时间运行的SQL
+     * 分析长时间运行的SQL - 只返回info字段有值的进程
      */
     private List<ProcessInfo> analyzeLongRunningSql(JdbcTemplate jdbcTemplate) throws DataAccessException {
         String sql = "SHOW FULL PROCESSLIST";
@@ -413,9 +413,10 @@ public class ScheduledReportService {
         try {
             List<ProcessInfo> allProcesses = jdbcTemplate.query(sql, new ProcessListMapper());
 
-            // 筛选超过30分钟的查询
+            // 筛选超过30分钟的查询，且info字段有值的进程
             return allProcesses.stream()
                     .filter(p -> p.getTime() != null && p.getTime() > LONG_RUNNING_THRESHOLD_MINUTES * 60)
+                    .filter(p -> p.hasValidInfo()) // 只返回info字段有值的进程
                     .sorted((a, b) -> Long.compare(b.getTime(), a.getTime()))
                     .collect(Collectors.toList());
 
@@ -507,12 +508,12 @@ public class ScheduledReportService {
         if (!hasLongRunningSql) {
             sb.append("🟢 长时间SQL检查报告\n");
             sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
-            sb.append("结果: 未发现持续时间超过30分钟的SQL查询\n");
+            sb.append("结果: 未发现持续时间超过30分钟且有有效SQL内容的查询\n");
             sb.append("状态: 正常\n");
         } else {
             sb.append("⚠️ 长时间SQL异常报告\n");
             sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
-            sb.append("发现超过30分钟的SQL查询:\n");
+            sb.append("发现超过30分钟且有有效SQL内容的查询:\n");
 
             for (Map.Entry<String, List<ProcessInfo>> entry : longRunningSqlByDataSource.entrySet()) {
                 String dataSource = entry.getKey();
@@ -522,20 +523,44 @@ public class ScheduledReportService {
 
                 for (ProcessInfo process : processes) {
                     long minutes = process.getTime() / 60;
-                    sb.append(String.format("  - ID: %d, 用户: %s, 运行时间: %d分钟, 状态: %s\n",
+                    long hours = minutes / 60;
+                    long remainingMinutes = minutes % 60;
+                    
+                    String timeDisplay = hours > 0 
+                        ? String.format("%d小时%d分钟", hours, remainingMinutes)
+                        : String.format("%d分钟", minutes);
+
+                    sb.append(String.format("  - ID: %d, 用户: %s, 运行时间: %s\n",
                             process.getId(),
                             process.getUser(),
-                            minutes,
-                            process.getState()));
+                            timeDisplay));
+                    
+                    // 明确打印State字段
+                    String state = process.getState();
+                    sb.append(String.format("    状态(State): %s\n", 
+                            state != null && !state.trim().isEmpty() ? state : "未知"));
 
-                    // 显示SQL语句（限制长度）
-                    String sql = process.getInfo();
-                    if (sql != null && !sql.trim().isEmpty()) {
-                        String shortSql = sql.length() > 100 ? sql.substring(0, 100) + "..." : sql;
-                        sb.append("    SQL: ").append(shortSql).append("\n");
+                    // 明确打印Info字段（因为已经过滤，这里一定有值）
+                    String info = process.getInfo();
+                    if (info != null && !info.trim().isEmpty()) {
+                        // 限制SQL显示长度，但显示更多内容以便分析
+                        String displaySql = info.length() > 200 ? info.substring(0, 200) + "..." : info;
+                        sb.append("    SQL内容(Info): ").append(displaySql).append("\n");
+                    } else {
+                        // 这种情况理论上不会出现，因为已经过滤
+                        sb.append("    SQL内容(Info): [空]\n");
                     }
+                    
+                    // 如果有数据库信息也显示
+                    if (process.getDb() != null && !process.getDb().trim().isEmpty()) {
+                        sb.append(String.format("    数据库: %s\n", process.getDb()));
+                    }
+                    
+                    sb.append("\n");
                 }
             }
+            
+            sb.append("建议: 检查这些长时间运行的SQL语句，可能需要优化或添加适当的索引。\n");
         }
 
         return sb.toString();
@@ -736,19 +761,20 @@ public class ScheduledReportService {
     }
 
     /**
-     * 构建锁等待报告消息
+     * 构建锁等待报告消息 - 强调是新增锁等待的报告
      */
     private String buildLockWaitReportMessage(Map<String, Object> lockWaitResults, boolean hasIssues) {
         StringBuilder sb = new StringBuilder();
 
         if (hasIssues) {
-            sb.append("⚠️ 锁等待增长警告\n");
+            sb.append("⚠️ 锁等待新增警告\n");
         } else {
             sb.append("🟢 锁等待状态正常\n");
         }
 
         sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
-        sb.append("检查周期: 30分钟\n");
+        sb.append("检查周期: 每30分钟\n");
+        sb.append("监控说明: 报告的是过去30分钟内新增的锁等待数量，非累计值\n");
         sb.append("检查结果:\n");
 
         for (Map.Entry<String, Object> entry : lockWaitResults.entrySet()) {
@@ -764,20 +790,26 @@ public class ScheduledReportService {
                 
                 if (delta != null && delta >= 0) {
                     if (delta > 0) {
-                        sb.append(String.format("  - %s: 新增锁等待 %d 个 (累计: %d)\n", 
+                        sb.append(String.format("  - %s: 🔴 过去30分钟新增锁等待 %d 个 (当前累计: %d)\n", 
                                 dataSource, delta, total != null ? total : 0));
                     } else {
-                        sb.append(String.format("  - %s: 无新增锁等待 (累计: %d)\n", 
+                        sb.append(String.format("  - %s: 🟢 过去30分钟无新增锁等待 (当前累计: %d)\n", 
                                 dataSource, total != null ? total : 0));
                     }
                 } else {
-                    sb.append(String.format("  - %s: 无法获取锁等待数据\n", dataSource));
+                    sb.append(String.format("  - %s: ⚪ 无法获取锁等待增量数据\n", dataSource));
                 }
             }
         }
 
         if (hasIssues) {
-            sb.append("\n建议检查相关SQL语句和数据库性能。");
+            sb.append("\n⚠️ 建议操作:\n");
+            sb.append("1. 检查相关SQL语句是否存在长时间锁定\n");
+            sb.append("2. 分析数据库并发访问模式\n");
+            sb.append("3. 考虑优化事务处理逻辑\n");
+            sb.append("4. 检查是否有死锁情况发生\n");
+        } else {
+            sb.append("\n✅ 系统锁等待状态良好，无异常增长。\n");
         }
 
         return sb.toString();

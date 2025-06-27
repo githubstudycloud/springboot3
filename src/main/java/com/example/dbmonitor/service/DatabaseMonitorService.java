@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -39,6 +40,12 @@ public class DatabaseMonitorService {
     // 使用线程池执行器（兼容MySQL 5.7环境）
     private final ExecutorService executor = Executors.newFixedThreadPool(
             Runtime.getRuntime().availableProcessors());
+
+    // 存储上一次锁等待累计值，用于计算差值（数据源名 -> 锁等待累计值）
+    private final Map<String, Long> previousLockWaits = new ConcurrentHashMap<>();
+    
+    // 存储上一次检查时间，用于计算时间间隔（数据源名 -> 检查时间）
+    private final Map<String, LocalDateTime> previousCheckTime = new ConcurrentHashMap<>();
 
     /**
      * 并行检查所有数据源
@@ -90,7 +97,7 @@ public class DatabaseMonitorService {
             var config = dataSourceManager.getDataSourceConfig(name);
             int threshold = config.getEffectiveSqlTimeoutThreshold(monitorProperties.getDefaults());
 
-            // 3. 检查长时间运行的SQL（核心功能）
+            // 3. 检查长时间运行的SQL（核心功能，只推送info字段有值的）
             longRunningQueries = checkLongRunningQueries(name, jdbcTemplate, threshold);
             if (!longRunningQueries.isEmpty()) {
                 issues.add(String.format("发现 %d 个长时间运行的SQL", longRunningQueries.size()));
@@ -151,7 +158,7 @@ public class DatabaseMonitorService {
 
     /**
      * 检查长时间运行的SQL - 使用 SHOW FULL PROCESSLIST
-     * 优化版本：处理大量进程和长SQL的情况
+     * 优化版本：处理大量进程和长SQL的情况，只返回info字段有值的进程
      */
     private List<ProcessInfo> checkLongRunningQueries(String dataSourceName,
                                                       JdbcTemplate jdbcTemplate,
@@ -166,16 +173,17 @@ public class DatabaseMonitorService {
 
                 List<ProcessInfo> allProcesses = jdbcTemplate.query(sql, new ProcessListMapper());
 
-                // 筛选长时间运行的查询
+                // 筛选长时间运行的查询，且info字段有值的进程
                 List<ProcessInfo> longRunning = allProcesses.stream()
                         .filter(p -> p.isLongRunning(threshold))
+                        .filter(p -> p.getInfo() != null && !p.getInfo().trim().isEmpty()) // 只推送info里有值的
                         .sorted((a, b) -> Long.compare(b.getTime(), a.getTime())) // 按运行时间降序
                         .limit(100) // 限制最多返回100个长时间查询，避免内存问题
                         .collect(Collectors.toList());
 
                 // 记录详细信息
                 if (!longRunning.isEmpty()) {
-                    log.warn("Found {} long running queries in {}, showing top {}",
+                    log.warn("Found {} long running queries with valid info in {}, showing top {}",
                             longRunning.size(), dataSourceName, Math.min(longRunning.size(), 10));
 
                     // 只记录前10个查询的详细信息，避免日志过大
@@ -211,7 +219,6 @@ public class DatabaseMonitorService {
                     "Failed to execute SHOW FULL PROCESSLIST", dataSourceName, sql, e);
         }
     }
-
 
     /**
      * 收集性能指标
@@ -278,6 +285,9 @@ public class DatabaseMonitorService {
         }
     }
 
+    /**
+     * 收集锁等待统计 - 计算增长差值而非累计值
+     */
     private void collectLockWaits(String dataSourceName, JdbcTemplate jdbcTemplate,
                                   Map<String, Object> metrics) throws SqlExecutionException {
         // MySQL 5.7兼容性：使用SHOW STATUS检查锁等待，避免information_schema权限问题
@@ -285,7 +295,7 @@ public class DatabaseMonitorService {
 
         try {
             List<Map<String, Object>> lockStats = jdbcTemplate.queryForList(sql);
-            int totalLockWaits = 0;
+            long totalLockWaits = 0;
 
             for (Map<String, Object> stat : lockStats) {
                 String varName = (String) stat.get("Variable_name");
@@ -293,19 +303,48 @@ public class DatabaseMonitorService {
 
                 if (varValue != null && !varValue.isEmpty()) {
                     try {
-                        totalLockWaits += Integer.parseInt(varValue);
+                        totalLockWaits += Long.parseLong(varValue);
                     } catch (NumberFormatException e) {
                         log.debug("Cannot parse lock wait value: {} = {}", varName, varValue);
                     }
                 }
             }
 
-            metrics.put("lockWaits", totalLockWaits);
-            log.debug("Successfully collected lock wait statistics for {}: {}", dataSourceName, totalLockWaits);
+            // 计算增长差值
+            LocalDateTime currentTime = LocalDateTime.now();
+            Long previousValue = previousLockWaits.get(dataSourceName);
+            LocalDateTime previousTime = previousCheckTime.get(dataSourceName);
+            
+            long lockWaitsDelta = 0;
+            if (previousValue != null && previousTime != null) {
+                lockWaitsDelta = totalLockWaits - previousValue;
+                
+                // 如果差值为负数（可能是MySQL重启导致累计值重置），重置为0
+                if (lockWaitsDelta < 0) {
+                    lockWaitsDelta = 0;
+                    log.warn("Lock waits delta is negative for {}, possibly due to MySQL restart, resetting to 0", dataSourceName);
+                }
+                
+                log.debug("Lock waits delta for {}: {} (current: {}, previous: {})", 
+                         dataSourceName, lockWaitsDelta, totalLockWaits, previousValue);
+            }
+
+            // 存储当前值和时间，供下次计算使用
+            previousLockWaits.put(dataSourceName, totalLockWaits);
+            previousCheckTime.put(dataSourceName, currentTime);
+
+            // 存储差值到metrics中
+            metrics.put("lockWaitsDelta", lockWaitsDelta);
+            metrics.put("lockWaitsTotal", totalLockWaits);
+            
+            log.debug("Lock wait statistics for {}: delta={}, total={}", 
+                     dataSourceName, lockWaitsDelta, totalLockWaits);
+                     
         } catch (DataAccessException e) {
             // 锁等待统计失败不是致命错误
             log.warn("Failed to collect lock wait statistics for {}: {}", dataSourceName, e.getMessage());
-            metrics.put("lockWaits", -1); // 使用-1表示无法获取
+            metrics.put("lockWaitsDelta", -1); // 使用-1表示无法获取
+            metrics.put("lockWaitsTotal", -1);
         }
     }
 
@@ -317,10 +356,10 @@ public class DatabaseMonitorService {
             analyzeConnections(connections, issues);
         }
 
-        // 分析锁等待
-        Integer lockWaits = (Integer) metrics.get("lockWaits");
-        if (lockWaits != null && lockWaits > 0) {
-            issues.add(String.format("检测到 %d 个锁等待", lockWaits));
+        // 分析锁等待增长差值
+        Long lockWaitsDelta = (Long) metrics.get("lockWaitsDelta");
+        if (lockWaitsDelta != null && lockWaitsDelta > 0) {
+            issues.add(String.format("检测到新增 %d 个锁等待", lockWaitsDelta));
         }
     }
 

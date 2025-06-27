@@ -35,11 +35,11 @@ public class ScheduledReportService {
     private static final int LONG_RUNNING_THRESHOLD_MINUTES = 30; // 30分钟阈值
 
     /**
-     * 定时报告 - 每小时的5分和35分执行
+     * 定时报告 - 在特定时间的5分钟执行
      * cron表达式：秒 分 时 日 月 周
-     * "0 5,35 * * * *" 表示每小时的第5分钟和第35分钟执行
+     * "0 5 0,5,7,9,12,14,16,18,20,22,23 * * *" 表示在0,5,7,9,12,14,16,18,20,22,23小时的第5分钟执行
      */
-    @Scheduled(cron = "0 5,35 * * * *")
+    @Scheduled(cron = "0 5 0,5,7,9,12,14,16,18,20,22,23 * * *")
     public void scheduledHealthReport() {
         log.info("开始执行定时健康报告...");
 
@@ -77,6 +77,27 @@ public class ScheduledReportService {
 
         } catch (Exception e) {
             log.error("执行定时健康报告时发生错误", e);
+
+            // 发送报告失败警告
+            sendReportFailureAlert(e);
+        }
+    }
+
+    /**
+     * 半小时锁等待报备 - 每30分钟检查一次锁等待增长情况
+     * cron表达式：秒 分 时 日 月 周
+     * "0 0,30 * * * *" 表示每小时的第0分钟和第30分钟执行
+     */
+    @Scheduled(cron = "0 0,30 * * * *")
+    public void lockWaitReport() {
+        log.info("开始执行锁等待半小时报备...");
+
+        try {
+            reportLockWaitAnalysis();
+            log.info("锁等待半小时报备执行完成");
+
+        } catch (Exception e) {
+            log.error("执行锁等待半小时报备时发生错误", e);
 
             // 发送报告失败警告
             sendReportFailureAlert(e);
@@ -634,5 +655,119 @@ public class ScheduledReportService {
         } catch (Exception sendException) {
             log.error("发送报告失败警报时也发生错误", sendException);
         }
+    }
+
+    /**
+     * 分析锁等待情况并报告
+     */
+    private void reportLockWaitAnalysis() {
+        Map<String, Object> lockWaitResults = new HashMap<>();
+        boolean hasLockWaitIssues = false;
+
+        try {
+            Map<String, JdbcTemplate> templates = dataSourceManager.getAllJdbcTemplates();
+
+            for (Map.Entry<String, JdbcTemplate> entry : templates.entrySet()) {
+                String dataSourceName = entry.getKey();
+                JdbcTemplate template = entry.getValue();
+
+                try {
+                    // 获取最新的监控结果，包含锁等待差值
+                    MonitorResult result = databaseMonitorService.checkDataSource(dataSourceName, template);
+                    
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> metrics = result.getMetrics();
+                    Long lockWaitsDelta = (Long) metrics.get("lockWaitsDelta");
+                    Long lockWaitsTotal = (Long) metrics.get("lockWaitsTotal");
+
+                    Map<String, Object> dataSourceResult = new HashMap<>();
+                    dataSourceResult.put("lockWaitsDelta", lockWaitsDelta);
+                    dataSourceResult.put("lockWaitsTotal", lockWaitsTotal);
+                    
+                    lockWaitResults.put(dataSourceName, dataSourceResult);
+
+                    // 如果有新增锁等待，标记为有问题
+                    if (lockWaitsDelta != null && lockWaitsDelta > 0) {
+                        hasLockWaitIssues = true;
+                        log.warn("数据源 {} 在过去30分钟内新增 {} 个锁等待", dataSourceName, lockWaitsDelta);
+                    }
+
+                } catch (Exception e) {
+                    log.warn("分析数据源 {} 的锁等待时发生错误: {}", dataSourceName, e.getMessage());
+                    Map<String, Object> errorResult = new HashMap<>();
+                    errorResult.put("error", e.getMessage());
+                    lockWaitResults.put(dataSourceName, errorResult);
+                }
+            }
+
+            String severity = hasLockWaitIssues ? "warning" : "info";
+            String alertType = hasLockWaitIssues ? "LOCK_WAIT_ALERT" : "LOCK_WAIT_NORMAL";
+
+            AlertMessage message = AlertMessage.builder()
+                    .alertType(alertType)
+                    .dataSource("ALL_DATASOURCES")
+                    .message(buildLockWaitReportMessage(lockWaitResults, hasLockWaitIssues))
+                    .timestamp(LocalDateTime.now())
+                    .severity(severity)
+                    .additionalInfo(lockWaitResults)
+                    .build();
+
+            if (hasLockWaitIssues) {
+                sendWarningLevelAlert(message);
+            } else {
+                sendInfoLevelAlert(message);
+            }
+
+        } catch (Exception e) {
+            log.error("执行锁等待分析时发生错误", e);
+        }
+    }
+
+    /**
+     * 构建锁等待报告消息
+     */
+    private String buildLockWaitReportMessage(Map<String, Object> lockWaitResults, boolean hasIssues) {
+        StringBuilder sb = new StringBuilder();
+
+        if (hasIssues) {
+            sb.append("⚠️ 锁等待增长警告\n");
+        } else {
+            sb.append("🟢 锁等待状态正常\n");
+        }
+
+        sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
+        sb.append("检查周期: 30分钟\n");
+        sb.append("检查结果:\n");
+
+        for (Map.Entry<String, Object> entry : lockWaitResults.entrySet()) {
+            String dataSource = entry.getKey();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = (Map<String, Object>) entry.getValue();
+
+            if (result.containsKey("error")) {
+                sb.append(String.format("  - %s: 检查失败 - %s\n", dataSource, result.get("error")));
+            } else {
+                Long delta = (Long) result.get("lockWaitsDelta");
+                Long total = (Long) result.get("lockWaitsTotal");
+                
+                if (delta != null && delta >= 0) {
+                    if (delta > 0) {
+                        sb.append(String.format("  - %s: 新增锁等待 %d 个 (累计: %d)\n", 
+                                dataSource, delta, total != null ? total : 0));
+                    } else {
+                        sb.append(String.format("  - %s: 无新增锁等待 (累计: %d)\n", 
+                                dataSource, total != null ? total : 0));
+                    }
+                } else {
+                    sb.append(String.format("  - %s: 无法获取锁等待数据\n", dataSource));
+                }
+            }
+        }
+
+        if (hasIssues) {
+            sb.append("\n建议检查相关SQL语句和数据库性能。");
+        }
+
+        return sb.toString();
     }
 }

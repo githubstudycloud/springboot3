@@ -1,5 +1,6 @@
 package com.example.dbmonitor.controller;
 
+import com.example.dbmonitor.config.MonitorProperties;
 import com.example.dbmonitor.entity.AlertMessage;
 import com.example.dbmonitor.service.AlertService;
 import com.example.dbmonitor.service.ScheduledReportService;
@@ -22,10 +23,11 @@ public class TestController {
     private final AlertService alertService;
     private final HttpUtil httpUtil;
     private final ScheduledReportService scheduledReportService;
+    private final MonitorProperties monitorProperties;
     
     /**
-     * 测试警告发送的接口
-     * 接收JSON参数：senduser, token, content
+     * 新版本三参数报警测试接口
+     * 接收JSON参数：receiver, auth, content (符合用户要求的新格式)
      */
     @PostMapping("/alert")
     public ResponseEntity<Map<String, Object>> testAlert(@RequestBody TestAlertRequest request) {
@@ -33,15 +35,15 @@ public class TestController {
         
         try {
             // 验证参数
-            if (request.getSenduser() == null || request.getSenduser().trim().isEmpty()) {
+            if (request.getReceiver() == null || request.getReceiver().trim().isEmpty()) {
                 response.put("success", false);
-                response.put("message", "senduser 参数不能为空");
+                response.put("message", "receiver 参数不能为空");
                 return ResponseEntity.badRequest().body(response);
             }
             
-            if (request.getToken() == null || request.getToken().trim().isEmpty()) {
+            if (request.getAuth() == null || request.getAuth().trim().isEmpty()) {
                 response.put("success", false);
-                response.put("message", "token 参数不能为空");
+                response.put("message", "auth 参数不能为空");
                 return ResponseEntity.badRequest().body(response);
             }
             
@@ -51,54 +53,53 @@ public class TestController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // 构建测试警告消息
-            AlertMessage testAlert = AlertMessage.builder()
-                    .alertType("TEST_ALERT")
-                    .dataSource("TEST_DATASOURCE")
-                    .message(String.format("测试消息 - 发送用户: %s, 内容: %s", 
-                            request.getSenduser(), request.getContent()))
-                    .timestamp(LocalDateTime.now())
-                    .severity("info")
-                    .build();
-            
-            // 发送到测试URL
-            String testUrl = "http://localhost:8080/api/test/webhook"; // 默认测试URL
-            if (request.getWebhookUrl() != null && !request.getWebhookUrl().trim().isEmpty()) {
-                testUrl = request.getWebhookUrl();
-            }
-            
-            httpUtil.sendAlert(testUrl, testAlert);
+            log.info("收到测试报警请求 - receiver: {}, auth: {}, content: {}", 
+                    request.getReceiver(), request.getAuth(), request.getContent());
             
             response.put("success", true);
-            response.put("message", "测试警告发送成功");
-            response.put("senduser", request.getSenduser());
-            response.put("token", request.getToken());
+            response.put("message", "报警接收成功");
+            response.put("receiver", request.getReceiver());
+            response.put("auth", request.getAuth());
             response.put("content", request.getContent());
             response.put("timestamp", LocalDateTime.now());
-            
-            log.info("测试警告发送成功 - 用户: {}, 内容: {}", request.getSenduser(), request.getContent());
+            response.put("serverNote", "这是内部测试接口，实际生产中请替换为您的报警接口地址");
             
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "发送失败: " + e.getMessage());
-            log.error("测试警告发送失败", e);
+            response.put("message", "接收失败: " + e.getMessage());
+            log.error("测试报警接收失败", e);
         }
         
         return ResponseEntity.ok(response);
     }
     
     /**
-     * 测试Webhook接收端点
+     * 标准三参数Webhook接收端点 (符合用户格式要求)
      */
     @PostMapping("/webhook")
-    public ResponseEntity<Map<String, Object>> receiveWebhook(@RequestBody Object payload) {
+    public ResponseEntity<Map<String, Object>> receiveWebhook(@RequestBody Map<String, Object> payload) {
         Map<String, Object> response = new HashMap<>();
         
-        log.info("收到Webhook测试消息: {}", payload);
-        
-        response.put("received", true);
-        response.put("timestamp", LocalDateTime.now());
-        response.put("message", "Webhook接收成功");
+        try {
+            String receiver = (String) payload.get("receiver");
+            String auth = (String) payload.get("auth");
+            String content = (String) payload.get("content");
+            
+            log.info("收到标准格式报警 - receiver: {}, auth: {}, content: {}", 
+                    receiver, auth, content);
+            
+            response.put("received", true);
+            response.put("timestamp", LocalDateTime.now());
+            response.put("message", "报警接收成功");
+            response.put("receiver", receiver);
+            response.put("auth_status", auth != null ? "token已验证" : "未提供token");
+            response.put("content_length", content != null ? content.length() : 0);
+            
+        } catch (Exception e) {
+            log.error("处理报警请求时出错", e);
+            response.put("received", false);
+            response.put("error", e.getMessage());
+        }
         
         return ResponseEntity.ok(response);
     }
@@ -231,26 +232,22 @@ public class TestController {
     }
     
     /**
-     * 测试请求DTO
+     * 标准三参数报警请求DTO
      */
     public static class TestAlertRequest {
-        private String senduser;
-        private String token;
+        private String receiver;
+        private String auth;
         private String content;
-        private String webhookUrl; // 可选的webhook URL
         
         // Getters and Setters
-        public String getSenduser() { return senduser; }
-        public void setSenduser(String senduser) { this.senduser = senduser; }
+        public String getReceiver() { return receiver; }
+        public void setReceiver(String receiver) { this.receiver = receiver; }
         
-        public String getToken() { return token; }
-        public void setToken(String token) { this.token = token; }
+        public String getAuth() { return auth; }
+        public void setAuth(String auth) { this.auth = auth; }
         
         public String getContent() { return content; }
         public void setContent(String content) { this.content = content; }
-        
-        public String getWebhookUrl() { return webhookUrl; }
-        public void setWebhookUrl(String webhookUrl) { this.webhookUrl = webhookUrl; }
     }
     
     /**
@@ -330,5 +327,115 @@ public class TestController {
         info.put("note", "如果发现超过30分钟的SQL，将发送异常报告包含具体SQL语句");
         
         return ResponseEntity.ok(info);
+    }
+    
+    /**
+     * 获取报警账号使用统计
+     */
+    @GetMapping("/alert-usage")
+    public ResponseEntity<Map<String, Object>> getAlertUsage() {
+        return ResponseEntity.ok(alertService.getUsageStatistics());
+    }
+    
+    /**
+     * 手动测试不同级别的报警
+     */
+    @PostMapping("/test-alert/{level}")
+    public ResponseEntity<Map<String, Object>> testAlertLevel(@PathVariable String level,
+                                                              @RequestParam(required = false, defaultValue = "这是一条测试报警消息") String message) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // 验证级别
+            if (!java.util.Set.of("info", "warn", "error").contains(level.toLowerCase())) {
+                response.put("success", false);
+                response.put("message", "不支持的报警级别: " + level + "，支持的级别: info, warn, error");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 发送测试报警
+            alertService.testAlert(level.toLowerCase(), message);
+            
+            response.put("success", true);
+            response.put("message", String.format("成功发送 %s 级别测试报警", level));
+            response.put("level", level.toLowerCase());
+            response.put("content", message);
+            response.put("timestamp", LocalDateTime.now());
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "发送失败: " + e.getMessage());
+            log.error("手动测试报警失败", e);
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 重置账号每日使用次数 (仅用于测试)
+     */
+    @PostMapping("/reset-daily-usage")
+    public ResponseEntity<Map<String, Object>> resetDailyUsage() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // 注意：这是一个测试方法，生产环境中应该移除或加强权限控制
+            var accounts = monitorProperties.getAlert().getAccounts();
+            accounts.getInfo().setUsedToday(0);
+            accounts.getWarn().setUsedToday(0);
+            accounts.getError().setUsedToday(0);
+            
+            response.put("success", true);
+            response.put("message", "所有账号的每日使用次数已重置为0");
+            response.put("timestamp", LocalDateTime.now());
+            response.put("warning", "这是测试功能，生产环境请谨慎使用");
+            
+            log.info("手动重置了所有账号的每日使用次数");
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "重置失败: " + e.getMessage());
+            log.error("重置每日使用次数失败", e);
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 获取报警配置信息
+     */
+    @GetMapping("/alert-config")
+    public ResponseEntity<Map<String, Object>> getAlertConfig() {
+        Map<String, Object> config = new HashMap<>();
+        
+        var alertConfig = monitorProperties.getAlert();
+        var accounts = alertConfig.getAccounts();
+        
+        config.put("enabled", alertConfig.isEnabled());
+        config.put("webhook_url", alertConfig.getWebhookUrl());
+        
+        // 账号信息（隐藏敏感的auth token）
+        config.put("accounts", Map.of(
+            "info", Map.of(
+                "receiver", accounts.getInfo().getReceiver(),
+                "daily_limit", accounts.getInfo().getDailyLimit(),
+                "used_today", accounts.getInfo().getUsedToday(),
+                "auth_configured", accounts.getInfo().getAuth() != null
+            ),
+            "warn", Map.of(
+                "receiver", accounts.getWarn().getReceiver(),
+                "daily_limit", accounts.getWarn().getDailyLimit(),
+                "used_today", accounts.getWarn().getUsedToday(),
+                "auth_configured", accounts.getWarn().getAuth() != null
+            ),
+            "error", Map.of(
+                "receiver", accounts.getError().getReceiver(),
+                "daily_limit", accounts.getError().getDailyLimit(),
+                "used_today", accounts.getError().getUsedToday(),
+                "auth_configured", accounts.getError().getAuth() != null
+            )
+        ));
+        
+        return ResponseEntity.ok(config);
     }
 }

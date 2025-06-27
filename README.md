@@ -14,13 +14,15 @@ Spring Boot 3.2 + MariaDB 数据库监控应用，实时监控数据库性能和
 - ✅ 动态调整监控频率
 - ✅ 兼容性优化：移除SESSION_STATUS依赖，使用SHOW STATUS
 
-### 智能报警系统
+### 智能报警系统 🚨
 
-- ✅ **分级报警机制**：支持 critical、warning、info 三个级别
-- ✅ **按级别分发**：不同等级报告发送给不同接收对象
+- ✅ **三级报警机制**：支持 info、warn、error 三个级别
+- ✅ **三账号分级分发**：每个级别对应一个独立账号和token
+- ✅ **每日限额控制**：每个账号每天最多300次报警
+- ✅ **标准三参数格式**：receiver, auth, content
 - ✅ **状态变化检测**：数据库断开/重连时自动发送通知
-- ✅ **HTTP协议支持**：确保所有警告URL使用HTTP方式
-- ✅ **多端点配置**：支持管理员、运维、开发等不同团队接收不同级别警告
+- ✅ **统一Webhook接口**：所有报警通过同一个地址发送
+- ✅ **自动账号选择**：根据严重程度自动选择对应账号
 
 ### API接口
 
@@ -31,9 +33,9 @@ Spring Boot 3.2 + MariaDB 数据库监控应用，实时监控数据库性能和
 
 ## 技术栈
 
-- Java 21 (虚拟线程支持)
+- Java 21 (兼容较早版本)
 - Spring Boot 3.2
-- MariaDB
+- MySQL 5.7+ (推荐) / MariaDB
 - HikariCP 连接池
 - Lombok
 - Jackson (时间模块)
@@ -66,21 +68,33 @@ src/main/java/com/example/dbmonitor/
     └── ProcessListMapper.java      # 统一的ProcessList映射器
 ```
 
-## 报警级别与分发策略
+## 新版本三账号报警系统 🆕
 
-### 报警级别
+### 报警级别与账号映射
 
-- **Critical**: 数据库完全不可用、系统严重故障
-- **Warning**: 性能问题、长时间运行SQL
-- **Info**: 连接恢复、状态正常通知
+- **info**: 正常状态通知 → `info-alerts` 账号
+- **warn**: 性能问题、警告 → `warn-alerts` 账号  
+- **error**: 严重故障、连接断开 → `error-alerts` 账号
 
-### 接收端点类型
+### 三参数标准格式
 
-- `critical-only`: 只接收critical级别（管理员、值班人员）
-- `warning-and-critical`: 接收warning和critical（运维团队）
-- `info-and-above`: 接收所有级别（监控系统、日志收集）
-- `non-critical`: 排除critical级别（开发团队）
-- `info-only`: 只接收info级别（状态看板）
+所有报警统一使用以下参数格式：
+```json
+{
+  "receiver": "info-alerts",     // 接收方标识
+  "auth": "info_token_12345",    // 认证token
+  "content": "报警内容文本"        // 报警消息内容
+}
+```
+
+### 账号配置
+
+每个账号独立配置，支持：
+- 独立的 `receiver` 标识
+- 独立的 `auth` token  
+- 每日 300 次报警限额
+- 自动使用次数跟踪
+- 每天自动重置计数
 
 ## 快速开始
 
@@ -96,19 +110,30 @@ src/main/java/com/example/dbmonitor/
    monitor:
      datasources:
        - name: "main-db"
-         url: "jdbc:mariadb://192.168.226.136:3306/mysql"
+         url: "jdbc:mysql://192.168.226.136:3306/mysql?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8"
          username: "root"
          password: "rootpass"
    ```
 
-3. **配置报警端点**
+3. **配置三账号报警系统**
    ```yaml
    monitor:
      alert:
-       endpoints:
-         - name: "admin-critical"
-           url: "http://your-webhook-url/critical"
-           type: "critical-only"
+       enabled: true
+       webhook-url: "http://localhost:8080/api/test/webhook"  # 可改为您的报警接口
+       accounts:
+         info:
+           receiver: "info-alerts"
+           auth: "info_token_12345"           # 替换为您的token
+           daily-limit: 300
+         warn:
+           receiver: "warn-alerts"
+           auth: "warn_token_67890"           # 替换为您的token
+           daily-limit: 300
+         error:
+           receiver: "error-alerts"
+           auth: "error_token_abcde"          # 替换为您的token
+           daily-limit: 300
    ```
 
 4. **运行应用**
@@ -132,27 +157,37 @@ src/main/java/com/example/dbmonitor/
 - `GET /api/monitor/system-health` - 系统健康检查
 - `PUT /api/monitor/schedule/{dataSource}` - 动态调整监控间隔（例如：main-db）
 
-### 测试接口
+### 新版本报警测试接口
 
-- `POST /api/test/alert` - 测试警告发送（JSON参数：senduser、token、content）
+- `POST /api/test/alert` - 测试三参数报警接收（receiver, auth, content）
+- `POST /api/test/webhook` - 标准Webhook接收端点 
+- `POST /api/test/test-alert/{level}` - 测试指定级别报警（info/warn/error）
+- `GET /api/test/alert-config` - 获取报警配置信息
+- `GET /api/test/alert-usage` - 获取账号使用统计
+- `POST /api/test/reset-daily-usage` - 重置每日使用次数（测试用）
 - `POST /api/test/test-db-disconnect` - 测试数据库断开警告
 - `POST /api/test/test-db-reconnect` - 测试数据库重连通知
-- `POST /api/test/test-severity/{level}` - 测试不同级别警告
-- `POST /api/test/webhook` - Webhook接收测试端点
 - `POST /api/test/trigger-scheduled-report` - 手动触发定时健康报告
-- `GET /api/test/scheduled-report-info` - 获取定时报告配置信息
 
-### 测试警告接口示例
+### 新版本三参数报警接口示例
 
 ```bash
+# 测试三参数报警接收
 curl -X POST http://localhost:8080/api/test/alert \
   -H "Content-Type: application/json" \
   -d '{
-    "senduser": "admin",
-    "token": "test-token-123", 
-    "content": "测试警告消息",
-    "webhookUrl": "http://localhost:8080/api/test/webhook"
+    "receiver": "test-alerts",
+    "auth": "test_token_12345", 
+    "content": "🔴 数据库连接断开警告\n数据库: main-db\n状态: 连接断开\n时间: 2024-01-20 15:30:00"
   }'
+
+# 测试不同级别报警
+curl -X POST "http://localhost:8080/api/test/test-alert/info?message=测试INFO级别报警"
+curl -X POST "http://localhost:8080/api/test/test-alert/warn?message=测试WARN级别报警"  
+curl -X POST "http://localhost:8080/api/test/test-alert/error?message=测试ERROR级别报警"
+
+# 查看使用统计
+curl http://localhost:8080/api/test/alert-usage
 ```
 
 ## 监控功能验证
@@ -238,32 +273,100 @@ curl -X POST http://localhost:8080/api/test/alert \
 
 ## 配置变更记录
 
-### v1.1 (最新)
+### v1.3 (最新) - 三账号报警系统重构 🚨
+- **全新报警架构**: 重构为三账号分级报警系统
+- **标准三参数**: 统一使用 receiver, auth, content 参数格式
+- **三级映射**: info/warn/error → 三个独立账号
+- **每日限额**: 每个账号每天300次报警限制，自动跟踪使用次数
+- **配置简化**: 移除复杂的端点配置，使用统一webhook地址
+- **测试接口**: 提供完整的报警测试和统计查看接口
+- **自动重置**: 每日使用次数自动重置
+- **账号管理**: 支持使用统计查看、手动重置等管理功能
+
+### v1.2 - MySQL 5.7 兼容性优化
+- **MySQL 5.7 兼容**: 全面适配 MySQL 5.7，移除不兼容语法
+- **数据库驱动**: 添加原生 MySQL 驱动支持，保留 MariaDB 驱动作为备选
+- **锁等待检测**: 使用 `SHOW STATUS` 替代 `information_schema.innodb_lock_waits`
+- **启动类优化**: 排除默认数据源自动配置，避免冲突
+- **连接URL优化**: 添加 MySQL 5.7 必要的连接参数
+
+### v1.1 
 - **数据源配置**: 简化为单一数据源 `main-db` (192.168.226.136:3306)
 - **兼容性改进**: 移除 `information_schema.SESSION_STATUS` 依赖，改用 `SHOW STATUS`
 - **连接统计**: 优化统计收集逻辑，提高数据库兼容性
 - **测试更新**: 更新所有测试用例以匹配新的数据源配置
 
-### 当前配置
+### 当前配置 (v1.3 三账号报警系统)
 ```yaml
 monitor:
   datasources:
     - name: "main-db"
-      url: "jdbc:mariadb://192.168.226.136:3306/mysql"
+      url: "jdbc:mysql://192.168.226.136:3306/mysql?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8"
       username: "root"
       password: "rootpass"
       enabled: true
       check-interval: 30
       tags: ["production", "main"]
+      
+  # 新版本三账号报警配置
+  alert:
+    enabled: true
+    webhook-url: "http://localhost:8080/api/test/webhook"  # 改为您的报警接口
+    accounts:
+      info:
+        receiver: "info-alerts"      # INFO级别接收方
+        auth: "info_token_12345"     # INFO级别认证token
+        daily-limit: 300
+      warn:
+        receiver: "warn-alerts"      # WARN级别接收方
+        auth: "warn_token_67890"     # WARN级别认证token
+        daily-limit: 300
+      error:
+        receiver: "error-alerts"     # ERROR级别接收方
+        auth: "error_token_abcde"    # ERROR级别认证token
+        daily-limit: 300
+```
+
+### 报警工作流程
+
+1. **监控检测** → 发现问题，确定级别（info/warn/error）
+2. **账号选择** → 自动选择对应级别的账号配置
+3. **限额检查** → 验证当日使用次数是否超限
+4. **构建请求** → 使用三参数格式：receiver, auth, content
+5. **发送报警** → POST到配置的webhook-url
+6. **统计更新** → 增加对应账号的使用次数
+
+### 报警内容格式
+
+系统自动生成的报警内容格式：
+```
+🔴 数据库连接断开警告
+数据库: main-db
+状态: 连接断开
+时间: 2024-01-20 15:30:00
+检查耗时: 120ms
 ```
 
 ## 故障排除
 
-### SESSION_STATUS 不可用问题
-如果遇到 `information_schema.SESSION_STATUS` 表不存在的错误：
-- ✅ 已修复：系统现在使用 `SHOW STATUS` 替代
-- ✅ 向下兼容：支持各种MariaDB/MySQL版本
-- ✅ 优雅降级：统计收集失败时不影响核心监控功能
+### MySQL 5.7 兼容性问题
+如果遇到数据库兼容性问题：
+- ✅ **已修复**：全面适配 MySQL 5.7
+- ✅ **锁等待检测**：使用 `SHOW STATUS` 替代 `information_schema.innodb_lock_waits`
+- ✅ **SESSION_STATUS问题**：系统现在使用 `SHOW STATUS` 替代
+- ✅ **权限问题**：优雅降级，统计收集失败时不影响核心监控功能
+- ✅ **连接参数**：针对 MySQL 5.7 优化连接 URL 参数
+
+### MySQL 5.7 必需权限
+确保数据库用户具有以下权限：
+```sql
+-- 基本监控权限
+GRANT SELECT ON *.* TO 'root'@'%';
+GRANT PROCESS ON *.* TO 'root'@'%';
+
+-- 查看进程列表权限
+GRANT SHOW DATABASES ON *.* TO 'root'@'%';
+```
 
 ### 连接测试
 ```bash
@@ -272,7 +375,27 @@ curl http://localhost:8080/api/monitor/check/main-db
 
 # 测试连接统计收集
 curl http://localhost:8080/api/monitor/status/detailed
+
+# 测试 MySQL 5.7 兼容性
+curl http://localhost:8080/api/monitor/status/comprehensive
 ```
+
+### 常见问题解决
+
+1. **SSL连接问题**
+   ```
+   连接URL已包含 useSSL=false 参数
+   ```
+
+2. **时区问题**
+   ```
+   连接URL已包含 serverTimezone=Asia/Shanghai 参数
+   ```
+
+3. **字符编码问题**
+   ```
+   连接URL已包含 useUnicode=true&characterEncoding=utf8 参数
+   ```
 
 ## 许可证
 

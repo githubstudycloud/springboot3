@@ -28,7 +28,7 @@ monitor:
   
   datasources:
     - name: "main-db"
-      url: "jdbc:mariadb://192.168.226.136:3306/mysql"
+      url: "jdbc:mysql://192.168.226.136:3306/mysql?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8"
       username: "root"
       password: "rootpass"
       enabled: true
@@ -37,39 +37,22 @@ monitor:
   
   alert:
     enabled: true
-    endpoints:
-      # 管理员端点 - 只接收critical级别警告
-      - name: "admin-critical"
-        url: "http://admin-alert.company.com/api/critical"
-        type: "critical-only"
-        tags: [ "production", "critical" ]
-      
-      # 运维团队 - 接收warning和critical级别
-      - name: "ops-team"
-        url: "http://ops-webhook.company.com/api/alerts"
-        type: "warning-and-critical"
-        tags: [ "production" ]
-      
-      # 监控系统 - 接收所有级别
-      - name: "monitoring-system"
-        url: "http://monitoring.company.com/api/db-alerts"
-        type: "info-and-above"
-
-      # 开发团队 - 排除critical级别（避免半夜被叫醒）
-      - name: "dev-team"
-        url: "http://dev-notifications.company.com/api/alerts"
-        type: "non-critical"
-        tags: [ "development" ]
-      
-      # 状态看板 - 只显示info级别（连接恢复等状态）
-      - name: "status-dashboard"
-        url: "http://status.company.com/api/updates"
-        type: "info-only"
-      
-      # 测试端点 - 用于本地测试
-      - name: "test-endpoint"
-        url: "localhost:8080/api/test/webhook"
-        type: "info-and-above"
+    # 统一报警接口地址
+    webhook-url: "http://localhost:8080/api/test/webhook"
+    # 三个账号的认证token，每天每个账号最多300次
+    accounts:
+      info:
+        receiver: "info-alerts"
+        auth: "info_token_12345"
+        daily-limit: 300
+      warn:
+        receiver: "warn-alerts"
+        auth: "warn_token_67890"
+        daily-limit: 300
+      error:
+        receiver: "error-alerts"
+        auth: "error_token_abcde"
+        daily-limit: 300
 
 # 日志配置
 logging:

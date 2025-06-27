@@ -2,6 +2,7 @@ package com.example.dbmonitor.service;
 
 import com.example.dbmonitor.config.MonitorProperties;
 import com.example.dbmonitor.entity.AlertMessage;
+import com.example.dbmonitor.entity.AlertRequest;
 import com.example.dbmonitor.entity.MonitorResult;
 import com.example.dbmonitor.exception.AlertSendException;
 import com.example.dbmonitor.util.HttpUtil;
@@ -10,12 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.net.http.HttpTimeoutException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -27,6 +27,9 @@ public class AlertService {
     
     // 用于跟踪数据源的上一次状态（是否健康）
     private final Map<String, Boolean> lastHealthStatus = new ConcurrentHashMap<>();
+    
+    // 记录每日使用次数的日期，用于重置计数
+    private LocalDate lastResetDate = LocalDate.now();
     
     public void sendAlert(MonitorResult result) throws AlertSendException {
         if (!monitorProperties.getAlert().isEnabled()) {
@@ -57,94 +60,142 @@ public class AlertService {
                     currentHealth ? "健康" : "不健康");
         }
         
-        // 获取数据源配置
-        var dsConfig = monitorProperties.getDatasources().stream()
-                .filter(ds -> ds.getName().equals(result.getDataSourceName()))
-                .findFirst()
-                .orElse(null);
+        // 确定严重程度
+        String severity = determineSeverity(result, isStateChange);
         
-        // 确定警告类型
-        String alertType = isStateChange ? stateChangeType : determineAlertType(result);
+        // 构建报警内容
+        String content = buildAlertContent(result, isStateChange, stateChangeType);
         
-        // 构建报警消息
-        AlertMessage message = AlertMessage.builder()
-                .alertType(alertType)
-                .dataSource(result.getDataSourceName())
-                .message(buildAlertMessage(result, isStateChange, stateChangeType))
-                .timestamp(LocalDateTime.now())
-                .severity(determineSeverity(result, isStateChange))
-                .longRunningQueries(result.getLongRunningQueries())
-                .additionalInfo(result.getMetrics())
-                .tags(dsConfig != null && dsConfig.getTags() != null ? 
-                      new ArrayList<>(dsConfig.getTags()) : new ArrayList<>())
-                .metrics(extractMetrics(result))
-                .build();
+        // 发送报警
+        sendAlertByLevel(severity, dataSourceName, content);
+    }
+    
+    /**
+     * 根据级别发送报警
+     */
+    private void sendAlertByLevel(String severity, String dataSourceName, String content) throws AlertSendException {
+        // 检查并重置每日计数
+        checkAndResetDailyLimit();
         
-        // 根据规则发送到对应的端点（按严重程度分发）
-        List<MonitorProperties.AlertEndpoint> endpoints = determineEndpointsBySeverity(result, message.getSeverity());
+        // 标准化严重程度
+        String normalizedSeverity = normalizeSeverity(severity);
         
-        List<AlertSendException> failures = new ArrayList<>();
+        // 获取对应级别的账号配置
+        MonitorProperties.AlertAccount account = getAccountBySeverity(normalizedSeverity);
         
-        for (MonitorProperties.AlertEndpoint endpoint : endpoints) {
-            try {
-                // 确保使用HTTP协议
-                String url = ensureHttpProtocol(endpoint.getUrl());
-                httpUtil.sendAlert(url, message);
-                log.info("Alert sent to endpoint: {} for datasource: {} (severity: {})", 
-                    endpoint.getName(), result.getDataSourceName(), message.getSeverity());
-            } catch (HttpTimeoutException e) {
-                String msg = String.format("Alert timeout for endpoint %s: %s", 
-                    endpoint.getName(), e.getMessage());
-                log.error(msg, e);
-                failures.add(new AlertSendException(msg, endpoint.getName(), e));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // 恢复中断状态
-                String msg = "Alert sending interrupted for endpoint: " + endpoint.getName();
-                log.error(msg, e);
-                failures.add(new AlertSendException(msg, endpoint.getName(), e));
-            } catch (IllegalArgumentException e) {
-                String msg = String.format("Invalid alert configuration for endpoint %s: %s", 
-                    endpoint.getName(), e.getMessage());
-                log.error(msg, e);
-                failures.add(new AlertSendException(msg, endpoint.getName(), e));
-            }
+        if (account == null) {
+            throw new AlertSendException("无法找到对应级别的账号配置: " + normalizedSeverity, "CONFIG");
         }
         
-        // 如果所有端点都失败，抛出异常
-        if (!failures.isEmpty() && failures.size() == endpoints.size()) {
-            throw failures.get(0); // 抛出第一个异常
+        // 检查每日限制
+        if (account.getUsedToday() >= account.getDailyLimit()) {
+            log.warn("账号 {} 今日报警次数已达限制 {}/{}", 
+                    account.getReceiver(), account.getUsedToday(), account.getDailyLimit());
+            throw new AlertSendException(
+                    String.format("账号 %s 今日报警次数已达限制", account.getReceiver()), 
+                    "DAILY_LIMIT_EXCEEDED");
+        }
+        
+        // 构建请求
+        AlertRequest request = AlertRequest.builder()
+                .receiver(account.getReceiver())
+                .auth(account.getAuth())
+                .content(content)
+                .severity(normalizedSeverity)
+                .dataSource(dataSourceName)
+                .timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                .build();
+        
+        try {
+            // 确保使用HTTP协议
+            String url = ensureHttpProtocol(monitorProperties.getAlert().getWebhookUrl());
+            httpUtil.sendAlert(url, request);
+            
+            // 增加使用次数
+            account.setUsedToday(account.getUsedToday() + 1);
+            
+            log.info("报警发送成功: receiver={}, severity={}, dataSource={}, usage={}/{}", 
+                    account.getReceiver(), normalizedSeverity, dataSourceName, 
+                    account.getUsedToday(), account.getDailyLimit());
+                    
+        } catch (HttpTimeoutException e) {
+            String msg = String.format("报警发送超时: receiver=%s, error=%s", 
+                    account.getReceiver(), e.getMessage());
+            log.error(msg, e);
+            throw new AlertSendException(msg, account.getReceiver(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            String msg = "报警发送被中断: receiver=" + account.getReceiver();
+            log.error(msg, e);
+            throw new AlertSendException(msg, account.getReceiver(), e);
+        } catch (IllegalArgumentException e) {
+            String msg = String.format("报警配置无效: receiver=%s, error=%s", 
+                    account.getReceiver(), e.getMessage());
+            log.error(msg, e);
+            throw new AlertSendException(msg, account.getReceiver(), e);
         }
     }
     
     /**
-     * 确保URL使用HTTP协议
+     * 专门为定时报告发送警报
      */
-    private String ensureHttpProtocol(String url) {
-        if (url == null || url.trim().isEmpty()) {
-            throw new IllegalArgumentException("URL cannot be null or empty");
+    public void sendScheduledAlert(String dataSourceName, String alertType, String message, 
+                                   String severity, Map<String, Object> additionalInfo) throws AlertSendException {
+        if (!monitorProperties.getAlert().isEnabled()) {
+            return;
         }
         
-        url = url.trim();
+        // 构建完整的报警内容
+        String content = buildScheduledAlertContent(dataSourceName, alertType, message, severity, additionalInfo);
         
-        // 如果没有协议，添加http://
-        if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            url = "http://" + url;
+        // 发送报警
+        sendAlertByLevel(severity, dataSourceName, content);
+    }
+    
+    /**
+     * 检查并重置每日限制
+     */
+    private void checkAndResetDailyLimit() {
+        LocalDate today = LocalDate.now();
+        if (!today.equals(lastResetDate)) {
+            // 新的一天，重置所有账号的使用次数
+            monitorProperties.getAlert().getAccounts().getInfo().setUsedToday(0);
+            monitorProperties.getAlert().getAccounts().getWarn().setUsedToday(0);
+            monitorProperties.getAlert().getAccounts().getError().setUsedToday(0);
+            lastResetDate = today;
+            log.info("每日报警次数已重置");
         }
+    }
+    
+    /**
+     * 标准化严重程度
+     */
+    private String normalizeSeverity(String severity) {
+        if (severity == null) return "info";
         
-        return url;
+        return switch (severity.toLowerCase()) {
+            case "critical" -> "error";  // critical映射到error
+            case "warning" -> "warn";    // warning映射到warn  
+            case "info" -> "info";       // info保持不变
+            default -> "info";
+        };
     }
     
-    private String determineAlertType(MonitorResult result) {
-        if (!result.isHealthy()) return "DATABASE_UNHEALTHY";
-        if (!result.getLongRunningQueries().isEmpty()) return "LONG_RUNNING_QUERIES";
-        if (!result.getIssues().isEmpty()) return "PERFORMANCE_ISSUES";
-        return "GENERAL";
+    /**
+     * 根据严重程度获取对应的账号配置
+     */
+    private MonitorProperties.AlertAccount getAccountBySeverity(String severity) {
+        return switch (severity) {
+            case "info" -> monitorProperties.getAlert().getAccounts().getInfo();
+            case "warn" -> monitorProperties.getAlert().getAccounts().getWarn();
+            case "error" -> monitorProperties.getAlert().getAccounts().getError();
+            default -> monitorProperties.getAlert().getAccounts().getInfo();
+        };
     }
     
-    private String determineSeverity(MonitorResult result) {
-        return determineSeverity(result, false);
-    }
-    
+    /**
+     * 确定严重程度
+     */
     private String determineSeverity(MonitorResult result, boolean isStateChange) {
         if (!result.isHealthy()) return "critical";
         
@@ -161,55 +212,10 @@ public class AlertService {
         return "info";
     }
     
-    private AlertMessage.AlertMetrics extractMetrics(MonitorResult result) {
-        var builder = AlertMessage.AlertMetrics.builder();
-        Map<String, Object> metrics = result.getMetrics();
-        
-        if (metrics != null) {
-            // 从metrics中提取连接数等信息
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> connections = (List<Map<String, Object>>) metrics.get("connections");
-            if (connections != null) {
-                parseConnectionMetrics(connections, builder);
-            }
-            
-            // 提取其他指标
-            Integer lockWaits = (Integer) metrics.get("lockWaits");
-            if (lockWaits != null) {
-                builder.lockWaits(lockWaits);
-            }
-        }
-        
-        return builder.build();
-    }
-    
-    private void parseConnectionMetrics(List<Map<String, Object>> connections, 
-                                       AlertMessage.AlertMetrics.AlertMetricsBuilder builder) {
-        for (Map<String, Object> conn : connections) {
-            String varName = (String) conn.get("Variable_name");
-            if (varName == null) varName = (String) conn.get("VARIABLE_NAME");
-            
-            String varValue = (String) conn.get("Value");
-            if (varValue == null) varValue = (String) conn.get("VARIABLE_VALUE");
-            
-            if (varName == null || varValue == null) continue;
-            
-            try {
-                switch (varName) {
-                    case "Threads_connected" -> builder.currentConnections(Integer.parseInt(varValue));
-                    case "Max_used_connections" -> builder.maxConnections(Integer.parseInt(varValue));
-                }
-            } catch (NumberFormatException e) {
-                log.warn("Failed to parse connection metric {}: {}", varName, varValue);
-            }
-        }
-    }
-    
-    private String buildAlertMessage(MonitorResult result) {
-        return buildAlertMessage(result, false, null);
-    }
-    
-    private String buildAlertMessage(MonitorResult result, boolean isStateChange, String stateChangeType) {
+    /**
+     * 构建报警内容
+     */
+    private String buildAlertContent(MonitorResult result, boolean isStateChange, String stateChangeType) {
         StringBuilder sb = new StringBuilder();
         
         // 状态变化消息优先显示
@@ -218,15 +224,18 @@ public class AlertService {
                 sb.append("🔴 数据库连接断开警告\n");
                 sb.append("数据库: ").append(result.getDataSourceName()).append("\n");
                 sb.append("状态: 连接断开\n");
-                sb.append("时间: ").append(LocalDateTime.now()).append("\n");
+                sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
             } else if ("DATABASE_RECONNECT".equals(stateChangeType)) {
                 sb.append("🟢 数据库连接恢复通知\n");
                 sb.append("数据库: ").append(result.getDataSourceName()).append("\n");
                 sb.append("状态: 连接已恢复\n");
-                sb.append("时间: ").append(LocalDateTime.now()).append("\n");
+                sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
             }
         } else {
+            sb.append("数据库监控报告\n");
             sb.append("数据库: ").append(result.getDataSourceName()).append("\n");
+            sb.append("健康状态: ").append(result.isHealthy() ? "健康" : "异常").append("\n");
+            sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
         }
         
         sb.append("检查耗时: ").append(result.getCheckDuration()).append("ms\n");
@@ -238,204 +247,100 @@ public class AlertService {
             result.getLongRunningQueries().stream()
                     .limit(3)
                     .forEach(q -> {
-                        sb.append(String.format("  - ID:%d, 时间:%ds, 严重程度:%s, SQL:%s\n", 
+                        sb.append(String.format("  - ID:%d, 时间:%ds, SQL:%s\n", 
                             q.getId(), 
                             q.getTime(), 
-                            q.getSeverity(30, 120),
                             q.getSqlPreview()));
                     });
         }
         
         if (!result.getIssues().isEmpty()) {
-            sb.append("检测到的问题: \n");
+            sb.append("检测到的问题:\n");
             result.getIssues().forEach(issue -> sb.append("  - ").append(issue).append("\n"));
         }
         
         return sb.toString();
     }
     
-    private List<MonitorProperties.AlertEndpoint> determineEndpoints(MonitorResult result, String severity) {
-        return monitorProperties.getAlert().getEndpoints().stream()
-                .filter(endpoint -> shouldSendToEndpoint(endpoint, result, severity))
-                .collect(Collectors.toList());
-    }
-    
     /**
-     * 根据严重程度确定接收端点（不同等级报告发送不同对象）
+     * 构建定时报告的报警内容
      */
-    private List<MonitorProperties.AlertEndpoint> determineEndpointsBySeverity(MonitorResult result, String severity) {
-        return monitorProperties.getAlert().getEndpoints().stream()
-                .filter(endpoint -> shouldSendToEndpointBySeverity(endpoint, result, severity))
-                .collect(Collectors.toList());
-    }
-    
-    private boolean shouldSendToEndpoint(MonitorProperties.AlertEndpoint endpoint, 
-                                       MonitorResult result, String severity) {
-        // 检查标签匹配
-        if (endpoint.getTags() != null && !endpoint.getTags().isEmpty()) {
-            var dsConfig = monitorProperties.getDatasources().stream()
-                    .filter(ds -> ds.getName().equals(result.getDataSourceName()))
-                    .findFirst()
-                    .orElse(null);
-            
-            if (dsConfig == null || dsConfig.getTags() == null) {
-                return false;
-            }
-            
-            boolean tagMatch = endpoint.getTags().stream()
-                    .anyMatch(tag -> dsConfig.getTags().contains(tag));
-            
-            if (!tagMatch) {
-                return false;
-            }
-        }
+    private String buildScheduledAlertContent(String dataSourceName, String alertType, String message, 
+                                            String severity, Map<String, Object> additionalInfo) {
+        StringBuilder sb = new StringBuilder();
         
-        // 可以根据severity进一步过滤
-        // 例如：某些端点只接收critical级别的报警
-        
-        return true;
-    }
-    
-    /**
-     * 专门为定时报告发送警报（支持自定义消息）
-     */
-    public void sendScheduledAlert(String dataSourceName, String alertType, String message, 
-                                   String severity, Map<String, Object> additionalInfo) throws AlertSendException {
-        if (!monitorProperties.getAlert().isEnabled()) {
-            return;
-        }
-        
-        // 构建报警消息
-        AlertMessage alertMessage = AlertMessage.builder()
-                .alertType(alertType)
-                .dataSource(dataSourceName)
-                .message(message)
-                .timestamp(LocalDateTime.now())
-                .severity(severity)
-                .longRunningQueries(new ArrayList<>())
-                .additionalInfo(additionalInfo)
-                .tags(new ArrayList<>())
-                .metrics(AlertMessage.AlertMetrics.builder().build())
-                .build();
-        
-        // 根据严重程度选择端点
-        List<MonitorProperties.AlertEndpoint> endpoints = getEndpointsBySeverity(severity);
-        
-        List<AlertSendException> failures = new ArrayList<>();
-        
-        for (MonitorProperties.AlertEndpoint endpoint : endpoints) {
-            try {
-                String url = ensureHttpProtocol(endpoint.getUrl());
-                httpUtil.sendAlert(url, alertMessage);
-                log.info("Scheduled alert sent to endpoint: {} for {} (severity: {})", 
-                    endpoint.getName(), dataSourceName, severity);
-            } catch (HttpTimeoutException e) {
-                String msg = String.format("Alert timeout for endpoint %s: %s", 
-                    endpoint.getName(), e.getMessage());
-                log.error(msg, e);
-                failures.add(new AlertSendException(msg, endpoint.getName(), e));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                String msg = "Alert sending interrupted for endpoint: " + endpoint.getName();
-                log.error(msg, e);
-                failures.add(new AlertSendException(msg, endpoint.getName(), e));
-            } catch (IllegalArgumentException e) {
-                String msg = String.format("Invalid alert configuration for endpoint %s: %s", 
-                    endpoint.getName(), e.getMessage());
-                log.error(msg, e);
-                failures.add(new AlertSendException(msg, endpoint.getName(), e));
-            }
-        }
-        
-        // 如果所有端点都失败，抛出异常
-        if (!failures.isEmpty() && failures.size() == endpoints.size()) {
-            throw failures.get(0);
-        }
-    }
-    
-    /**
-     * 根据严重程度获取端点列表
-     */
-    private List<MonitorProperties.AlertEndpoint> getEndpointsBySeverity(String severity) {
-        return monitorProperties.getAlert().getEndpoints().stream()
-                .filter(endpoint -> shouldReceiveBySeverity(endpoint, severity))
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * 根据严重程度判断端点是否应该接收警报
-     */
-    private boolean shouldReceiveBySeverity(MonitorProperties.AlertEndpoint endpoint, String severity) {
-        String endpointType = endpoint.getType();
-        if (endpointType == null) {
-            endpointType = "default";
-        }
-        
-        return switch (endpointType.toLowerCase()) {
-            case "critical-only" -> "critical".equals(severity);
-            case "warning-and-critical" -> "warning".equals(severity) || "critical".equals(severity);
-            case "info-and-above" -> true;
-            case "info-only" -> "info".equals(severity);
-            case "non-critical" -> !"critical".equals(severity);
-            default -> true;
+        // 根据严重程度添加图标
+        String icon = switch (normalizeSeverity(severity)) {
+            case "error" -> "🔴";
+            case "warn" -> "⚠️";
+            default -> "🟢";
         };
+        
+        sb.append(icon).append(" 定时监控报告\n");
+        sb.append("类型: ").append(alertType).append("\n");
+        sb.append("数据源: ").append(dataSourceName).append("\n");
+        sb.append("时间: ").append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).append("\n");
+        sb.append("内容:\n").append(message);
+        
+        return sb.toString();
     }
     
     /**
-     * 根据严重程度判断是否应该发送到指定端点
-     * 实现不同等级报告发送给不同对象的逻辑
+     * 确保URL使用HTTP协议
      */
-    private boolean shouldSendToEndpointBySeverity(MonitorProperties.AlertEndpoint endpoint, 
-                                                  MonitorResult result, String severity) {
-        // 检查标签匹配
-        if (endpoint.getTags() != null && !endpoint.getTags().isEmpty()) {
-            var dsConfig = monitorProperties.getDatasources().stream()
-                    .filter(ds -> ds.getName().equals(result.getDataSourceName()))
-                    .findFirst()
-                    .orElse(null);
-            
-            if (dsConfig == null || dsConfig.getTags() == null) {
-                return false;
-            }
-            
-            boolean tagMatch = endpoint.getTags().stream()
-                    .anyMatch(tag -> dsConfig.getTags().contains(tag));
-            
-            if (!tagMatch) {
-                return false;
-            }
+    private String ensureHttpProtocol(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            throw new IllegalArgumentException("Webhook URL cannot be null or empty");
         }
         
-        // 根据端点类型和严重程度进行分发
-        String endpointType = endpoint.getType();
-        if (endpointType == null) {
-            endpointType = "default";
+        url = url.trim();
+        
+        // 如果没有协议，添加http://
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "http://" + url;
         }
         
-        switch (endpointType.toLowerCase()) {
-            case "critical-only":
-                // 只接收critical级别的警告（如：管理员，值班人员）
-                return "critical".equals(severity);
-                
-            case "warning-and-critical":
-                // 接收warning和critical级别（如：运维团队）
-                return "warning".equals(severity) || "critical".equals(severity);
-                
-            case "info-and-above":
-                // 接收所有级别（如：监控系统，日志收集）
-                return true;
-                
-            case "info-only":
-                // 只接收info级别（如：状态看板）
-                return "info".equals(severity);
-                
-            case "non-critical":
-                // 排除critical级别（如：开发团队通知）
-                return !"critical".equals(severity);
-                
-            default:
-                // 默认接收所有级别
-                return true;
-        }
+        return url;
+    }
+    
+    /**
+     * 获取账号使用情况统计
+     */
+    public Map<String, Object> getUsageStatistics() {
+        checkAndResetDailyLimit();
+        
+        var accounts = monitorProperties.getAlert().getAccounts();
+        return Map.of(
+            "date", LocalDate.now().toString(),
+            "info", Map.of(
+                "receiver", accounts.getInfo().getReceiver(),
+                "used", accounts.getInfo().getUsedToday(),
+                "limit", accounts.getInfo().getDailyLimit(),
+                "remaining", accounts.getInfo().getDailyLimit() - accounts.getInfo().getUsedToday()
+            ),
+            "warn", Map.of(
+                "receiver", accounts.getWarn().getReceiver(),
+                "used", accounts.getWarn().getUsedToday(),
+                "limit", accounts.getWarn().getDailyLimit(),
+                "remaining", accounts.getWarn().getDailyLimit() - accounts.getWarn().getUsedToday()
+            ),
+            "error", Map.of(
+                "receiver", accounts.getError().getReceiver(),
+                "used", accounts.getError().getUsedToday(),
+                "limit", accounts.getError().getDailyLimit(),
+                "remaining", accounts.getError().getDailyLimit() - accounts.getError().getUsedToday()
+            )
+        );
+    }
+    
+    /**
+     * 手动测试报警发送
+     */
+    public void testAlert(String severity, String testMessage) throws AlertSendException {
+        String content = String.format("🧪 测试报警\n级别: %s\n消息: %s\n时间: %s", 
+                severity, testMessage, 
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        
+        sendAlertByLevel(severity, "TEST_DATASOURCE", content);
     }
 }

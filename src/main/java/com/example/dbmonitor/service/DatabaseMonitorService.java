@@ -36,8 +36,9 @@ public class DatabaseMonitorService {
     private final MonitorProperties monitorProperties;
     private final AlertService alertService;
 
-    // 使用虚拟线程执行器（JDK 21特性）
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    // 使用线程池执行器（兼容MySQL 5.7环境）
+    private final ExecutorService executor = Executors.newFixedThreadPool(
+            Runtime.getRuntime().availableProcessors());
 
     /**
      * 并行检查所有数据源
@@ -279,14 +280,28 @@ public class DatabaseMonitorService {
 
     private void collectLockWaits(String dataSourceName, JdbcTemplate jdbcTemplate,
                                   Map<String, Object> metrics) throws SqlExecutionException {
-        String sql = """
-                SELECT COUNT(*) as lock_waits 
-                FROM information_schema.innodb_lock_waits
-                """;
+        // MySQL 5.7兼容性：使用SHOW STATUS检查锁等待，避免information_schema权限问题
+        String sql = "SHOW STATUS WHERE Variable_name IN ('Table_locks_waited', 'Innodb_row_lock_waits')";
 
         try {
-            Integer lockWaits = jdbcTemplate.queryForObject(sql, Integer.class);
-            metrics.put("lockWaits", lockWaits);
+            List<Map<String, Object>> lockStats = jdbcTemplate.queryForList(sql);
+            int totalLockWaits = 0;
+
+            for (Map<String, Object> stat : lockStats) {
+                String varName = (String) stat.get("Variable_name");
+                String varValue = (String) stat.get("Value");
+
+                if (varValue != null && !varValue.isEmpty()) {
+                    try {
+                        totalLockWaits += Integer.parseInt(varValue);
+                    } catch (NumberFormatException e) {
+                        log.debug("Cannot parse lock wait value: {} = {}", varName, varValue);
+                    }
+                }
+            }
+
+            metrics.put("lockWaits", totalLockWaits);
+            log.debug("Successfully collected lock wait statistics for {}: {}", dataSourceName, totalLockWaits);
         } catch (DataAccessException e) {
             // 锁等待统计失败不是致命错误
             log.warn("Failed to collect lock wait statistics for {}: {}", dataSourceName, e.getMessage());

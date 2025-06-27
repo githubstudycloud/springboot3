@@ -1,149 +1,202 @@
-# 数据库监控系统API测试文件
-# 可以在IntelliJ IDEA中直接运行这些HTTP请求
+### 数据库监控API测试文件
+### 支持新版本三参数报警格式 (receiver, auth, content)
 
-### 1. 测试基本健康检查
+### 1. 健康检查
 GET http://localhost:8080/api/monitor/health
 Accept: application/json
 
-### 2. 测试警告发送接口（JSON参数）
-POST http://localhost:8080/api/test/alert
-Content-Type: application/json
-
-{
-  "senduser": "admin",
-  "token": "test-token-123",
-  "content": "这是一个测试警告消息",
-  "webhookUrl": "http://localhost:8080/api/test/webhook"
-}
-
-### 3. 测试数据库断开警告
-POST http://localhost:8080/api/test/test-db-disconnect
-Accept: application/json
-
-### 4. 测试数据库重连警告
-POST http://localhost:8080/api/test/test-db-reconnect
-Accept: application/json
-
-### 5. 测试Critical级别警告
-POST http://localhost:8080/api/test/test-severity/critical
-Accept: application/json
-
-### 6. 测试Warning级别警告
-POST http://localhost:8080/api/test/test-severity/warning
-Accept: application/json
-
-### 7. 测试Info级别警告
-POST http://localhost:8080/api/test/test-severity/info
-Accept: application/json
-
-### 8. 检查所有数据源状态
+### 2. 检查所有数据源
 GET http://localhost:8080/api/monitor/check/all
 Accept: application/json
 
-### 9. 获取详细监控状态
+### 3. 检查特定数据源
+GET http://localhost:8080/api/monitor/check/main-db
+Accept: application/json
+
+### 4. 获取监控状态
+GET http://localhost:8080/api/monitor/status
+Accept: application/json
+
+### 5. 获取详细状态
 GET http://localhost:8080/api/monitor/status/detailed
 Accept: application/json
 
-### 10. 系统健康检查
-GET http://localhost:8080/api/monitor/system-health
-Accept: application/json
-
-### 11. 综合状态检查（数据库+系统）
+### 6. 获取综合状态（包括系统健康）
 GET http://localhost:8080/api/monitor/status/comprehensive
 Accept: application/json
 
-### 12. 动态调整监控间隔
-PUT http://localhost:8080/api/monitor/schedule/main-db?interval=30
+### 7. 系统健康检查
+GET http://localhost:8080/api/monitor/system-health
 Accept: application/json
 
-### 13. 手动触发定时健康报告（测试定时任务）
+###
+### === 新版本报警系统测试 ===
+###
+
+### 8. 测试三参数报警接口 (receiver, auth, content)
+POST http://localhost:8080/api/test/alert
+Content-Type: application/json
+
+{
+  "receiver": "test-alerts",
+  "auth": "test_token_12345",
+  "content": "这是一条测试报警消息，用于验证新的三参数格式"
+}
+
+### 9. 获取报警配置信息
+GET http://localhost:8080/api/test/alert-config
+Accept: application/json
+
+### 10. 获取报警账号使用统计
+GET http://localhost:8080/api/test/alert-usage
+Accept: application/json
+
+### 11. 测试INFO级别报警
+POST http://localhost:8080/api/test/test-alert/info
+Content-Type: application/json
+
+### 12. 测试WARN级别报警
+POST http://localhost:8080/api/test/test-alert/warn?message=这是一条警告级别的测试消息
+Content-Type: application/json
+
+### 13. 测试ERROR级别报警
+POST http://localhost:8080/api/test/test-alert/error?message=这是一条错误级别的测试消息
+Content-Type: application/json
+
+### 14. 重置每日使用次数 (仅测试用)
+POST http://localhost:8080/api/test/reset-daily-usage
+Content-Type: application/json
+
+### 15. 标准Webhook接收测试 (模拟外部报警系统)
+POST http://localhost:8080/api/test/webhook
+Content-Type: application/json
+
+{
+  "receiver": "info-alerts",
+  "auth": "info_token_12345",
+  "content": "🟢 数据库连接恢复通知\n数据库: main-db\n状态: 连接已恢复\n时间: 2024-01-20 15:30:00\n检查耗时: 120ms"
+}
+
+### 16. 数据库断开测试
+POST http://localhost:8080/api/test/test-db-disconnect
+Content-Type: application/json
+
+### 17. 数据库重连测试
+POST http://localhost:8080/api/test/test-db-reconnect
+Content-Type: application/json
+
+### 18. 手动触发定时报告
 POST http://localhost:8080/api/test/trigger-scheduled-report
-Accept: application/json
+Content-Type: application/json
 
-### 14. 获取定时报告配置信息
+### 19. 获取定时报告配置信息
 GET http://localhost:8080/api/test/scheduled-report-info
 Accept: application/json
 
-### 15. 测试完整的警告工作流程
-POST http://localhost:8080/api/test/alert
+###
+### === 账号限制测试 ===
+###
+
+### 20. 快速连发测试 (测试每日限制)
+POST http://localhost:8080/api/test/test-alert/info?message=批量测试消息1
 Content-Type: application/json
 
-{
-  "senduser": "test-operator",
-  "token": "workflow-test-456",
-  "content": "测试完整警告工作流程：HTTP协议自动添加、分级发送、状态变化检测",
-  "webhookUrl": "webhook.example.com/alerts",
-  "severity": "warning"
-}
+###
+POST http://localhost:8080/api/test/test-alert/info?message=批量测试消息2
+Content-Type: application/json
 
-### 16. 测试长时间SQL检测功能
+###
+POST http://localhost:8080/api/test/test-alert/info?message=批量测试消息3
+Content-Type: application/json
+
+###
+### === 配置验证测试 ===
+###
+
+### 21. 验证不同级别使用不同账号
+POST http://localhost:8080/api/test/test-alert/info?message=INFO级别使用info账号
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/test/test-alert/warn?message=WARN级别使用warn账号
+Content-Type: application/json
+
+###
+POST http://localhost:8080/api/test/test-alert/error?message=ERROR级别使用error账号
+Content-Type: application/json
+
+###
+### === 实际监控场景测试 ===
+###
+
+### 22. 模拟数据库连接问题
+### (需要暂时断开数据库连接进行测试)
 GET http://localhost:8080/api/monitor/check/main-db
 Accept: application/json
 
-### 17. 测试分级报警功能
-POST http://localhost:8080/api/test/test-severity/critical
-Content-Type: application/json
+### 23. 模拟长时间运行SQL警告
+### (可通过在数据库中执行长时间查询来触发)
 
-{
-  "message": "测试Critical级别：数据库完全无法连接",
-  "additionalInfo": {
-    "testType": "critical-level-test",
-    "recipients": [
-      "admin",
-      "oncall-engineer"
-    ]
-  }
-}
+### 24. 综合压力测试 - 同时监控多个方面
+GET http://localhost:8080/api/monitor/status/comprehensive
+Accept: application/json
 
-### 18. 测试定时报告功能说明
-# 定时报告将在以下时间自动执行：
-# - 每小时的第5分钟（00:05, 01:05, 02:05, ...）
-# - 每小时的第35分钟（00:35, 01:35, 02:35, ...）
-# 
-# 报告内容包括：
-# 1. Java程序状态检查 (INFO级别) - 报告程序正常运行
-# 2. MySQL连接状态 (INFO/CRITICAL级别) - 检查所有数据库连接
-# 3. 长时间SQL分析 (INFO/WARNING/CRITICAL级别) - 检查超过30分钟的SQL
-# 4. 系统资源检查 (INFO/WARNING/CRITICAL级别) - CPU、内存状态
-# 5. 磁盘空间检查 (INFO/WARNING/CRITICAL级别) - 磁盘使用情况
-# 6. 综合健康总结 (INFO级别) - 整体状态汇总
+###
+### === 完整业务流程测试 ===
+###
 
-### 19. 测试代码优化效果验证
-# 验证ProcessListMapper重构后的功能
+### 25. 完整的监控->报警流程测试
+### Step 1: 检查当前状态
 GET http://localhost:8080/api/monitor/status
 Accept: application/json
 
-### 20. 验证HTTP协议自动添加功能
-POST http://localhost:8080/api/test/alert
+### Step 2: 获取使用统计
+GET http://localhost:8080/api/test/alert-usage
+Accept: application/json
+
+### Step 3: 测试三个级别的报警
+POST http://localhost:8080/api/test/test-alert/info?message=流程测试-INFO
 Content-Type: application/json
 
-{
-  "senduser": "protocol-test",
-  "token": "http-test-789",
-  "content": "测试HTTP协议自动添加功能",
-  "webhookUrl": "example.com/webhook-without-protocol"
-}
-
-### 21. 测试新数据源连接 (192.168.226.136)
-GET http://localhost:8080/api/monitor/check/main-db
-Accept: application/json
-
-### 22. 测试数据库连接状态
-GET http://localhost:8080/api/monitor/status
-Accept: application/json
-
-### 23. 测试修复后的连接统计功能
-GET http://localhost:8080/api/monitor/status/detailed
-Accept: application/json
-
-### 24. 验证SESSION_STATUS移除后的功能
-# 该测试用于验证去除SESSION_STATUS后，系统仍能正常收集连接统计
-POST http://localhost:8080/api/test/alert
+###
+POST http://localhost:8080/api/test/test-alert/warn?message=流程测试-WARN
 Content-Type: application/json
 
-{
-  "senduser": "test-admin",
-  "token": "conn-stats-test",
-  "content": "测试连接统计功能（已移除SESSION_STATUS依赖）",
-  "webhookUrl": "localhost:8080/api/test/webhook"
-}
+###
+POST http://localhost:8080/api/test/test-alert/error?message=流程测试-ERROR
+Content-Type: application/json
+
+### Step 4: 再次检查使用统计
+GET http://localhost:8080/api/test/alert-usage
+Accept: application/json
+
+###
+### === 新配置格式说明 ===
+###
+### 配置文件 application.yml 中的报警配置：
+### 
+### monitor:
+###   alert:
+###     enabled: true
+###     webhook-url: "http://localhost:8080/api/test/webhook"
+###     accounts:
+###       info:
+###         receiver: "info-alerts"
+###         auth: "info_token_12345"
+###         daily-limit: 300
+###       warn:
+###         receiver: "warn-alerts"
+###         auth: "warn_token_67890"
+###         daily-limit: 300
+###       error:
+###         receiver: "error-alerts"
+###         auth: "error_token_abcde"
+###         daily-limit: 300
+###
+### 特点：
+### 1. 统一的webhook地址
+### 2. 三个账号对应三个级别
+### 3. 每个账号有独立的receiver、auth、daily-limit
+### 4. 自动根据严重程度选择对应账号
+### 5. 自动跟踪每日使用次数并限制
+### 6. 标准三参数格式：receiver, auth, content

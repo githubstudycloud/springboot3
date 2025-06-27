@@ -63,23 +63,22 @@ public class MonitorProperties {
     @Data
     public static class AlertConfig {
         private boolean enabled = true;
-        private List<AlertEndpoint> endpoints = new ArrayList<>();
-        private List<AlertRule> rules = new ArrayList<>();
+        private String webhookUrl;
+        private AlertAccounts accounts = new AlertAccounts();
     }
     
     @Data
-    public static class AlertEndpoint {
-        private String name;
-        private String url;
-        private String type;
-        private Set<String> tags;
+    public static class AlertAccounts {
+        private AlertAccount info = new AlertAccount();
+        private AlertAccount warn = new AlertAccount();
+        private AlertAccount error = new AlertAccount();
     }
     
     @Data
-    public static class AlertRule {
-        private String name;
-        private String condition;
-        private String severity;
-        private String endpoint;
+    public static class AlertAccount {
+        private String receiver;
+        private String auth;
+        private int dailyLimit = 300;
+        private int usedToday = 0; // 今日已使用次数
     }
 }

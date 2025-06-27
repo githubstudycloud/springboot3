@@ -6,12 +6,13 @@ Spring Boot 3.2 + MariaDB 数据库监控应用，实时监控数据库性能和
 
 ### 核心监控功能
 
-- ✅ 实时监控多个数据库连接状态
+- ✅ 实时监控数据库连接状态（当前配置：192.168.226.136）
 - ✅ 检测长时间运行的SQL查询
 - ✅ 数据库连接断开/重连自动检测
 - ✅ 系统资源监控（CPU、内存、磁盘）
 - ✅ 支持自定义监控规则和阈值
 - ✅ 动态调整监控频率
+- ✅ 兼容性优化：移除SESSION_STATUS依赖，使用SHOW STATUS
 
 ### 智能报警系统
 
@@ -94,10 +95,10 @@ src/main/java/com/example/dbmonitor/
    ```yaml
    monitor:
      datasources:
-       - name: "primary-db"
-         url: "jdbc:mariadb://localhost:3306/test"
-         username: "your_user"
-         password: "your_password"
+       - name: "main-db"
+         url: "jdbc:mariadb://192.168.226.136:3306/mysql"
+         username: "root"
+         password: "rootpass"
    ```
 
 3. **配置报警端点**
@@ -129,7 +130,7 @@ src/main/java/com/example/dbmonitor/
 - `GET /api/monitor/status/comprehensive` - 综合状态（数据库+系统）
 - `GET /api/monitor/check/all` - 检查所有数据源
 - `GET /api/monitor/system-health` - 系统健康检查
-- `PUT /api/monitor/schedule/{dataSource}` - 动态调整监控间隔
+- `PUT /api/monitor/schedule/{dataSource}` - 动态调整监控间隔（例如：main-db）
 
 ### 测试接口
 
@@ -160,7 +161,9 @@ curl -X POST http://localhost:8080/api/test/alert \
 
 - ✅ 程序能够检测数据库断开并发送critical级别警告
 - ✅ 程序能够检测数据库重连并发送info级别通知
-- ✅ 支持多数据源并行监控
+- ✅ 支持单一数据源监控（192.168.226.136）
+- ✅ 优化连接统计收集，移除了不兼容的SESSION_STATUS依赖
+- ✅ 使用SHOW STATUS替代SESSION_STATUS，提高兼容性
 
 ### 系统状态监控
 
@@ -232,6 +235,44 @@ curl -X POST http://localhost:8080/api/test/alert \
 ## 测试
 
 使用提供的 `test-api.http` 文件在IntelliJ IDEA中测试所有API接口，包括手动触发定时报告功能。
+
+## 配置变更记录
+
+### v1.1 (最新)
+- **数据源配置**: 简化为单一数据源 `main-db` (192.168.226.136:3306)
+- **兼容性改进**: 移除 `information_schema.SESSION_STATUS` 依赖，改用 `SHOW STATUS`
+- **连接统计**: 优化统计收集逻辑，提高数据库兼容性
+- **测试更新**: 更新所有测试用例以匹配新的数据源配置
+
+### 当前配置
+```yaml
+monitor:
+  datasources:
+    - name: "main-db"
+      url: "jdbc:mariadb://192.168.226.136:3306/mysql"
+      username: "root"
+      password: "rootpass"
+      enabled: true
+      check-interval: 30
+      tags: ["production", "main"]
+```
+
+## 故障排除
+
+### SESSION_STATUS 不可用问题
+如果遇到 `information_schema.SESSION_STATUS` 表不存在的错误：
+- ✅ 已修复：系统现在使用 `SHOW STATUS` 替代
+- ✅ 向下兼容：支持各种MariaDB/MySQL版本
+- ✅ 优雅降级：统计收集失败时不影响核心监控功能
+
+### 连接测试
+```bash
+# 测试数据库连接
+curl http://localhost:8080/api/monitor/check/main-db
+
+# 测试连接统计收集
+curl http://localhost:8080/api/monitor/status/detailed
+```
 
 ## 许可证
 

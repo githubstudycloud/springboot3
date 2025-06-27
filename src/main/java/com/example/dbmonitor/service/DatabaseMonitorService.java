@@ -237,27 +237,17 @@ public class DatabaseMonitorService {
 
     private void collectConnectionStats(String dataSourceName, JdbcTemplate jdbcTemplate,
                                         Map<String, Object> metrics) throws SqlExecutionException {
-        String sql = """
-                SELECT 
-                    VARIABLE_NAME,
-                    VARIABLE_VALUE 
-                FROM information_schema.SESSION_STATUS 
-                WHERE VARIABLE_NAME IN ('Threads_connected', 'Max_used_connections', 'Threads_running')
-                """;
+        // 直接使用SHOW STATUS，避免SESSION_STATUS不可用的问题
+        String sql = "SHOW STATUS WHERE Variable_name IN ('Threads_connected', 'Max_used_connections', 'Threads_running')";
 
         try {
             List<Map<String, Object>> connStats = jdbcTemplate.queryForList(sql);
             metrics.put("connections", connStats);
+            log.debug("Successfully collected connection statistics for {}", dataSourceName);
         } catch (DataAccessException e) {
-            // MariaDB可能使用不同的表，尝试备选方案
-            try {
-                String altSql = "SHOW STATUS WHERE Variable_name IN ('Threads_connected', 'Max_used_connections', 'Threads_running')";
-                List<Map<String, Object>> connStats = jdbcTemplate.queryForList(altSql);
-                metrics.put("connections", connStats);
-            } catch (DataAccessException ex) {
-                throw new SqlExecutionException(
-                        "Failed to collect connection statistics", dataSourceName, sql, e);
-            }
+            log.warn("Failed to collect connection statistics for {}: {}", dataSourceName, e.getMessage());
+            // 连接统计失败不是致命错误，设置空列表
+            metrics.put("connections", new ArrayList<>());
         }
     }
 

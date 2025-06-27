@@ -64,7 +64,38 @@ Accept: application/json
 GET http://localhost:8080/api/test/scheduled-report-info
 Accept: application/json
 
-### 15. 测试定时报告功能说明
+### 15. 测试完整的警告工作流程
+POST http://localhost:8080/api/test/alert
+Content-Type: application/json
+
+{
+  "senduser": "test-operator",
+  "token": "workflow-test-456",
+  "content": "测试完整警告工作流程：HTTP协议自动添加、分级发送、状态变化检测",
+  "webhookUrl": "webhook.example.com/alerts",
+  "severity": "warning"
+}
+
+### 16. 测试长时间SQL检测功能
+GET http://localhost:8080/api/monitor/check/primary-db
+Accept: application/json
+
+### 17. 测试分级报警功能
+POST http://localhost:8080/api/test/test-severity/critical
+Content-Type: application/json
+
+{
+  "message": "测试Critical级别：数据库完全无法连接",
+  "additionalInfo": {
+    "testType": "critical-level-test",
+    "recipients": [
+      "admin",
+      "oncall-engineer"
+    ]
+  }
+}
+
+### 18. 测试定时报告功能说明
 # 定时报告将在以下时间自动执行：
 # - 每小时的第5分钟（00:05, 01:05, 02:05, ...）
 # - 每小时的第35分钟（00:35, 01:35, 02:35, ...）
@@ -76,3 +107,19 @@ Accept: application/json
 # 4. 系统资源检查 (INFO/WARNING/CRITICAL级别) - CPU、内存状态
 # 5. 磁盘空间检查 (INFO/WARNING/CRITICAL级别) - 磁盘使用情况
 # 6. 综合健康总结 (INFO级别) - 整体状态汇总
+
+### 19. 测试代码优化效果验证
+# 验证ProcessListMapper重构后的功能
+GET http://localhost:8080/api/monitor/status
+Accept: application/json
+
+### 20. 验证HTTP协议自动添加功能
+POST http://localhost:8080/api/test/alert
+Content-Type: application/json
+
+{
+  "senduser": "protocol-test",
+  "token": "http-test-789",
+  "content": "测试HTTP协议自动添加功能",
+  "webhookUrl": "example.com/webhook-without-protocol"
+}

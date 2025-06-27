@@ -1,0 +1,78 @@
+# 数据库监控系统API测试文件
+# 可以在IntelliJ IDEA中直接运行这些HTTP请求
+
+### 1. 测试基本健康检查
+GET http://localhost:8080/api/monitor/health
+Accept: application/json
+
+### 2. 测试警告发送接口（JSON参数）
+POST http://localhost:8080/api/test/alert
+Content-Type: application/json
+
+{
+  "senduser": "admin",
+  "token": "test-token-123",
+  "content": "这是一个测试警告消息",
+  "webhookUrl": "http://localhost:8080/api/test/webhook"
+}
+
+### 3. 测试数据库断开警告
+POST http://localhost:8080/api/test/test-db-disconnect
+Accept: application/json
+
+### 4. 测试数据库重连警告
+POST http://localhost:8080/api/test/test-db-reconnect
+Accept: application/json
+
+### 5. 测试Critical级别警告
+POST http://localhost:8080/api/test/test-severity/critical
+Accept: application/json
+
+### 6. 测试Warning级别警告
+POST http://localhost:8080/api/test/test-severity/warning
+Accept: application/json
+
+### 7. 测试Info级别警告
+POST http://localhost:8080/api/test/test-severity/info
+Accept: application/json
+
+### 8. 检查所有数据源状态
+GET http://localhost:8080/api/monitor/check/all
+Accept: application/json
+
+### 9. 获取详细监控状态
+GET http://localhost:8080/api/monitor/status/detailed
+Accept: application/json
+
+### 10. 系统健康检查
+GET http://localhost:8080/api/monitor/system-health
+Accept: application/json
+
+### 11. 综合状态检查（数据库+系统）
+GET http://localhost:8080/api/monitor/status/comprehensive
+Accept: application/json
+
+### 12. 动态调整监控间隔
+PUT http://localhost:8080/api/monitor/schedule/primary-db?interval=30
+Accept: application/json
+
+### 13. 手动触发定时健康报告（测试定时任务）
+POST http://localhost:8080/api/test/trigger-scheduled-report
+Accept: application/json
+
+### 14. 获取定时报告配置信息
+GET http://localhost:8080/api/test/scheduled-report-info
+Accept: application/json
+
+### 15. 测试定时报告功能说明
+# 定时报告将在以下时间自动执行：
+# - 每小时的第5分钟（00:05, 01:05, 02:05, ...）
+# - 每小时的第35分钟（00:35, 01:35, 02:35, ...）
+# 
+# 报告内容包括：
+# 1. Java程序状态检查 (INFO级别) - 报告程序正常运行
+# 2. MySQL连接状态 (INFO/CRITICAL级别) - 检查所有数据库连接
+# 3. 长时间SQL分析 (INFO/WARNING/CRITICAL级别) - 检查超过30分钟的SQL
+# 4. 系统资源检查 (INFO/WARNING/CRITICAL级别) - CPU、内存状态
+# 5. 磁盘空间检查 (INFO/WARNING/CRITICAL级别) - 磁盘使用情况
+# 6. 综合健康总结 (INFO级别) - 整体状态汇总

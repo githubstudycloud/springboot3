@@ -6,6 +6,7 @@ import com.example.dbmonitor.exception.ConfigurationException;
 import com.example.dbmonitor.exception.DbMonitorException;
 import com.example.dbmonitor.scheduler.DynamicMonitorScheduler;
 import com.example.dbmonitor.service.DatabaseMonitorService;
+import com.example.dbmonitor.service.SystemHealthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,6 +24,7 @@ public class MonitorController {
     private final DatabaseMonitorService monitorService;
     private final DataSourceManager dataSourceManager;
     private final DynamicMonitorScheduler scheduler;
+    private final SystemHealthService systemHealthService;
     
     /**
      * 检查所有数据源
@@ -132,5 +134,76 @@ public class MonitorController {
         response.put("status", "updated");
         
         return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * 系统健康检查端点
+     */
+    @GetMapping("/system-health")
+    public ResponseEntity<Map<String, Object>> checkSystemHealth() {
+        Map<String, Object> healthInfo = systemHealthService.checkSystemHealth();
+        return ResponseEntity.ok(healthInfo);
+    }
+    
+    /**
+     * 综合状态检查 - 包括数据库和系统健康状况
+     */
+    @GetMapping("/status/comprehensive")
+    public ResponseEntity<Map<String, Object>> getComprehensiveStatus() {
+        Map<String, Object> status = new HashMap<>();
+        
+        try {
+            // 获取数据库状态
+            List<MonitorResult> dbResults = monitorService.checkAllDataSources();
+            status.put("database", buildDatabaseStatus(dbResults));
+            
+            // 获取系统健康状况
+            Map<String, Object> systemHealth = systemHealthService.checkSystemHealth();
+            status.put("system", systemHealth);
+            
+            // 综合健康状态
+            boolean dbHealthy = dbResults.stream().allMatch(MonitorResult::isHealthy);
+            boolean systemHealthy = (Boolean) systemHealth.getOrDefault("healthy", false);
+            
+            status.put("overallHealthy", dbHealthy && systemHealthy);
+            status.put("timestamp", System.currentTimeMillis());
+            
+        } catch (Exception e) {
+            status.put("overallHealthy", false);
+            status.put("error", "综合状态检查失败: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(status);
+    }
+    
+    private Map<String, Object> buildDatabaseStatus(List<MonitorResult> results) {
+        Map<String, Object> dbStatus = new HashMap<>();
+        
+        dbStatus.put("totalDataSources", results.size());
+        dbStatus.put("healthyDataSources", results.stream().filter(MonitorResult::isHealthy).count());
+        dbStatus.put("unhealthyDataSources", results.stream().filter(r -> !r.isHealthy()).count());
+        
+        // 按健康状态分组
+        Map<String, List<String>> dataSourcesByHealth = new HashMap<>();
+        dataSourcesByHealth.put("healthy", 
+            results.stream()
+                .filter(MonitorResult::isHealthy)
+                .map(MonitorResult::getDataSourceName)
+                .toList());
+        dataSourcesByHealth.put("unhealthy", 
+            results.stream()
+                .filter(r -> !r.isHealthy())
+                .map(MonitorResult::getDataSourceName)
+                .toList());
+        
+        dbStatus.put("dataSourcesByHealth", dataSourcesByHealth);
+        
+        // 汇总问题
+        long totalLongRunningQueries = results.stream()
+                .mapToLong(r -> r.getLongRunningQueries().size())
+                .sum();
+        dbStatus.put("totalLongRunningQueries", totalLongRunningQueries);
+        
+        return dbStatus;
     }
 }

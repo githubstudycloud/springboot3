@@ -1,103 +1,99 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+# Spring Boot 数据库监控应用配置
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: db-monitor
+  
+  # Jackson配置
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# 数据库监控配置
+monitor:
+  defaults:
+    check-interval: 60
+    sql-timeout-threshold: 30
+    connection-timeout: 5000
+    pool-size: 3
+    validation-timeout: 5000
+    keep-alive-time: 600000
+    query-timeout: 10
+  
+  datasources:
+    - name: "primary-db"
+      url: "jdbc:mariadb://localhost:3306/test"
+      username: "monitor_user"
+      password: "monitor_pass"
+      enabled: true
+      check-interval: 30
+      tags: ["production", "critical"]
     
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.0</version>
-    </parent>
-    
-    <groupId>com.example</groupId>
-    <artifactId>db-monitor</artifactId>
-    <version>1.0.0</version>
-    
-    <properties>
-        <java.version>21</java.version>
-        <lombok.version>1.18.30</lombok.version>
-    </properties>
-    
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
-        </dependency>
-        <!-- MariaDB驱动替代MySQL -->
-        <dependency>
-            <groupId>org.mariadb.jdbc</groupId>
-            <artifactId>mariadb-java-client</artifactId>
-            <version>3.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-        </dependency>
-        <!-- 添加Jackson的时间模块 -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-        </dependency>
-    </dependencies>
-    
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <release>21</release>
-                    <compilerArgs>
-                        <arg>--enable-preview</arg>
-                    </compilerArgs>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </path>
-                        <path>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-configuration-processor</artifactId>
-                            <version>3.2.0</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-</project>
+    - name: "secondary-db"
+      url: "jdbc:mariadb://localhost:3307/backup"
+      username: "backup_user"
+      password: "backup_pass"
+      enabled: true
+      check-interval: 120
+      tags: ["backup", "non-critical"]
+  
+  alert:
+    enabled: true
+    endpoints:
+      # 管理员端点 - 只接收critical级别警告
+      - name: "admin-critical"
+        url: "http://admin-alert.company.com/api/critical"
+        type: "critical-only"
+        tags: ["production", "critical"]
+      
+      # 运维团队 - 接收warning和critical级别
+      - name: "ops-team"
+        url: "http://ops-webhook.company.com/api/alerts"
+        type: "warning-and-critical"
+        tags: ["production"]
+      
+      # 监控系统 - 接收所有级别
+      - name: "monitoring-system"
+        url: "http://monitoring.company.com/api/db-alerts"
+        type: "info-and-above"
+        
+      # 开发团队 - 排除critical级别（避免半夜被叫醒）
+      - name: "dev-team"
+        url: "http://dev-notifications.company.com/api/alerts"
+        type: "non-critical"
+        tags: ["development"]
+      
+      # 状态看板 - 只显示info级别（连接恢复等状态）
+      - name: "status-dashboard"
+        url: "http://status.company.com/api/updates"
+        type: "info-only"
+      
+      # 测试端点 - 用于本地测试
+      - name: "test-endpoint"
+        url: "localhost:8080/api/test/webhook"
+        type: "info-and-above"
+
+# 日志配置
+logging:
+  level:
+    com.example.dbmonitor: DEBUG
+    org.springframework.jdbc: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
